@@ -96,13 +96,13 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
 
         args := strings.Split(t, "=>")
         // should be 'arg1 => arg2'
-        if len(args) != 2 {
+        if len(args) != 2 && len(args) != 3{
             return nil, fmt.Errorf("Syntax error: improper argument formatting on line %d", line+startLine)
         }
-        a0 := shaveWhitespace(args[0])
-        a1 := shaveWhitespace(args[1])
-        job.args = append(job.args, a0, a1)
-        
+        for _, a := range args{
+            shaven := shaveWhitespace(a)
+            job.args = append(job.args, shaven)
+        }
     }
     // only gets here if we finish all the lines
     *lines = nil
@@ -135,7 +135,6 @@ func (e *EPM) Parse(filename string) error{
 
 // job switch
 func (e *EPM) ExecuteJob(job Job){
-    fmt.Println(job)
     e.VarsSub(&job) // substitute vars 
     switch(job.cmd){
         case "deploy":
@@ -153,24 +152,20 @@ func (e *EPM) ExecuteJob(job Job){
         case "endow":
             e.Endow(job.args)
     }
-    fmt.Println("vars:", e.vars)
 }
 
 // replaces any {{varname}} args with the variable value
 func (e *EPM) VarsSub(job *Job){
     r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
-    fmt.Println("vars subbing")
     fmt.Println("vars map:", e.vars)
     fmt.Println("args", job.args)
     for i, a := range job.args{
         //l := len(a)
-        fmt.Println(a)
         // if it already exists, replace it
         // else, leave alone
         job.args[i] = r.ReplaceAllStringFunc(a, func(s string) string{
             k := s[2:len(s)-2] // shave the brackets
             v, ok := e.vars[k]
-            fmt.Println("in replace all s/k/v", s, k, v)
             if ok{
                 return v
             } else{

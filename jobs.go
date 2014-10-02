@@ -50,7 +50,10 @@ func (e *EPM) ModifyDeploy(args []string){
 }
 
 func (e *EPM) Transact(args []string){
-    e.eth.Push("tx", args)
+    to := args[0:1]
+    dataS := args[1]
+    data := strings.Split(dataS, " ")
+    e.eth.Push("tx", append(to, data...))
 }
 
 func (e *EPM) Query(args []string){
@@ -92,7 +95,6 @@ func (e *EPM) Endow(args []string){
 // apply substitution/replace pairs from args to contract
 // save in temp file
 func Modify(contract string, args []string) string{
-    fmt.Println("contract:", contract)
     b, err := ioutil.ReadFile(contract)
     if err != nil{
         fmt.Println("could not open file", contract)
@@ -101,7 +103,6 @@ func Modify(contract string, args []string) string{
     }
 
     lll := string(b)
-    fmt.Println("before:", lll)
 
     for len(args) > 0 {
         sub := args[0]
@@ -110,7 +111,6 @@ func Modify(contract string, args []string) string{
         lll = strings.Replace(lll, sub, rep, -1)
         args = args[2:]
     }
-    fmt.Println("after", lll)    
 
     newPath := path.Join(".tmp", ethutil.Bytes2Hex(ethcrypto.Sha3Bin([]byte(lll)))+".lll")
     err = ioutil.WriteFile(path.Join(ContractPath, newPath), []byte(lll), 0644)
