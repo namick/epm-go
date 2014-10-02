@@ -12,16 +12,24 @@ import (
 )
 
 var GOPATH = os.Getenv("GOPATH")
-//var ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "eris")
-var ContractPath = "contracts"
+var ContractPath = path.Join(GOPATH, "src", "github.com", "project-douglas", "epm-go", "tests", "contracts")
+var TestPath = path.Join(GOPATH, "src", "github.com", "project-douglas", "epm-go", "tests", "definitions")
 
 func (e *EPM) ExecuteJobs(){
     for _, j := range e.jobs{
+        fmt.Println("job!", j.cmd, j.args)
         e.ExecuteJob(j)
     }
 }
 
+/*
+    The following are the "jobs" functions that EPM knows
+    Interaction with BlockChain is strictly through Get() and Push() methods of ChainInterface
+    Hides details of in-process vs. rpc
+*/
+
 func (e *EPM) Deploy(args []string){
+    fmt.Println("deploy!")
     contract := args[0]
     key := args[1]
     
@@ -41,6 +49,7 @@ func (e *EPM) Deploy(args []string){
 }
 
 func (e *EPM) ModifyDeploy(args []string){
+    fmt.Println("modify-deploy!")
     contract := args[0]
     key := args[1]
     args = args[2:]
@@ -83,7 +92,7 @@ func (e *EPM) Log(args []string){
 func (e *EPM) Set(args []string){
     k := args[0]
     v := args[1]
-    e.vars[k] = v
+    e.vars[k[2:len(k)-2]] = v
 }
 
 func (e *EPM) Endow(args []string){

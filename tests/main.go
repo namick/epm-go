@@ -10,14 +10,26 @@ import (
     "github.com/eris-ltd/eth-go-mods/ethchain"
 )
 
-func main(){
+var GoPath = os.Getenv("GOPATH")
+
+func NewEthNode() *ethtest.EthChain{
     lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
-    // Startup the EthChain
     eth := ethtest.NewEth(nil)
     ethchain.GENDOUG = nil
+    ethchain.GenesisConfig = "genesis.json"
+    eth.Config.RootDir = ".ethchain"
+    eth.Config.LogLevel = 0
+    eth.Config.DougDifficulty = 14
     eth.Init() 
     eth.Config.Mining = true
     eth.Start()
+    return eth
+}
+
+
+func main(){
+    // Startup the EthChain
+    eth := NewEthNode()
     // Create ChainInterface instance
     ethD := epm.NewEthD(eth)
     // setup EPM object with ChainInterface

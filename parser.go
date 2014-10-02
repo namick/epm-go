@@ -112,7 +112,7 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
 //parse should open a file, read all lines, peel commands into jobs
 func (e *EPM) Parse(filename string) error{
     lines := []string{}
-    f, _ := os.Open("hi.txt")
+    f, _ := os.Open(filename)
     scanner := bufio.NewScanner(f)
     // read in all lines
     for scanner.Scan(){
@@ -135,7 +135,7 @@ func (e *EPM) Parse(filename string) error{
 
 // job switch
 func (e *EPM) ExecuteJob(job Job){
-    e.VarsSub(&job) // substitute vars 
+    e.VarSub(&job) // substitute vars 
     switch(job.cmd){
         case "deploy":
             e.Deploy(job.args)
@@ -155,12 +155,9 @@ func (e *EPM) ExecuteJob(job Job){
 }
 
 // replaces any {{varname}} args with the variable value
-func (e *EPM) VarsSub(job *Job){
+func (e *EPM) VarSub(job *Job){
     r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
-    fmt.Println("vars map:", e.vars)
-    fmt.Println("args", job.args)
     for i, a := range job.args{
-        //l := len(a)
         // if it already exists, replace it
         // else, leave alone
         job.args[i] = r.ReplaceAllStringFunc(a, func(s string) string{
@@ -173,9 +170,12 @@ func (e *EPM) VarsSub(job *Job){
             }
         })
     }
-    fmt.Println("args after sub", job.args)
 }
 
 func (e *EPM) Vars() map[string]string{
     return e.vars
+}
+
+func (e *EPM) Jobs() []Job{
+    return e.jobs
 }
