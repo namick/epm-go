@@ -7,13 +7,16 @@ import (
     "github.com/project-douglas/lllc-server"
     "github.com/project-douglas/epm-go"
     "github.com/eris-ltd/eth-go-mods/ethtest"
+    "github.com/eris-ltd/eth-go-mods/ethchain"
 )
 
 func main(){
     lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
     // Startup the EthChain
     eth := ethtest.NewEth(nil)
-    eth.Init()
+    ethchain.GENDOUG = nil
+    eth.Init() 
+    eth.Config.Mining = true
     eth.Start()
     // Create ChainInterface instance
     ethD := epm.NewEthD(eth)
@@ -27,5 +30,7 @@ func main(){
     }
     // epm execute jobs
     e.ExecuteJobs()
+    fmt.Println("internal vars:", e.Vars())
+    eth.Ethereum.WaitForShutdown()
 }
 

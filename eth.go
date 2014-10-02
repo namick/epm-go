@@ -28,6 +28,7 @@ type EthChain interface{
     Tx(string, string)
     Msg(string, []string)
     DeployContract(string, string) string
+    GetStorageAt(string, string) string
 }
 
 
@@ -36,7 +37,10 @@ func NewEthD(ethChain EthChain) ChainInterface{
 }
 
 func (e *EthD) Get(query string, args []string) (string, error){
-    return "", nil
+    addr := args[0]
+    storage := args[1]
+    ret :=  e.chain.GetStorageAt(addr, storage)
+    return ret, nil
 }
 
 func (e *EthD) Push(kind string, args []string) (string, error){

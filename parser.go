@@ -5,6 +5,7 @@ import (
     "bufio"
     "os"
     "strings"
+    "regexp"
 )
 
 // an EPM Job
@@ -16,8 +17,11 @@ type Job struct{
 // EPM object. maintains list of jobs and a symbols table
 type EPM struct{
     eth ChainInterface
+
     jobs []Job
     vars map[string]string
+    
+    log string
 }
 
 // new empty epm
@@ -26,6 +30,7 @@ func NewEPM(eth ChainInterface) *EPM{
         eth:  eth,
         jobs: []Job{},
         vars: make(map[string]string),
+        log: ".epm-log",
     }
 }
 
@@ -59,7 +64,7 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
     job := Job{"", []string{}}
     for line, t := range *lines{
         // ignore comments and blank lines
-        fmt.Println("next line:", line, t)
+        //fmt.Println("next line:", line, t)
         if len(t) == 0 || t[0:1] == "#" {
             continue
         }
@@ -118,7 +123,6 @@ func (e *EPM) Parse(filename string) error{
     l := 0
     startLength := len(lines)
     for lines != nil{
-        fmt.Println("peercmd", l)
         job, err := peelCmd(&lines, l)
         if err != nil{
             return err
@@ -132,6 +136,7 @@ func (e *EPM) Parse(filename string) error{
 // job switch
 func (e *EPM) ExecuteJob(job Job){
     fmt.Println(job)
+    e.VarsSub(&job) // substitute vars 
     switch(job.cmd){
         case "deploy":
             e.Deploy(job.args)
@@ -148,4 +153,34 @@ func (e *EPM) ExecuteJob(job Job){
         case "endow":
             e.Endow(job.args)
     }
+    fmt.Println("vars:", e.vars)
+}
+
+// replaces any {{varname}} args with the variable value
+func (e *EPM) VarsSub(job *Job){
+    r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
+    fmt.Println("vars subbing")
+    fmt.Println("vars map:", e.vars)
+    fmt.Println("args", job.args)
+    for i, a := range job.args{
+        //l := len(a)
+        fmt.Println(a)
+        // if it already exists, replace it
+        // else, leave alone
+        job.args[i] = r.ReplaceAllStringFunc(a, func(s string) string{
+            k := s[2:len(s)-2] // shave the brackets
+            v, ok := e.vars[k]
+            fmt.Println("in replace all s/k/v", s, k, v)
+            if ok{
+                return v
+            } else{
+                return s
+            }
+        })
+    }
+    fmt.Println("args after sub", job.args)
+}
+
+func (e *EPM) Vars() map[string]string{
+    return e.vars
 }
