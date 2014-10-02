@@ -8,6 +8,7 @@ import (
     "github.com/project-douglas/epm-go"
     "github.com/eris-ltd/eth-go-mods/ethtest"
     "github.com/eris-ltd/eth-go-mods/ethchain"
+    "github.com/eris-ltd/eth-go-mods/ethreact"
 )
 
 var GoPath = os.Getenv("GOPATH")
@@ -18,7 +19,7 @@ func NewEthNode() *ethtest.EthChain{
     ethchain.GENDOUG = nil
     ethchain.GenesisConfig = "genesis.json"
     eth.Config.RootDir = ".ethchain"
-    eth.Config.LogLevel = 0
+    eth.Config.LogLevel = 5
     eth.Config.DougDifficulty = 14
     eth.Init() 
     eth.Config.Mining = true
@@ -35,14 +36,16 @@ func main(){
     // setup EPM object with ChainInterface
     e := epm.NewEPM(ethD)
     // epm parse the package definition file
-    err := e.Parse("hi.txt")
+    err := e.Parse(path.Join(epm.TestPath, "test_parse.epm"))
     if err != nil{
         fmt.Println(err)
         os.Exit(0)
     }
     // epm execute jobs
     e.ExecuteJobs()
-    fmt.Println("internal vars:", e.Vars())
-    eth.Ethereum.WaitForShutdown()
+    ch := make(chan ethreact.Event, 1)
+    eth.Ethereum.Reactor().Subscribe("newBlock", ch)
+    _ =<- ch
+    e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
 }
 

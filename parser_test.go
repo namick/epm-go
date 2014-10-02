@@ -10,7 +10,7 @@ var ExpectedParse = []Job{
     Job{"deploy", []string{"a.lll", "{{A}}"}},
     Job{"modify-deploy", []string{"b.lll", "{{B}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})"}},
     Job{"modify-deploy", []string{"b.lll", "{{D}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})", "[[0x42]]", "[[0x43]]"}},
-    Job{"transact", []string{"{{B}}", "0x15 0x12"}},
+    Job{"transact", []string{"{{B}}", "0x12 0x15"}},
     Job{"query", []string{"{{B}}", "0x15", "{{C}}"}},
     Job{"endow", []string{"{{A}}", "0x609"}},
 }
@@ -52,7 +52,7 @@ func TestVarSub(t *testing.T){
         if j.cmd == "set"{
             e.ExecuteJob(j)
         } else{
-            e.VarSub(&j)
+            j.args = e.VarSub(j.args)
         }
         expected := ExpectedVarSub_jobs[i]
         if !checkExpectedJobs(j, expected){

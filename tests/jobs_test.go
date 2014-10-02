@@ -63,6 +63,27 @@ func TestModifyDeploy(t *testing.T){
     eth.Stop()
 }
 
+// doesn't work unless we wait a block until actually making the query
+// not going to fly here
+func iTestQuery(t *testing.T){
+    eth := NewEthNode()
+    e := epm.NewEPM(epm.NewEthD(eth)) 
+
+    err := e.Parse(path.Join(epm.TestPath, "test_query.epm"))
+    if err != nil{
+        t.Error(err)
+    }
+    e.ExecuteJobs()
+
+    ch := make(chan ethreact.Event, 1) 
+    eth.Ethereum.Reactor().Subscribe("newBlock", ch)
+    _ = <- ch
+    a := e.Vars()["B"]
+    if a != "0x5050"{
+        t.Error("got:", a, "expecxted:", "0x5050")
+    }
+}
+
 func TestStack(t *testing.T){
     eth := NewEthNode()
     e := epm.NewEPM(epm.NewEthD(eth)) 
@@ -96,9 +117,9 @@ func TestStack(t *testing.T){
     if got != "15"{
         t.Error("got:", got, "expected:", "0x15")
     }
-    got = eth.GetStorageAt(addr2, "0x15")
-    if got != "12"{
-        t.Error("got:", got, "expected:", "0x12")
+    got = eth.GetStorageAt(addr2, "0x12")
+    if got != "15"{
+        t.Error("got:", got, "expected:", "0x15")
     }
 
 

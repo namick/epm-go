@@ -119,7 +119,7 @@ func (e *EPM) Parse(filename string) error{
         t := scanner.Text()
         lines = append(lines, t)
     }
-    
+
     l := 0
     startLength := len(lines)
     for lines != nil{
@@ -133,34 +133,13 @@ func (e *EPM) Parse(filename string) error{
     return nil
 }
 
-// job switch
-func (e *EPM) ExecuteJob(job Job){
-    e.VarSub(&job) // substitute vars 
-    switch(job.cmd){
-        case "deploy":
-            e.Deploy(job.args)
-        case "modify-deploy":
-            e.ModifyDeploy(job.args)
-        case "transact":
-            e.Transact(job.args)
-        case "query":
-            e.Query(job.args)
-        case "log":
-            e.Log(job.args)
-        case "set":
-            e.Set(job.args)
-        case "endow":
-            e.Endow(job.args)
-    }
-}
-
 // replaces any {{varname}} args with the variable value
-func (e *EPM) VarSub(job *Job){
+func (e *EPM) VarSub(args []string) []string{
     r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
-    for i, a := range job.args{
+    for i, a := range args{
         // if it already exists, replace it
         // else, leave alone
-        job.args[i] = r.ReplaceAllStringFunc(a, func(s string) string{
+        args[i] = r.ReplaceAllStringFunc(a, func(s string) string{
             k := s[2:len(s)-2] // shave the brackets
             v, ok := e.vars[k]
             if ok{
@@ -170,6 +149,7 @@ func (e *EPM) VarSub(job *Job){
             }
         })
     }
+    return args
 }
 
 func (e *EPM) Vars() map[string]string{
