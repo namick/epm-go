@@ -38,6 +38,7 @@ func (e *EPM) Test(filename string){
     
     failed := 0
     for i, line := range lines{
+        fmt.Println("vars:", e.Vars())
         err := e.ExecuteTest(line, i)
         if err != nil{
             failed += 1
@@ -48,7 +49,7 @@ func (e *EPM) Test(filename string){
         fmt.Println("passed all tests")
     } else {
 
-        fmt.Println("failed %d/%d", failed, len(lines))
+        fmt.Printf("failed %d/%d\n", failed, len(lines))
     }
 }
 
@@ -69,6 +70,7 @@ func (e *EPM) ExecuteTest(line string, i int) error{
 
     // retrieve the value
     val, _ := e.eth.Get("get", []string{addHex(addr), addHex(storage)})
+    val = addHex(val)
     //val, _ := e.eth.Get("get", []string{addr, storage})
 
     if stripHex(expected) != stripHex(val){

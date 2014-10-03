@@ -7,6 +7,8 @@ import (
     "strings"
     "regexp"
     "strconv"
+    "bytes"
+    "encoding/binary"
     "github.com/eris-ltd/eth-go-mods/ethutil"
 )
 
@@ -163,25 +165,49 @@ func (e *EPM) Jobs() []Job{
 }
 
 func (e *EPM) StoreVar(key, val string){
+    fmt.Println("storing var:", key, val)
     if key[:2] == "{{" && key[len(key)-2:] == "}}"{
         key = key[2:len(key)-2]
     }
-    e.vars[key] = addHex(val)
+    e.vars[key] = Coerce2Hex(val)
+    fmt.Println("stored result:", e.vars[key])
+}
+
+// keeps N bytes of the conversion
+func NumberToBytes(num interface{}, N int) []byte {
+    buf := new(bytes.Buffer)
+    err := binary.Write(buf, binary.BigEndian, num)
+    if err != nil {
+        fmt.Println("NumberToBytes failed:", err)
+    }
+    fmt.Println("btyes!", buf.Bytes())
+    if buf.Len() > N{
+        return buf.Bytes()[buf.Len()-N:]
+    }
+    return buf.Bytes()
 }
 
 // s can be string, hex, or int.
 // returns properly formatted 32byte hex value
 func Coerce2Hex(s string) string{
-    _, err := strconv.Atoi(s)
+    fmt.Println("coercing to hex:", s)
+    // is int?
+    i, err := strconv.Atoi(s)
     if err == nil{
-        pad := strings.Repeat("\x00", (32-len(s)))+s
-        return "0x"+ethutil.Bytes2Hex([]byte(pad))
+        return "0x"+ethutil.Bytes2Hex(NumberToBytes(int32(i), i/256+1))
     }
+    // is already prefixed hex?
     if len(s) > 1 && s[:2] == "0x"{
         return s
     }
+    // is unprefixed hex?
+    if len(s) > 32{
+        return "0x"+s
+    }
     pad := s + strings.Repeat("\x00", (32-len(s)))
-    return "0x"+ethutil.Bytes2Hex([]byte(pad))
+    ret := "0x"+ethutil.Bytes2Hex([]byte(pad))
+    fmt.Println("result:", ret)
+    return ret
 }
 
 func addHex(s string) string{

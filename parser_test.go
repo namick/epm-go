@@ -10,7 +10,7 @@ var ExpectedParse = []Job{
     Job{"deploy", []string{"a.lll", "{{A}}"}},
     Job{"modify-deploy", []string{"b.lll", "{{B}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})"}},
     Job{"modify-deploy", []string{"b.lll", "{{D}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})", "[[0x42]]", "[[0x43]]"}},
-    Job{"transact", []string{"{{B}}", "0x12 0x15"}},
+    Job{"transact", []string{"{{B}}", "0x12 ethan"}},
     Job{"query", []string{"{{B}}", "0x15", "{{C}}"}},
     Job{"endow", []string{"{{A}}", "0x609"}},
 }
@@ -31,12 +31,12 @@ func TestParse(t *testing.T){
     }
 }
 
-var ExpectedVarSub_map= map[string]string{"A":"hello"}
+var ExpectedVarSub_map= map[string]string{"A":Coerce2Hex("hello")}
 
 var ExpectedVarSub_jobs = []Job{
     Job{"set", []string{"{{A}}", "hello"}},
-    Job{"transact", []string{"hello", "0x15 0x12"}},
-    Job{"modify-deploy", []string{"a.lll", "{{C}}", "(def 'dougie 0x1313)", "(def 'dougie hello)"}},
+    Job{"transact", []string{Coerce2Hex("hello"), "0x15 0x12"}},
+    Job{"modify-deploy", []string{"a.lll", "{{C}}", "(def 'dougie 0x1313)", "(def 'dougie "+Coerce2Hex("hello")+")"}},
 }
 
     
