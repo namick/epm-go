@@ -4,7 +4,6 @@ import (
     "fmt"
     "os"
     "path"
-    "github.com/project-douglas/lllc-server"
     "github.com/eris-ltd/epm-go"
     "github.com/eris-ltd/eth-go-mods/ethtest"
     "github.com/eris-ltd/eth-go-mods/ethchain"
@@ -14,7 +13,7 @@ import (
 var GoPath = os.Getenv("GOPATH")
 
 func NewEthNode() *ethtest.EthChain{
-    lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
+    //lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
     eth := ethtest.NewEth(nil)
     ethchain.GENDOUG = nil
     ethchain.GenesisConfig = "genesis.json"

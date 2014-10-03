@@ -121,7 +121,9 @@ func (e *EPM) Deploy(args []string){
     // compile contract
     p := path.Join(ContractPath, contract)
     fmt.Println("path", p)
-    b, err := lllcserver.CompileLLLWrapper(p)
+    // this needs a better solution ...
+    lllcserver.URL = "http://162.218.65.211:9999/compile"
+    b, err := lllcserver.Compile(p)
     if err != nil{
         fmt.Println("error compiling!", err)
          return
