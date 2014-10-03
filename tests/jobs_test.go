@@ -4,7 +4,7 @@ import (
     "fmt"
     "testing"
     "path"
-    "github.com/project-douglas/epm-go"
+    "github.com/eris-ltd/epm-go"
     "github.com/eris-ltd/eth-go-mods/ethreact"
 )
 
@@ -118,11 +118,9 @@ func TestStack(t *testing.T){
         t.Error("got:", got, "expected:", "0x15")
     }
     got = eth.GetStorageAt(addr2, "0x12")
-    if got != "15"{
-        t.Error("got:", got, "expected:", "0x15")
+    if "0x"+got != epm.Coerce2Hex("ethan"){
+        t.Error("got:", got, "expected:", epm.Coerce2Hex("ethan"))
     }
-
-
 }
 
 

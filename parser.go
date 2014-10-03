@@ -171,7 +171,7 @@ func (e *EPM) StoreVar(key, val string){
 
 // s can be string, hex, or int.
 // returns properly formatted 32byte hex value
-func coerce2Hex(s string) string{
+func Coerce2Hex(s string) string{
     _, err := strconv.Atoi(s)
     if err == nil{
         pad := strings.Repeat("\x00", (32-len(s)))+s

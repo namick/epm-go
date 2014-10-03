@@ -5,7 +5,7 @@ import (
     "os"
     "path"
     "github.com/project-douglas/lllc-server"
-    "github.com/project-douglas/epm-go"
+    "github.com/eris-ltd/epm-go"
     "github.com/eris-ltd/eth-go-mods/ethtest"
     "github.com/eris-ltd/eth-go-mods/ethchain"
     "github.com/eris-ltd/eth-go-mods/ethreact"

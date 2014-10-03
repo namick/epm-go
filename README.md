@@ -18,3 +18,33 @@ Values stored as EPM variables will be immediately converted to the proper hex r
 Testing
 -------
 `go test` can be used to test the parser, or when run in `tests` to test the commands. To test a deployment suite, write a txt file consisting of query params (addr, storage) and the expected result. A fourth parameter can be included for storing the result as a variable for later queries
+
+
+Deploy and Test
+---------------
+```
+func main(){
+    // Startup the EthChain (ala `eth-go-mods/ethtest/ethereum.go`)
+    // or use one you've already got
+    eth := NewEthNode()
+    // Create ChainInterface instance (hides details of rpc vs. in-process from epm)
+    // Here we use in-process (D)
+    ethD := epm.NewEthD(eth)
+    // setup EPM object with ChainInterface
+    e := epm.NewEPM(ethD)
+    // epm parse the package definition file
+    err := e.Parse(path.Join(epm.TestPath, "test_parse.epm"))
+    if err != nil{
+        fmt.Println(err)
+        os.Exit(0)
+    }
+    // epm execute jobs
+    e.ExecuteJobs()
+    // wait for a block to be mined
+    ch := make(chan ethreact.Event, 1)
+    eth.Ethereum.Reactor().Subscribe("newBlock", ch)
+    _ =<- ch
+    // test the results against the check file
+    e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
+}
+```

@@ -13,8 +13,8 @@ import (
 )
 
 var GOPATH = os.Getenv("GOPATH")
-var ContractPath = path.Join(GOPATH, "src", "github.com", "project-douglas", "epm-go", "tests", "contracts")
-var TestPath = path.Join(GOPATH, "src", "github.com", "project-douglas", "epm-go", "tests", "definitions")
+var ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "tests", "contracts")
+var TestPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "tests", "definitions")
 
 func (e *EPM) ExecuteJobs(){
     for _, j := range e.jobs{
@@ -30,6 +30,10 @@ func (e *EPM) Test(filename string){
     for scanner.Scan(){
         t := scanner.Text()
         lines = append(lines, t)
+    }
+    if len(lines) == 0{
+        fmt.Println("No tests to run...")
+        return
     }
     
     failed := 0
@@ -60,7 +64,7 @@ func (e *EPM) ExecuteTest(line string, i int) error{
     // if there's a fourth, its the variable name to store the result under
     addr := args[0]
     storage := args[1]
-    expected := coerce2Hex(args[2])
+    expected := Coerce2Hex(args[2])
     //expected := args[2]
 
     // retrieve the value
