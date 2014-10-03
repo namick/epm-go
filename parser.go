@@ -6,6 +6,8 @@ import (
     "os"
     "strings"
     "regexp"
+    "strconv"
+    "github.com/eris-ltd/eth-go-mods/ethutil"
 )
 
 // an EPM Job
@@ -159,3 +161,47 @@ func (e *EPM) Vars() map[string]string{
 func (e *EPM) Jobs() []Job{
     return e.jobs
 }
+
+func (e *EPM) StoreVar(key, val string){
+    if key[:2] == "{{" && key[len(key)-2:] == "}}"{
+        key = key[2:len(key)-2]
+    }
+    e.vars[key] = addHex(val)
+}
+
+// s can be string, hex, or int.
+// returns properly formatted 32byte hex value
+func coerce2Hex(s string) string{
+    _, err := strconv.Atoi(s)
+    if err == nil{
+        pad := strings.Repeat("\x00", (32-len(s)))+s
+        return "0x"+ethutil.Bytes2Hex([]byte(pad))
+    }
+    if len(s) > 1 && s[:2] == "0x"{
+        return s
+    }
+    pad := s + strings.Repeat("\x00", (32-len(s)))
+    return "0x"+ethutil.Bytes2Hex([]byte(pad))
+}
+
+func addHex(s string) string{
+    if len(s) < 2{
+        return "0x"+s
+    }
+
+    if s[:2] != "0x"{
+        return "0x"+s
+    }
+    
+    return s
+}
+
+func stripHex(s string) string{
+    if len(s) > 1{
+        if s[:2] == "0x"{
+            return s[2:]
+        }
+    }
+    return s
+}
+

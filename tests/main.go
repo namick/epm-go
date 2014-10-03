@@ -19,7 +19,7 @@ func NewEthNode() *ethtest.EthChain{
     ethchain.GENDOUG = nil
     ethchain.GenesisConfig = "genesis.json"
     eth.Config.RootDir = ".ethchain"
-    eth.Config.LogLevel = 5
+    eth.Config.LogLevel = 0
     eth.Config.DougDifficulty = 14
     eth.Init() 
     eth.Config.Mining = true

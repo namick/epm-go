@@ -60,14 +60,14 @@ func (e *EPM) ExecuteTest(line string, i int) error{
     // if there's a fourth, its the variable name to store the result under
     addr := args[0]
     storage := args[1]
-    expected := args[2]
+    expected := coerce2Hex(args[2])
+    //expected := args[2]
 
     // retrieve the value
     val, _ := e.eth.Get("get", []string{addHex(addr), addHex(storage)})
     //val, _ := e.eth.Get("get", []string{addr, storage})
 
     if stripHex(expected) != stripHex(val){
-        fmt.Println("bytes:", []byte(val), []byte(expected))
         return fmt.Errorf("Test %d failed. Got: %s, expected %s", i, val, expected)
     }
 
@@ -75,37 +75,7 @@ func (e *EPM) ExecuteTest(line string, i int) error{
     if len(args) == 4{
         e.StoreVar(args[3], val)
     }
-    fmt.Println(e.vars)
     return nil
-}
-
-func (e *EPM) StoreVar(key, val string){
-    if key[:2] == "{{" && key[len(key)-2:] == "}}"{
-        key = key[2:len(key)-2]
-    }
-    e.vars[key] = val
-
-}
-
-func addHex(s string) string{
-    if len(s) < 2{
-        return "0x"+s
-    }
-
-    if s[:2] != "0x"{
-        return "0x"+s
-    }
-    
-    return s
-}
-
-func stripHex(s string) string{
-    if len(s) > 1{
-        if s[:2] == "0x"{
-            return s[2:]
-        }
-    }
-    return s
 }
 
 
@@ -150,11 +120,10 @@ func (e *EPM) Deploy(args []string){
         fmt.Println("error compiling!", err)
          return
     }
-
+    // deploy contract
     addr, _ := e.eth.Push("create", []string{"0x"+ethutil.Bytes2Hex(b)})
-
-    // assign contract addr to key (strip the {{}})
-    e.vars[key[2:len(key)-2]] = "0x"+addr
+    // save contract address
+    e.StoreVar(key, addr)
 }
 
 func (e *EPM) ModifyDeploy(args []string){
@@ -203,7 +172,7 @@ func (e *EPM) Log(args []string){
 func (e *EPM) Set(args []string){
     k := args[0]
     v := args[1]
-    e.vars[k[2:len(k)-2]] = v
+    e.StoreVar(k, v)
 }
 
 func (e *EPM) Endow(args []string){
