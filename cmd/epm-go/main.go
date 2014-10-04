@@ -50,6 +50,7 @@ var (
 
 func main(){
     flag.Parse()
+
     var err error
     // set contract path to current directory. make configureable
     epm.ContractPath, err = filepath.Abs(*contractPath)
@@ -91,13 +92,13 @@ func main(){
     //eth.GetStorage()
 }
 
-
+// configure and start an in-process eth node
 func NewEthNode() *ethtest.EthChain{
-    //lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
+    // empty ethchain object
     eth := ethtest.NewEth(nil)
+    // configure, configure, configure
     ethchain.GENDOUG = nil
     var err error
-    //ethchain.GenesisConfig = "genesis.json"
     if *keys != ""{
         eth.Config.KeyFile, err = filepath.Abs(*keys)
         if err != nil{
@@ -106,20 +107,18 @@ func NewEthNode() *ethtest.EthChain{
         }
     }
     if *genesis != ""{
+        eth.Config.GenesisConfig = *genesis
         eth.Config.ContractPath = *contractPath
-
     }
     eth.Config.RootDir = *database
     eth.Config.LogLevel = *logLevel
     eth.Config.DougDifficulty = *difficulty
     eth.Config.Mining = *mining
+    // initialize and start
     eth.Init() 
     eth.Start()
     return eth
 }
-
-
-
 
 // looks for pkg-def file
 // exits if error (none or more than 1)
