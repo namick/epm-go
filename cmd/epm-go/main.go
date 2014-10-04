@@ -15,6 +15,9 @@ import (
 
 var GoPath = os.Getenv("GOPATH")
 
+// adjust these to suit all your deformed nefarious extension name desires. Muahahaha
+var PkgExt = "pkg-def"
+var TestExt = "pkg-def-test"
 
 /*
     epm-go cli:
@@ -74,7 +77,7 @@ func main(){
     e := epm.NewEPM(ethD)
 
     // epm parse the package definition file
-    err = e.Parse(pkg+".package-definition")
+    err = e.Parse(pkg+"."+PkgExt)
     if err != nil{
         fmt.Println(err)
         os.Exit(0)
@@ -87,7 +90,7 @@ func main(){
     eth.Ethereum.Reactor().Subscribe("newBlock", ch)
     _ =<- ch
     if test_{
-        e.Test(pkg+".package-definition-test")
+        e.Test(pkg+"." + TestExt)
     }
     //eth.GetStorage()
 }
@@ -138,9 +141,9 @@ func getPkgDefFile(pkgPath string) (string, bool) {
         spl := strings.Split(name, ".")
         name = spl[0]
         ext := spl[1]
-        if ext == "package-definition"{
+        if ext == PkgExt{
             candidates[name] = 1
-        } else if ext == "package-definition-test" {
+        } else if ext == TestExt {
             candidates_test[name] = 1
         }
     }
@@ -149,7 +152,7 @@ func getPkgDefFile(pkgPath string) (string, bool) {
         fmt.Println("More than one package-definition file available. Please select with the '-p' flag")
         os.Exit(0)
     } else if len(candidates) == 0{
-        fmt.Println("No package-definition files found.")
+        fmt.Println("No package-definition files found for extensions", PkgExt, TestExt)
         os.Exit(0)
     }
     var name string
