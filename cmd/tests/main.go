@@ -46,5 +46,6 @@ func main(){
     eth.Ethereum.Reactor().Subscribe("newBlock", ch)
     _ =<- ch
     e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
+    eth.GetStorage()
 }
 

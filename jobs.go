@@ -2,10 +2,12 @@ package epm
 
 import (
     "os"
+    "os/user"
     "io/ioutil"
     "fmt"
     "strings"
     "path"
+    "path/filepath"
     "bufio"
     "github.com/project-douglas/lllc-server"
     "github.com/eris-ltd/eth-go-mods/ethutil"
@@ -13,8 +15,15 @@ import (
 )
 
 var GOPATH = os.Getenv("GOPATH")
+// should be set to the "current" directory if using epm-cli
 var ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "tests", "contracts")
 var TestPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "tests", "definitions")
+var EPMDIR = path.Join(usr(), ".epm-go")
+
+func usr() string{
+    u, _ := user.Current()
+    return u.HomeDir
+}
 
 func (e *EPM) ExecuteJobs(){
     for _, j := range e.jobs{
@@ -23,7 +32,17 @@ func (e *EPM) ExecuteJobs(){
     }
 }
 
-func (e *EPM) Test(filename string){
+type TestResults struct{
+    Tests []string
+    Errors []error
+
+    FailedTests []int
+    Failed int
+
+    Err error
+}
+
+func (e *EPM) Test(filename string) (*TestResults, error){
     lines := []string{}
     f, _ := os.Open(filename)
     scanner := bufio.NewScanner(f)
@@ -32,25 +51,35 @@ func (e *EPM) Test(filename string){
         lines = append(lines, t)
     }
     if len(lines) == 0{
-        fmt.Println("No tests to run...")
-        return
+        return nil, fmt.Errorf("No tests to run...")
+    }
+
+    results := TestResults{
+        Tests: lines,
+        Errors: []error{},
+        FailedTests: []int{},
+        Failed: 0,
+        Err: nil,
     }
     
-    failed := 0
     for i, line := range lines{
         fmt.Println("vars:", e.Vars())
         err := e.ExecuteTest(line, i)
+        results.Errors = append(results.Errors, err)
         if err != nil{
-            failed += 1
+            results.Failed += 1
+            results.FailedTests = append(results.FailedTests, i)
             fmt.Println(err)
         }
     }
-    if failed == 0{
+    var err error
+    if results.Failed == 0{
+        err = nil
         fmt.Println("passed all tests")
     } else {
-
-        fmt.Printf("failed %d/%d\n", failed, len(lines))
+        err = fmt.Errorf("failed %d/%d tests", results.Failed, len(lines))
     }
+    return &results, err
 }
 
 func (e *EPM) ExecuteTest(line string, i int) error{
@@ -117,9 +146,14 @@ func (e *EPM) Deploy(args []string){
     fmt.Println("deploy!")
     contract := args[0]
     key := args[1]
-    
+   
+    var p string 
     // compile contract
-    p := path.Join(ContractPath, contract)
+    if filepath.IsAbs(contract){
+        p = contract
+    } else {
+        p = path.Join(ContractPath, contract)
+    }
     fmt.Println("path", p)
     // this needs a better solution ...
     lllcserver.URL = "http://162.218.65.211:9999/compile"
@@ -208,9 +242,9 @@ func Modify(contract string, args []string) string{
         lll = strings.Replace(lll, sub, rep, -1)
         args = args[2:]
     }
-
-    newPath := path.Join(".tmp", ethutil.Bytes2Hex(ethcrypto.Sha3Bin([]byte(lll)))+".lll")
-    err = ioutil.WriteFile(path.Join(ContractPath, newPath), []byte(lll), 0644)
+    
+    newPath := path.Join(EPMDIR, ".tmp", ethutil.Bytes2Hex(ethcrypto.Sha3Bin([]byte(lll)))+".lll")
+    err = ioutil.WriteFile(newPath, []byte(lll), 0644)
     if err != nil{
         fmt.Println("could not write file", newPath, err)
         os.Exit(0)
@@ -218,3 +252,14 @@ func Modify(contract string, args []string) string{
     return newPath
 }
 
+
+func CheckMakeTmp(){
+    _, err := os.Stat(path.Join(EPMDIR))
+    if err != nil{
+       err := os.MkdirAll(path.Join(EPMDIR, ".tmp"), 0777)  //wtf!
+       if err != nil{
+            fmt.Println("Could not make directory. Exiting", err)
+            os.Exit(0)
+       }
+    }
+}
