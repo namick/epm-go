@@ -115,6 +115,8 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
 
 //parse should open a file, read all lines, peel commands into jobs
 func (e *EPM) Parse(filename string) error{
+    CheckMakeTmp()
+
     lines := []string{}
     f, _ := os.Open(filename)
     scanner := bufio.NewScanner(f)

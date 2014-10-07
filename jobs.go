@@ -9,6 +9,7 @@ import (
     "path"
     "path/filepath"
     "bufio"
+    //"time"
     "github.com/project-douglas/lllc-server"
     "github.com/eris-ltd/eth-go-mods/ethutil"
     "github.com/eris-ltd/eth-go-mods/ethcrypto"
@@ -16,8 +17,8 @@ import (
 
 var GOPATH = os.Getenv("GOPATH")
 // should be set to the "current" directory if using epm-cli
-var ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "tests", "contracts")
-var TestPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "tests", "definitions")
+var ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "contracts")
+var TestPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "definitions")
 var EPMDIR = path.Join(usr(), ".epm-go")
 
 func usr() string{
@@ -29,6 +30,8 @@ func (e *EPM) ExecuteJobs(){
     for _, j := range e.jobs{
         fmt.Println("job!", j.cmd, j.args)
         e.ExecuteJob(j)
+       // time.Sleep(time.Second) // this was not necessary for epm but was when called from CI. not sure why :(
+        // otherwise, tx reactors get blocked;
     }
 }
 

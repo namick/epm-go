@@ -141,6 +141,7 @@ func NewEthNode() *ethtest.EthChain{
 // exits if error (none or more than 1)
 // returns dir of pkg, name of pkg (no extension) and whether or not there's a test file
 func getPkgDefFile(pkgPath string) (string, string, bool) {
+    fmt.Println("pkg path:", pkgPath)
     var name string
     var test_ bool
 
@@ -183,6 +184,9 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
     for _, f := range files{
         name := f.Name()
         spl := strings.Split(name, ".")
+        if len(spl) < 2{
+            continue
+        }
         name = spl[0]
         ext := spl[1]
         if ext == PkgExt{
