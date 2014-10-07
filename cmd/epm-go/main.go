@@ -3,6 +3,7 @@ package main
 import (
     "fmt"
     "os"
+    "path"
     "path/filepath"
     "flag"
     "io/ioutil"
@@ -55,7 +56,6 @@ func main(){
     flag.Parse()
 
     var err error
-    // set contract path to current directory. make configureable
     epm.ContractPath, err = filepath.Abs(*contractPath)
     if err != nil{
         fmt.Println(err)
@@ -67,9 +67,10 @@ func main(){
 
     // comb directory for package-definition file
     // exits on error
-    pkg, test_ := getPkgDefFile(*packagePath)        
+    dir, pkg, test_ := getPkgDefFile(*packagePath)        
 
     // Startup the EthChain
+    // uses flag variables (global) for config
     eth := NewEthNode()
     // Create ChainInterface instance
     ethD := epm.NewEthD(eth)
@@ -77,7 +78,7 @@ func main(){
     e := epm.NewEPM(ethD)
 
     // epm parse the package definition file
-    err = e.Parse(pkg+"."+PkgExt)
+    err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
     if err != nil{
         fmt.Println(err)
         os.Exit(0)
@@ -90,12 +91,13 @@ func main(){
     eth.Ethereum.Reactor().Subscribe("newBlock", ch)
     _ =<- ch
     if test_{
-        e.Test(pkg+"." + TestExt)
+        e.Test(path.Join(dir, pkg+"."+TestExt))
     }
     //eth.GetStorage()
 }
 
 // configure and start an in-process eth node
+// all paths should be made absolute
 func NewEthNode() *ethtest.EthChain{
     // empty ethchain object
     eth := ethtest.NewEth(nil)
@@ -110,10 +112,22 @@ func NewEthNode() *ethtest.EthChain{
         }
     }
     if *genesis != ""{
-        eth.Config.GenesisConfig = *genesis
-        eth.Config.ContractPath = *contractPath
+        eth.Config.GenesisConfig, err = filepath.Abs(*genesis)
+        if err != nil{
+            fmt.Println(err)
+            os.Exit(0)
+        }
+        eth.Config.ContractPath, err = filepath.Abs(*contractPath)
+        if err != nil{
+            fmt.Println(err)
+            os.Exit(0)
+        }
     }
-    eth.Config.RootDir = *database
+    eth.Config.RootDir, err = filepath.Abs(*database)
+    if err != nil{
+        fmt.Println(err)
+        os.Exit(0)
+    }
     eth.Config.LogLevel = *logLevel
     eth.Config.DougDifficulty = *difficulty
     eth.Config.Mining = *mining
@@ -125,8 +139,38 @@ func NewEthNode() *ethtest.EthChain{
 
 // looks for pkg-def file
 // exits if error (none or more than 1)
-// returns name of pkg and whether or not there's a test file
-func getPkgDefFile(pkgPath string) (string, bool) {
+// returns dir of pkg, name of pkg (no extension) and whether or not there's a test file
+func getPkgDefFile(pkgPath string) (string, string, bool) {
+    var name string
+    var test_ bool
+
+    // if its not a directory, look for a corresponding test file
+    f, err := os.Stat(pkgPath)
+    if err != nil{
+        fmt.Println(err)
+        os.Exit(0)
+    }
+    if !f.IsDir(){
+        dir, fil := path.Split(pkgPath)
+        spl := strings.Split(fil, ".")
+        pkg := spl[0]
+        ext := spl[1] 
+        if ext != PkgExt{
+            fmt.Printf("Did not understand extension. Got %s, expected %s\n", ext, PkgExt)
+            os.Exit(0)
+        }
+        
+        _, err := os.Stat(path.Join(dir, pkg, TestExt))
+        if err != nil{
+            fmt.Printf("There was no test found for package-definition %s. Deploying without test ...\n", name)
+            test_ = false
+        } else {
+            test_ = true
+        }
+        return dir, name, test_
+    }
+
+
     // read dir for files
     files, err := ioutil.ReadDir(pkgPath)
     if err != nil{
@@ -155,16 +199,15 @@ func getPkgDefFile(pkgPath string) (string, bool) {
         fmt.Println("No package-definition files found for extensions", PkgExt, TestExt)
         os.Exit(0)
     }
-    var name string
-    var test_ bool
-    // this should run once
+    // this should run once (there's only one candidate)
     for k, _ := range candidates{
         name = k
         if candidates_test[name] == 1{
             test_ = true
         } else{
             fmt.Printf("There was no test found for package-definition %s. Deploying without test ...\n", name)
+            test_ = false
         }
     }
-    return name, test_
+    return pkgPath, name, test_
 }
