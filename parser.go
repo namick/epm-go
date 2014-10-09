@@ -9,7 +9,8 @@ import (
     "strconv"
     "bytes"
     "encoding/binary"
-    "github.com/eris-ltd/eth-go-mods/ethutil"
+    "github.com/eris-ltd/eth-go-mods/ethutil" // TODO: replace!
+    "github.com/project-douglas/lllc-server"
 )
 
 // an EPM Job
@@ -22,21 +23,26 @@ type Job struct{
 type EPM struct{
     eth ChainInterface
 
+    lllcURL string
+
     jobs []Job
     vars map[string]string
 
     pkgdef string // latest pkgdef we are parsing
+    state map[string]map[string]string// latest ethstate
     
     log string
 }
 
 // new empty epm
 func NewEPM(eth ChainInterface) *EPM{
+    lllcserver.URL = "http://162.218.65.211:9999/compile"
     return &EPM{
         eth:  eth,
         jobs: []Job{},
         vars: make(map[string]string),
         log: ".epm-log",
+        state: nil,
     }
 }
 
@@ -54,6 +60,7 @@ func checkCommand(cmd string) bool{
     return r
 }
 
+//TODO: use Trim!
 func shaveWhitespace(t string) string{
     // shave whitespace from front
     for ; t[0:1] == " " || t[0:1] == "\t"; t = t[1:]{
@@ -98,6 +105,7 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
         
         // the line is args. parse them
         // first, eliminate prefix whitespace/tabs
+        // TODO: use Trim
         t = shaveWhitespace(t)
 
         args := strings.Split(t, "=>")
@@ -120,6 +128,8 @@ func (e *EPM) Parse(filename string) error{
     // set current file to parse
     e.pkgdef = filename
 
+    // temp dir
+    // TODO: move it!
     CheckMakeTmp()
 
     lines := []string{}
@@ -151,7 +161,7 @@ func (e *EPM) Parse(filename string) error{
 func (e *EPM) VarSub(args []string) []string{
     r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
     for i, a := range args{
-        // if it already exists, replace it
+        // if its a known var, replace it
         // else, leave alone
         args[i] = r.ReplaceAllStringFunc(a, func(s string) string{
             k := s[2:len(s)-2] // shave the brackets
@@ -208,7 +218,10 @@ func Coerce2Hex(s string) string{
     }
     // is already prefixed hex?
     if len(s) > 1 && s[:2] == "0x"{
-        return s
+        if len(s) % 2 == 0{
+            return s
+        }
+        return "0x0"+s[2:]
     }
     // is unprefixed hex?
     if len(s) > 32{
