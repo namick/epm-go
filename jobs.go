@@ -66,10 +66,10 @@ func (t *TestResults) String() string{
                 result += "\\n"
             }
         }
-        return result
+        return strings.Replace(result, `"`, `\"`, -1)
     }
     result += "\\nAll Tests Passed"
-    return result
+    return strings.Replace(result, `"`, `\"`, -1)
 }
 
 func (e *EPM) Test(filename string) (*TestResults, error){
@@ -237,9 +237,18 @@ func (e *EPM) Log(args []string){
     k := args[0]
     v := args[1]
 
-    f, err := os.OpenFile(e.log, os.O_APPEND|os.O_WRONLY, 0600)
-    if err != nil {
-        panic(err)
+    _, err := os.Stat(e.log)
+    var f *os.File
+    if err != nil{
+        f, err = os.Create(e.log)
+        if err != nil{
+            panic(err)    
+        }
+    } else {
+        f, err = os.OpenFile(e.log, os.O_APPEND|os.O_WRONLY, 0600)
+        if err != nil {
+            panic(err)
+        }
     }
     defer f.Close()
 
