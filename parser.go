@@ -24,6 +24,8 @@ type EPM struct{
 
     jobs []Job
     vars map[string]string
+
+    pkgdef string // latest pkgdef we are parsing
     
     log string
 }
@@ -115,10 +117,16 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
 
 //parse should open a file, read all lines, peel commands into jobs
 func (e *EPM) Parse(filename string) error{
+    // set current file to parse
+    e.pkgdef = filename
+
     CheckMakeTmp()
 
     lines := []string{}
-    f, _ := os.Open(filename)
+    f, err := os.Open(filename)
+    if err != nil{
+        return err
+    }
     scanner := bufio.NewScanner(f)
     // read in all lines
     for scanner.Scan(){

@@ -37,12 +37,39 @@ func (e *EPM) ExecuteJobs(){
 
 type TestResults struct{
     Tests []string
-    Errors []error
+    Errors []string // go can't marshal/unmarshal errors
 
     FailedTests []int
     Failed int
 
-    Err error
+    Err string // if we suffered a non-epm-test error
+
+    PkgDefFile string
+    PkgTestFile string
+}
+
+func (t *TestResults) String() string{
+    result := ""
+
+    result += fmt.Sprintf("PkgDefFile: %s\\n", t.PkgDefFile)
+    result += fmt.Sprintf("PkgTestFile: %s\\n", t.PkgTestFile)
+
+    if t.Err != ""{
+        result += fmt.Sprintf("Fail due to error: %s", t.Err)
+        return result
+    }
+
+    if t.Failed > 0{
+        for _, testN := range t.FailedTests{
+            result += fmt.Sprintf("Test %d failed.\\n\\tQuery: %s\\n\\tError: %s", testN, t.Tests[testN], t.Errors[testN])
+            if result[len(result)-1:] != "\n"{
+                result += "\\n"
+            }
+        }
+        return result
+    }
+    result += "\\nAll Tests Passed"
+    return result
 }
 
 func (e *EPM) Test(filename string) (*TestResults, error){
@@ -59,16 +86,23 @@ func (e *EPM) Test(filename string) (*TestResults, error){
 
     results := TestResults{
         Tests: lines,
-        Errors: []error{},
+        Errors: []string{},
         FailedTests: []int{},
         Failed: 0,
-        Err: nil,
+        Err: "",
+        PkgDefFile: e.pkgdef, 
+        PkgTestFile: filename,
     }
     
     for i, line := range lines{
         fmt.Println("vars:", e.Vars())
         err := e.ExecuteTest(line, i)
-        results.Errors = append(results.Errors, err)
+        if err != nil{
+            results.Errors = append(results.Errors, err.Error())
+        } else{
+            results.Errors = append(results.Errors, "")
+        }
+
         if err != nil{
             results.Failed += 1
             results.FailedTests = append(results.FailedTests, i)
