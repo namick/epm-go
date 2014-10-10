@@ -29,6 +29,9 @@ func usr() string{
 func (e *EPM) ExecuteJobs(){
     // so we can take a diff after
     e.state = e.eth.State()
+    // set gendoug
+    gendougaddr, _:= e.eth.Get("gendoug", nil)
+    e.StoreVar("GENDOUG", gendougaddr)
     for _, j := range e.jobs{
         fmt.Println("job!", j.cmd, j.args)
         e.ExecuteJob(j)

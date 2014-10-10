@@ -45,6 +45,7 @@ var (
     logLevel = flag.Int("log", 0, "Set the eth log level")
     difficulty = flag.Int("dif", 14, "Set the mining difficulty")
     mining = flag.Bool("mine", true, "To mine or not to mine, that is the question")
+    diffStorage = flag.Bool("diff", false, "Show a diff of all contract storage")
 //    rpc = flag.Bool("rpc", false, "Fire commands over rpc")
 //    rpcHost = flag.String("rpcHost", "localhost", "Set the rpc host")
 //    rpcPort = flag.String("rpcPort", "", "Set the rpc port")
@@ -75,7 +76,7 @@ func main(){
     // Create ChainInterface instance
     ethD := epm.NewEthD(eth)
     // setup EPM object with ChainInterface
-    e := epm.NewEPM(ethD)
+    e := epm.NewEPM(ethD, ".epm-log")
 
     // epm parse the package definition file
     err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
@@ -92,6 +93,11 @@ func main(){
     _ =<- ch
     if test_{
         e.Test(path.Join(dir, pkg+"."+TestExt))
+    }
+
+
+    if *diffStorage{
+        fmt.Println(epm.PrettyPrintAcctDiff(epm.StorageDiff(e.PrevState(), e.CurrentState())))
     }
     //eth.GetStorage()
 }
@@ -142,7 +148,7 @@ func NewEthNode() *ethtest.EthChain{
 // returns dir of pkg, name of pkg (no extension) and whether or not there's a test file
 func getPkgDefFile(pkgPath string) (string, string, bool) {
     fmt.Println("pkg path:", pkgPath)
-    var name string
+    var pkgName string
     var test_ bool
 
     // if its not a directory, look for a corresponding test file
@@ -154,21 +160,21 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
     if !f.IsDir(){
         dir, fil := path.Split(pkgPath)
         spl := strings.Split(fil, ".")
-        pkg := spl[0]
+        pkgName = spl[0]
         ext := spl[1] 
         if ext != PkgExt{
             fmt.Printf("Did not understand extension. Got %s, expected %s\n", ext, PkgExt)
             os.Exit(0)
         }
         
-        _, err := os.Stat(path.Join(dir, pkg, TestExt))
+        _, err := os.Stat(path.Join(dir, pkgName, TestExt))
         if err != nil{
-            fmt.Printf("There was no test found for package-definition %s. Deploying without test ...\n", name)
+            fmt.Printf("There was no test found for package-definition %s. Deploying without test ...\n", pkgName)
             test_ = false
         } else {
             test_ = true
         }
-        return dir, name, test_
+        return dir, pkgName, test_
     }
 
 
@@ -205,13 +211,13 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
     }
     // this should run once (there's only one candidate)
     for k, _ := range candidates{
-        name = k
-        if candidates_test[name] == 1{
+        pkgName = k
+        if candidates_test[pkgName] == 1{
             test_ = true
         } else{
-            fmt.Printf("There was no test found for package-definition %s. Deploying without test ...\n", name)
+            fmt.Printf("There was no test found for package-definition %s. Deploying without test ...\n", pkgName)
             test_ = false
         }
     }
-    return pkgPath, name, test_
+    return pkgPath, pkgName, test_
 }
