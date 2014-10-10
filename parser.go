@@ -9,7 +9,7 @@ import (
     "strconv"
     "bytes"
     "encoding/binary"
-    "github.com/eris-ltd/eth-go-mods/ethutil" // TODO: replace!
+    "encoding/hex"
     "github.com/project-douglas/lllc-server"
 )
 
@@ -35,7 +35,7 @@ type EPM struct{
 }
 
 // new empty epm
-func NewEPM(eth ChainInterface) *EPM{
+func NewEPM(eth ChainInterface, log string) *EPM{
     lllcserver.URL = "http://162.218.65.211:9999/compile"
     return &EPM{
         eth:  eth,
@@ -214,7 +214,7 @@ func Coerce2Hex(s string) string{
     // is int?
     i, err := strconv.Atoi(s)
     if err == nil{
-        return "0x"+ethutil.Bytes2Hex(NumberToBytes(int32(i), i/256+1))
+        return "0x"+hex.EncodeToString(NumberToBytes(int32(i), i/256+1))
     }
     // is already prefixed hex?
     if len(s) > 1 && s[:2] == "0x"{
@@ -228,7 +228,7 @@ func Coerce2Hex(s string) string{
         return "0x"+s
     }
     pad := s + strings.Repeat("\x00", (32-len(s)))
-    ret := "0x"+ethutil.Bytes2Hex([]byte(pad))
+    ret := "0x"+hex.EncodeToString([]byte(pad))
     fmt.Println("result:", ret)
     return ret
 }

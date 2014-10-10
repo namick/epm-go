@@ -33,7 +33,7 @@ func main(){
     // Create ChainInterface instance
     ethD := epm.NewEthD(eth)
     // setup EPM object with ChainInterface
-    e := epm.NewEPM(ethD)
+    e := epm.NewEPM(ethD, ".epm-log-deploy-test")
     // epm parse the package definition file
     err := e.Parse(path.Join(epm.TestPath, "test_parse.epm"))
     if err != nil{

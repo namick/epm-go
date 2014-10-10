@@ -10,7 +10,7 @@ import (
 
 func TestDeploy(t *testing.T){
     eth := NewEthNode()
-    e := epm.NewEPM(epm.NewEthD(eth)) 
+    e := epm.NewEPM(epm.NewEthD(eth), ".epm-log-test")
 
     err := e.Parse(path.Join(epm.TestPath, "test_deploy.epm"))
     if err != nil{
@@ -35,7 +35,7 @@ func TestDeploy(t *testing.T){
 
 func TestModifyDeploy(t *testing.T){
     eth := NewEthNode()
-    e := epm.NewEPM(epm.NewEthD(eth)) 
+    e := epm.NewEPM(epm.NewEthD(eth), ".epm-log-test")
 
     err := e.Parse(path.Join(epm.TestPath, "test_modify_deploy.epm"))
     if err != nil{
@@ -67,7 +67,7 @@ func TestModifyDeploy(t *testing.T){
 // not going to fly here
 func iTestQuery(t *testing.T){
     eth := NewEthNode()
-    e := epm.NewEPM(epm.NewEthD(eth)) 
+    e := epm.NewEPM(epm.NewEthD(eth), ".epm-log-test")
 
     err := e.Parse(path.Join(epm.TestPath, "test_query.epm"))
     if err != nil{
@@ -86,7 +86,7 @@ func iTestQuery(t *testing.T){
 
 func TestStack(t *testing.T){
     eth := NewEthNode()
-    e := epm.NewEPM(epm.NewEthD(eth)) 
+    e := epm.NewEPM(epm.NewEthD(eth), ".epm-log-test")
 
     err := e.Parse(path.Join(epm.TestPath, "test_parse.epm"))
     if err != nil{

@@ -11,12 +11,14 @@ var ExpectedParse = []Job{
     Job{"modify-deploy", []string{"b.lll", "{{B}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})"}},
     Job{"modify-deploy", []string{"b.lll", "{{D}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})", "[[0x42]]", "[[0x43]]"}},
     Job{"transact", []string{"{{B}}", "0x12 ethan"}},
+    Job{"transact", []string{"{{B}}", "0x7 not-ethan"}},
+    Job{"transact", []string{"{{B}}", "0x231 moreover"}},
     Job{"query", []string{"{{B}}", "0x15", "{{C}}"}},
     Job{"endow", []string{"{{A}}", "0x609"}},
 }
 
 func TestParse(t *testing.T){
-    e := &EPM{nil, []Job{}, make(map[string]string), ".epm-log-test"}
+    e := NewEPM(nil, ".epm-log-test")
     err := e.Parse(path.Join(TestPath, "test_parse.epm"))
     if err != nil{
         t.Error(err)
@@ -41,7 +43,7 @@ var ExpectedVarSub_jobs = []Job{
 
     
 func TestVarSub(t *testing.T){
-    e := &EPM{nil, []Job{}, make(map[string]string), ".epm-log-test"}
+    e := NewEPM(nil, ".epm-log-test")
     err := e.Parse(path.Join(TestPath, "test_varsub.epm"))
     if err != nil{
         t.Error(err)

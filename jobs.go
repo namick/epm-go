@@ -11,8 +11,8 @@ import (
     "bufio"
     //"time"
     "github.com/project-douglas/lllc-server"
-    "github.com/eris-ltd/eth-go-mods/ethutil"
-    "github.com/eris-ltd/eth-go-mods/ethcrypto"
+    "encoding/hex"
+    "crypto/sha256"
 )
 
 var GOPATH = os.Getenv("GOPATH")
@@ -27,6 +27,8 @@ func usr() string{
 }
 
 func (e *EPM) ExecuteJobs(){
+    // so we can take a diff after
+    e.state = e.eth.State()
     for _, j := range e.jobs{
         fmt.Println("job!", j.cmd, j.args)
         e.ExecuteJob(j)
@@ -48,6 +50,7 @@ type TestResults struct{
     PkgTestFile string
 }
 
+// pretty print the test results for json (double escape \n!)
 func (t *TestResults) String() string{
     result := ""
 
@@ -66,10 +69,10 @@ func (t *TestResults) String() string{
                 result += "\\n"
             }
         }
-        return strings.Replace(result, `"`, `\"`, -1)
+        return strings.Replace(result, `"`, `\"`, -1) // " 
     }
     result += "\\nAll Tests Passed"
-    return strings.Replace(result, `"`, `\"`, -1)
+    return strings.Replace(result, `"`, `\"`, -1) // " // essential for color sanity
 }
 
 func (e *EPM) Test(filename string) (*TestResults, error){
@@ -151,8 +154,8 @@ func (e *EPM) ExecuteTest(line string, i int) error{
 }
 
 
-
 // job switch
+// args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job){
     job.args = e.VarSub(job.args) // substitute vars 
     switch(job.cmd){
@@ -192,15 +195,13 @@ func (e *EPM) Deploy(args []string){
         p = path.Join(ContractPath, contract)
     }
     fmt.Println("path", p)
-    // this needs a better solution ...
-    lllcserver.URL = "http://162.218.65.211:9999/compile"
     b, err := lllcserver.Compile(p)
     if err != nil{
         fmt.Println("error compiling!", err)
          return
     }
     // deploy contract
-    addr, _ := e.eth.Push("create", []string{"0x"+ethutil.Bytes2Hex(b)})
+    addr, _ := e.eth.Push("create", []string{"0x"+hex.EncodeToString(b)})
     // save contract address
     e.StoreVar(key, addr)
 }
@@ -289,7 +290,8 @@ func Modify(contract string, args []string) string{
         args = args[2:]
     }
     
-    newPath := path.Join(EPMDIR, ".tmp", ethutil.Bytes2Hex(ethcrypto.Sha3Bin([]byte(lll)))+".lll")
+    hash := sha256.Sum256([]byte(lll))
+    newPath := path.Join(EPMDIR, ".tmp", hex.EncodeToString(hash[:])+".lll")
     err = ioutil.WriteFile(newPath, []byte(lll), 0644)
     if err != nil{
         fmt.Println("could not write file", newPath, err)
