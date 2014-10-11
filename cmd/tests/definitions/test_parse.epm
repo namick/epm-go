@@ -9,6 +9,10 @@ modify-deploy:
     [[0x42]] => [[0x43]]
 transact:
     {{B}} => 0x12 ethan
+transact:
+    {{B}} => 0x7 not-ethan
+transact:
+    {{B}} => 0x231 moreover
 query:
     {{B}} => 0x15 => {{C}}
 endow:
