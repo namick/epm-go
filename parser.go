@@ -36,7 +36,7 @@ type EPM struct{
 
 // new empty epm
 func NewEPM(eth ChainInterface, log string) *EPM{
-    lllcserver.URL = "http://162.218.65.211:9999/compile"
+    lllcserver.URL = "http://lllc.erisindustries.com/compile"
     return &EPM{
         eth:  eth,
         jobs: []Job{},
