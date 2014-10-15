@@ -10,9 +10,9 @@ var ExpectedParse = []Job{
     Job{"deploy", []string{"a.lll", "{{A}}"}},
     Job{"modify-deploy", []string{"b.lll", "{{B}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})"}},
     Job{"modify-deploy", []string{"b.lll", "{{D}}", "(def 'dougie 0x1313)", "(def 'dougie {{A}})", "[[0x42]]", "[[0x43]]"}},
-    Job{"transact", []string{"{{B}}", "0x12 ethan"}},
-    Job{"transact", []string{"{{B}}", "0x7 not-ethan"}},
-    Job{"transact", []string{"{{B}}", "0x231 moreover"}},
+    Job{"transact", []string{"{{B}}", "0x1+16+0x1 \"ethan\""}},
+    Job{"transact", []string{"{{B}}", "0x7 \"not-ethan\""}},
+    Job{"transact", []string{"{{B}}", "0x231 \"moreover\""}},
     Job{"query", []string{"{{B}}", "0x15", "{{C}}"}},
     Job{"endow", []string{"{{A}}", "0x609"}},
 }
@@ -65,6 +65,17 @@ func TestVarSub(t *testing.T){
         t.Error("got:", e.vars, "expected:", ExpectedVarSub_map)
     }
     
+}
+
+func TestMath(t *testing.T){
+    args := []string{`3+5-1`, `0x3+0x5-0x2+0x1a`, `10+0x10`, `"a"+0x1+0xc`}
+    expected := []string{`0x07`, `0x20`, `0x1a`, `0x610000000000000000000000000000000000000000000000000000000000000d`}
+    res := DoMath(args)
+    for i, r := range res{
+        if r!=expected[i]{
+            t.Error("got:", r, "expected:", expected[i])
+        }
+    }
 }
 
 func checkExpectedMaps(m1 map[string]string, m2 map[string]string) bool{

@@ -104,6 +104,7 @@ func (e *EPM) Transact(args []string){
     to := args[0:1]
     dataS := args[1]
     data := strings.Split(dataS, " ")
+    data = DoMath(data)
     e.eth.Push("tx", append(to, data...))
 }
 

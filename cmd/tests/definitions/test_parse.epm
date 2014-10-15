@@ -8,11 +8,11 @@ modify-deploy:
     (def 'dougie 0x1313) => (def 'dougie {{A}})
     [[0x42]] => [[0x43]]
 transact:
-    {{B}} => 0x12 ethan
+    {{B}} => 0x1+16+0x1 "ethan"
 transact:
-    {{B}} => 0x7 not-ethan
+    {{B}} => 0x7 "not-ethan"
 transact:
-    {{B}} => 0x231 moreover
+    {{B}} => 0x231 "moreover"
 query:
     {{B}} => 0x15 => {{C}}
 endow:

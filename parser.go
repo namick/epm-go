@@ -11,12 +11,14 @@ import (
     "encoding/binary"
     "encoding/hex"
     "github.com/project-douglas/lllc-server"
+    "github.com/eris-ltd/eth-go-mods/ethutil"
+    "log"
 )
 
 // an EPM Job
 type Job struct{
    cmd string
-   args []string 
+   args []string  // args may contain unparsed math that will be handled by jobs.go
 }
 
 // EPM object. maintains list of jobs and a symbols table
@@ -60,18 +62,6 @@ func checkCommand(cmd string) bool{
     return r
 }
 
-//TODO: use Trim!
-func shaveWhitespace(t string) string{
-    // shave whitespace from front
-    for ; t[0:1] == " " || t[0:1] == "\t"; t = t[1:]{
-    }
-    // shave whitespace from back...
-    l := len(t)
-    for ; t[l-1:] == " "; t = t[:l-1]{
-    }
-    return t
-}
-
 // peel off the next command and its args
 func peelCmd(lines *[]string, startLine int) (*Job, error){
     job := Job{"", []string{}}
@@ -105,16 +95,15 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
         
         // the line is args. parse them
         // first, eliminate prefix whitespace/tabs
-        // TODO: use Trim
-        t = shaveWhitespace(t)
-
+        t = strings.TrimSpace(t)
         args := strings.Split(t, "=>")
         // should be 'arg1 => arg2'
         if len(args) != 2 && len(args) != 3{
             return nil, fmt.Errorf("Syntax error: improper argument formatting on line %d", line+startLine)
         }
         for _, a := range args{
-            shaven := shaveWhitespace(a)
+            shaven := strings.TrimSpace(a)
+            
             job.args = append(job.args, shaven)
         }
     }
@@ -191,6 +180,116 @@ func (e *EPM) StoreVar(key, val string){
     }
     e.vars[key] = Coerce2Hex(val)
     fmt.Println("stored result:", e.vars[key])
+}
+
+// takes a simple string of nums/hex and ops
+// all strings should have been removed
+func tokenize(s string) []string{
+    tokens := []string{}
+    r_opMatch := regexp.MustCompile(`\+|\-|\*`)
+    m_inds:= r_opMatch.FindAllStringSubmatchIndex(s, -1)
+    // if no ops, just return the string
+    if len(m_inds) == 0{
+        return []string{s}
+    }
+    // for each theres a symbol and hex/num after it
+    l := 0
+    for i, matchI := range m_inds{
+        i0 := matchI[0]
+        i1 := matchI[1]
+        ss := s[l:i0]
+        l = i1
+        if len(ss) != 0{
+            tokens = append(tokens, ss)
+        }
+        tokens = append(tokens, s[i0:i1]) 
+        if i == len(m_inds)-1{
+            tokens = append(tokens, s[i1:])
+            break
+        }
+        //tokens = append(tokens, s[i1:m_inds[i+1][0]])
+    }
+    return tokens
+}
+
+// applies any math within an arg
+// splits each arg into tokens first by pulling out strings, then by parsing ops/nums/hex between strings
+// finally, run through all the tokens doing the math
+func DoMath(args []string) []string{
+    margs := []string{} // return
+    fmt.Println("domath:", args)
+    r_stringMatch := regexp.MustCompile(`\"(.*?)\"`) //"
+
+    for _, a := range args{
+        fmt.Println("time to tokenize:", a)
+        tokens := []string{}
+        // find all strings (between "")
+        strMatches := r_stringMatch.FindAllStringSubmatchIndex(a, -1)
+        // grab the expression before the first string
+        if len(strMatches) > 0{
+            // loop through every interval between strMatches
+            // tokenize, append to tokens
+            l := 0
+            for j, matchI := range strMatches{
+                i0 := matchI[0]
+                i1 := matchI[1]
+                // get everything before this token
+                s := a[l:i0]
+                l = i1
+                // if s is empty, add the string to tokens, move on
+                if len(s) == 0{
+                    tokens = append(tokens, a[i0+1:i1-1])
+                } else{
+                    t := tokenize(s)
+                    tokens = append(tokens, t...)
+                    tokens = append(tokens, a[i0+1:i1-1])
+                }
+                // if we're on the last one, get anything that comes after
+                if j == len(strMatches)-1{
+                    s := a[l:]
+                    if len(s) > 0{
+                        t := tokenize(s)
+                        tokens = append(tokens, t...)
+                    }
+                }
+            }
+        } else {
+           // just tokenize the args 
+           tokens = tokenize(a)
+        }
+        fmt.Println("tokens:", tokens)
+
+        // now run through the tokens doin the math
+        // initialize the first value
+        tokenBigBytes, err := hex.DecodeString(stripHex(Coerce2Hex(tokens[0])))
+        if err != nil{
+            log.Fatal(err)
+        }
+        result := ethutil.BigD(tokenBigBytes)
+        // start with the second token, and go up in twos (should be odd num of tokens)
+        for j := 0; j < (len(tokens)-1)/2; j ++{
+            op := tokens[2*j+1]
+            n := tokens[2*j+2]
+            nBigBytes, err := hex.DecodeString(stripHex(Coerce2Hex(n)))
+            if err != nil{
+                log.Fatal(err)
+            }
+            tokenBigInt := ethutil.BigD(nBigBytes)
+            switch (op){
+                case "+":
+                    result.Add(result, tokenBigInt)
+                case "-":
+                    result.Sub(result, tokenBigInt)
+                case "*":
+                    result.Mul(result, tokenBigInt)
+            }
+        }
+        // TODO: deal with 32-byte overflow
+        resultHex := "0x"+hex.EncodeToString(result.Bytes())
+        fmt.Println("resultHex:", resultHex)
+        margs = append(margs, resultHex)
+    }
+    return margs
 }
 
 // keeps N bytes of the conversion
