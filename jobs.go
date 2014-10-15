@@ -8,7 +8,6 @@ import (
     "strings"
     "path"
     "path/filepath"
-    "bufio"
     //"time"
     "github.com/project-douglas/lllc-server"
     "encoding/hex"
@@ -39,124 +38,6 @@ func (e *EPM) ExecuteJobs(){
         // otherwise, tx reactors get blocked;
     }
 }
-
-type TestResults struct{
-    Tests []string
-    Errors []string // go can't marshal/unmarshal errors
-
-    FailedTests []int
-    Failed int
-
-    Err string // if we suffered a non-epm-test error
-
-    PkgDefFile string
-    PkgTestFile string
-}
-
-// pretty print the test results for json (double escape \n!)
-func (t *TestResults) String() string{
-    result := ""
-
-    result += fmt.Sprintf("PkgDefFile: %s\\n", t.PkgDefFile)
-    result += fmt.Sprintf("PkgTestFile: %s\\n", t.PkgTestFile)
-
-    if t.Err != ""{
-        result += fmt.Sprintf("Fail due to error: %s", t.Err)
-        return result
-    }
-
-    if t.Failed > 0{
-        for _, testN := range t.FailedTests{
-            result += fmt.Sprintf("Test %d failed.\\n\\tQuery: %s\\n\\tError: %s", testN, t.Tests[testN], t.Errors[testN])
-            if result[len(result)-1:] != "\n"{
-                result += "\\n"
-            }
-        }
-        return strings.Replace(result, `"`, `\"`, -1) // " 
-    }
-    result += "\\nAll Tests Passed"
-    return strings.Replace(result, `"`, `\"`, -1) // " // essential for color sanity
-}
-
-func (e *EPM) Test(filename string) (*TestResults, error){
-    lines := []string{}
-    f, _ := os.Open(filename)
-    scanner := bufio.NewScanner(f)
-    for scanner.Scan(){
-        t := scanner.Text()
-        lines = append(lines, t)
-    }
-    if len(lines) == 0{
-        return nil, fmt.Errorf("No tests to run...")
-    }
-
-    results := TestResults{
-        Tests: lines,
-        Errors: []string{},
-        FailedTests: []int{},
-        Failed: 0,
-        Err: "",
-        PkgDefFile: e.pkgdef, 
-        PkgTestFile: filename,
-    }
-    
-    for i, line := range lines{
-        fmt.Println("vars:", e.Vars())
-        err := e.ExecuteTest(line, i)
-        if err != nil{
-            results.Errors = append(results.Errors, err.Error())
-        } else{
-            results.Errors = append(results.Errors, "")
-        }
-
-        if err != nil{
-            results.Failed += 1
-            results.FailedTests = append(results.FailedTests, i)
-            fmt.Println(err)
-        }
-    }
-    var err error
-    if results.Failed == 0{
-        err = nil
-        fmt.Println("passed all tests")
-    } else {
-        err = fmt.Errorf("failed %d/%d tests", results.Failed, len(lines))
-    }
-    return &results, err
-}
-
-func (e *EPM) ExecuteTest(line string, i int) error{
-    args := strings.Split(line, " ")
-    args = e.VarSub(args)
-    fmt.Println("test!", i)
-    fmt.Println(args)
-    if len(args) < 3 || len(args) > 4{
-        return fmt.Errorf("invalid number of args for test on line %d", i)
-    }
-    // a test is 'addr storage expected'
-    // if there's a fourth, its the variable name to store the result under
-    addr := args[0]
-    storage := args[1]
-    expected := Coerce2Hex(args[2])
-    //expected := args[2]
-
-    // retrieve the value
-    val, _ := e.eth.Get("get", []string{addHex(addr), addHex(storage)})
-    val = addHex(val)
-    //val, _ := e.eth.Get("get", []string{addr, storage})
-
-    if stripHex(expected) != stripHex(val){
-        return fmt.Errorf("Test %d failed. Got: %s, expected %s", i, val, expected)
-    }
-
-    // store the value
-    if len(args) == 4{
-        e.StoreVar(args[3], val)
-    }
-    return nil
-}
-
-
 // job switch
 // args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job){

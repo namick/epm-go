@@ -8,6 +8,11 @@ import (
     "github.com/eris-ltd/eth-go-mods/ethreact"
 )
 
+/*
+    For direct coding of hardcoded contracts and test results.   
+    See definitions and contracts for context
+*/
+
 func TestDeploy(t *testing.T){
     eth := NewEthNode()
     e := epm.NewEPM(epm.NewEthD(eth), ".epm-log-test")

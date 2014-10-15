@@ -254,3 +254,14 @@ func stripHex(s string) string{
     return s
 }
 
+// split line and trim space
+func parseLine(line string) []string{
+    line = strings.TrimSpace(line)
+    line = strings.TrimRight(line, ";")
+
+    args := strings.Split(line, ";")
+    for i, a := range args{
+        args[i] = strings.TrimSpace(a)
+    }
+    return args
+}
