@@ -217,11 +217,11 @@ func tokenize(s string) []string{
 // finally, run through all the tokens doing the math
 func DoMath(args []string) []string{
     margs := []string{} // return
-    fmt.Println("domath:", args)
+    //fmt.Println("domath:", args)
     r_stringMatch := regexp.MustCompile(`\"(.*?)\"`) //"
 
     for _, a := range args{
-        fmt.Println("time to tokenize:", a)
+        //fmt.Println("time to tokenize:", a)
         tokens := []string{}
         // find all strings (between "")
         strMatches := r_stringMatch.FindAllStringSubmatchIndex(a, -1)
@@ -257,7 +257,7 @@ func DoMath(args []string) []string{
            // just tokenize the args 
            tokens = tokenize(a)
         }
-        fmt.Println("tokens:", tokens)
+        //fmt.Println("tokens:", tokens)
 
         // now run through the tokens doin the math
         // initialize the first value
@@ -286,7 +286,7 @@ func DoMath(args []string) []string{
         }
         // TODO: deal with 32-byte overflow
         resultHex := "0x"+hex.EncodeToString(result.Bytes())
-        fmt.Println("resultHex:", resultHex)
+        //fmt.Println("resultHex:", resultHex)
         margs = append(margs, resultHex)
     }
     return margs
@@ -299,7 +299,7 @@ func NumberToBytes(num interface{}, N int) []byte {
     if err != nil {
         fmt.Println("NumberToBytes failed:", err)
     }
-    fmt.Println("btyes!", buf.Bytes())
+    //fmt.Println("btyes!", buf.Bytes())
     if buf.Len() > N{
         return buf.Bytes()[buf.Len()-N:]
     }
@@ -309,7 +309,7 @@ func NumberToBytes(num interface{}, N int) []byte {
 // s can be string, hex, or int.
 // returns properly formatted 32byte hex value
 func Coerce2Hex(s string) string{
-    fmt.Println("coercing to hex:", s)
+    //fmt.Println("coercing to hex:", s)
     // is int?
     i, err := strconv.Atoi(s)
     if err == nil{
@@ -328,7 +328,7 @@ func Coerce2Hex(s string) string{
     }
     pad := s + strings.Repeat("\x00", (32-len(s)))
     ret := "0x"+hex.EncodeToString([]byte(pad))
-    fmt.Println("result:", ret)
+    //fmt.Println("result:", ret)
     return ret
 }
 

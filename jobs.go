@@ -67,7 +67,7 @@ func (e *EPM) ExecuteJob(job Job){
 */
 
 func (e *EPM) Deploy(args []string){
-    fmt.Println("deploy!")
+    //fmt.Println("deploy!")
     contract := args[0]
     key := args[1]
    
@@ -78,7 +78,7 @@ func (e *EPM) Deploy(args []string){
     } else {
         p = path.Join(ContractPath, contract)
     }
-    fmt.Println("path", p)
+    //fmt.Println("path", p)
     b, err := lllcserver.Compile(p)
     if err != nil{
         fmt.Println("error compiling!", err)
@@ -91,7 +91,7 @@ func (e *EPM) Deploy(args []string){
 }
 
 func (e *EPM) ModifyDeploy(args []string){
-    fmt.Println("modify-deploy!")
+    //fmt.Println("modify-deploy!")
     contract := args[0]
     key := args[1]
     args = args[2:]
@@ -113,7 +113,7 @@ func (e *EPM) Query(args []string){
     storage := args[1]
     varName := args[2]
 
-    fmt.Println("running query:", addr, storage)
+    //fmt.Println("running query:", addr, storage)
 
     v, _ := e.eth.Get("get", []string{addr, storage})
     e.StoreVar(varName, v)
