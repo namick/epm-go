@@ -17,8 +17,8 @@ import (
 var GoPath = os.Getenv("GOPATH")
 
 // adjust these to suit all your deformed nefarious extension name desires. Muahahaha
-var PkgExt = "pkg-def"
-var TestExt = "pkg-def-test"
+var PkgExt = "pdx"
+var TestExt = "pdt"
 
 /*
     epm-go cli:
@@ -167,7 +167,7 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
             os.Exit(0)
         }
         
-        _, err := os.Stat(path.Join(dir, pkgName, TestExt))
+        _, err := os.Stat(path.Join(dir, pkgName)+"."+TestExt)
         if err != nil{
             fmt.Printf("There was no test found for package-definition %s. Deploying without test ...\n", pkgName)
             test_ = false
