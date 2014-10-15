@@ -72,7 +72,7 @@ func (e *EPM) Test(filename string) (*TestResults, error){
     }
     
     for i, line := range lines{
-        fmt.Println("vars:", e.Vars())
+        //fmt.Println("vars:", e.Vars())
         err := e.ExecuteTest(line, i)
         if err != nil{
             results.Errors = append(results.Errors, err.Error())
@@ -101,7 +101,11 @@ func (e *EPM) ExecuteTest(line string, i int) error{
     args := parseLine(line)
     args = e.VarSub(args)
     fmt.Println("test!", i)
-    fmt.Println(args)
+    s := "\t"
+    for _, a := range args{
+        s += a+"  "
+    }
+    fmt.Println(s)
     if len(args) < 3 || len(args) > 4{
         return fmt.Errorf("invalid number of args for test on line %d", i)
     }
@@ -120,15 +124,18 @@ func (e *EPM) ExecuteTest(line string, i int) error{
     if args[2] != "_"{
         expected := Coerce2Hex(margs[2])
         if stripHex(expected) != stripHex(val){
-            return fmt.Errorf("#####################Test %d failed. Got: %s, expected %s", i, val, expected)
+            return fmt.Errorf("\t!!!!!Test %d failed. Got: %s, expected %s", i, val, expected)
+        } else{
+            fmt.Println("\tTest Passed (with flying colors!)")
         }
     } else {
-        fmt.Println("No expected value specified. Skipping check")
+        fmt.Println("\tNo expected value specified. Skipping check")
     }
 
     // store the value
     if len(args) == 4{
         e.StoreVar(args[3], val)
+        fmt.Println("\tStored:", args[3], val)
     }
     return nil
 }

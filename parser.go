@@ -174,12 +174,12 @@ func (e *EPM) Jobs() []Job{
 }
 
 func (e *EPM) StoreVar(key, val string){
-    fmt.Println("storing var:", key, val)
+    //fmt.Println("storing var:", key, val)
     if key[:2] == "{{" && key[len(key)-2:] == "}}"{
         key = key[2:len(key)-2]
     }
     e.vars[key] = Coerce2Hex(val)
-    fmt.Println("stored result:", e.vars[key])
+    //fmt.Println("stored result:", e.vars[key])
 }
 
 // takes a simple string of nums/hex and ops

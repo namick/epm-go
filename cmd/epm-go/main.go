@@ -92,9 +92,12 @@ func main(){
     eth.Ethereum.Reactor().Subscribe("newBlock", ch)
     _ =<- ch
     if test_{
-        e.Test(path.Join(dir, pkg+"."+TestExt))
+        results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
+        if err != nil{
+            fmt.Println(err)
+            fmt.Println("failed tests:", results.FailedTests)
+        }
     }
-
 
     if *diffStorage{
         fmt.Println(epm.PrettyPrintAcctDiff(epm.StorageDiff(e.PrevState(), e.CurrentState())))
