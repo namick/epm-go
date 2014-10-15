@@ -73,6 +73,12 @@ func (e *EPM) Test(filename string) (*TestResults, error){
     
     for i, line := range lines{
         //fmt.Println("vars:", e.Vars())
+        tt := strings.TrimSpace(line)
+        if len(tt) == 0 || tt[0:1] == "#" {
+            continue
+        }
+        line = strings.Split(line, "#")[0]
+
         err := e.ExecuteTest(line, i)
         if err != nil{
             results.Errors = append(results.Errors, err.Error())
