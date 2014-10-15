@@ -68,12 +68,16 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
     for line, t := range *lines{
         // ignore comments and blank lines
         //fmt.Println("next line:", line, t)
-        if len(t) == 0 || t[0:1] == "#" {
+        tt := strings.TrimSpace(t)
+        if len(tt) == 0 || tt[0:1] == "#" {
             continue
         }
+        t = strings.Split(t, "#")[0]
+
         // if no cmd yet
         if job.cmd == ""{
             // cmd syntax check
+            t = strings.TrimSpace(t)
             l := len(t)
             if t[l-1:] != ":"{
                 return nil, fmt.Errorf("Syntax error: missing ':' on line %d", line+startLine)
