@@ -79,7 +79,6 @@ func (e *EPM) Deploy(args []string){
     } else {
         p = path.Join(ContractPath, contract)
     }
-    fmt.Println("path", p, args)
     b, err := lllcserver.Compile(p)
     if err != nil{
         fmt.Println("error compiling!", err)
