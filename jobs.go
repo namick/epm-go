@@ -70,7 +70,7 @@ func (e *EPM) Deploy(args []string){
     //fmt.Println("deploy!")
     contract := args[0]
     key := args[1]
-   
+    contract = strings.Trim(contract, "\"")
     var p string 
     // compile contract
     if filepath.IsAbs(contract){
@@ -95,6 +95,8 @@ func (e *EPM) ModifyDeploy(args []string){
     contract := args[0]
     key := args[1]
     args = args[2:]
+
+    contract = strings.Trim(contract, "\"")
     newName := Modify(path.Join(ContractPath, contract), args) 
 
     e.Deploy([]string{newName, key})
@@ -187,7 +189,7 @@ func Modify(contract string, args []string) string{
 
 
 func CheckMakeTmp(){
-    _, err := os.Stat(path.Join(EPMDIR))
+    _, err := os.Stat(path.Join(EPMDIR, ".tmp"))
     if err != nil{
        err := os.MkdirAll(path.Join(EPMDIR, ".tmp"), 0777)  //wtf!
        if err != nil{
