@@ -3,6 +3,7 @@ package epm
 import (
     "os"
     "os/user"
+    "os/exec"
     "io/ioutil"
     "fmt"
     "strings"
@@ -78,7 +79,7 @@ func (e *EPM) Deploy(args []string){
     } else {
         p = path.Join(ContractPath, contract)
     }
-    //fmt.Println("path", p)
+    fmt.Println("path", p, args)
     b, err := lllcserver.Compile(p)
     if err != nil{
         fmt.Println("error compiling!", err)
@@ -98,7 +99,6 @@ func (e *EPM) ModifyDeploy(args []string){
 
     contract = strings.Trim(contract, "\"")
     newName := Modify(path.Join(ContractPath, contract), args) 
-
     e.Deploy([]string{newName, key})
 }
 
@@ -169,6 +169,15 @@ func Modify(contract string, args []string) string{
 
     lll := string(b)
 
+    // when we modify a contract, we save it in the .tmp dir in the same relative path as its original root.
+    // eg. if ContractPath is ~/ponos and we modify ponos/projects/issue.lll then the modified version will be found in
+    //  EPMDIR/.tmp/ponos/projects/somehash.lll
+    dirC := path.Dir(contract) // absolute path
+    l := len(ContractPath)
+    dir := dirC[l+1:] //this is relative to the contract root (ie. projects/issue.lll)
+    root := path.Base(ContractPath) // base of the ContractPath should be the root dir of the contracts
+    dir = path.Join(root, dir) // add in the root (ie. ponos/projects/issue.lll)
+    
     for len(args) > 0 {
         sub := args[0]
         rep := args[1]
@@ -178,7 +187,7 @@ func Modify(contract string, args []string) string{
     }
     
     hash := sha256.Sum256([]byte(lll))
-    newPath := path.Join(EPMDIR, ".tmp", hex.EncodeToString(hash[:])+".lll")
+    newPath := path.Join(EPMDIR, ".tmp", dir, hex.EncodeToString(hash[:])+".lll")
     err = ioutil.WriteFile(newPath, []byte(lll), 0644)
     if err != nil{
         fmt.Println("could not write file", newPath, err)
@@ -196,5 +205,13 @@ func CheckMakeTmp(){
             fmt.Println("Could not make directory. Exiting", err)
             os.Exit(0)
        }
-    }
+       // copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
+       cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
+       err = cmd.Run()
+       if err != nil{
+            fmt.Println("error copying working dir into tmp:", err)
+            os.Exit(0)
+       }
+
+       }
 }
