@@ -77,6 +77,8 @@ func main(){
     ethD := epm.NewEthD(eth)
     // setup EPM object with ChainInterface
     e := epm.NewEPM(ethD, ".epm-log")
+    // subscribe to new blocks..
+    e.Ch = Subscribe(eth, "newBlock")
 
     // epm parse the package definition file
     err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
@@ -85,12 +87,14 @@ func main(){
         os.Exit(0)
     }
 
+    if *diffStorage{
+        e.Diff = true
+    }
+
     // epm execute jobs
     e.ExecuteJobs()
     // wait for a block
-    ch := make(chan ethreact.Event, 1)
-    eth.Ethereum.Reactor().Subscribe("newBlock", ch)
-    _ =<- ch
+    e.WaitForBlock()
     if test_{
         results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
         if err != nil{
@@ -98,10 +102,14 @@ func main(){
             fmt.Println("failed tests:", results.FailedTests)
         }
     }
-    if *diffStorage{
-        fmt.Println(epm.PrettyPrintAcctDiff(epm.StorageDiff(e.PrevState(), e.CurrentState())))
-    }
     //eth.GetStorage()
+}
+
+// subscribe on the channel
+func Subscribe(eth *ethtest.EthChain, event string) chan ethreact.Event{
+    ch := make(chan ethreact.Event, 1) 
+    eth.Ethereum.Reactor().Subscribe(event, ch)
+    return ch
 }
 
 // configure and start an in-process eth node

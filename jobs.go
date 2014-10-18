@@ -242,10 +242,13 @@ func CheckMakeTmp(){
        }
     }
    // copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
-   cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
-   err = cmd.Run()
-   if err != nil{
-        fmt.Println("error copying working dir into tmp:", err)
-        os.Exit(0)
+   root := path.Base(ContractPath)
+   if _, err = os.Stat(path.Join(EPMDIR, ".tmp", root)); err != nil{
+       cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
+       err = cmd.Run()
+       if err != nil{
+            fmt.Println("error copying working dir into tmp:", err)
+            os.Exit(0)
+       }
    }
 }
