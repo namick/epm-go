@@ -55,7 +55,7 @@ func (e *EPM) ExecuteJobs(){
     gendougaddr, _:= e.eth.Get("gendoug", nil)
     e.StoreVar("GENDOUG", gendougaddr)
     for i, j := range e.jobs{
-        fmt.Println("job!", j.cmd, j.args)
+        //fmt.Println("job!", j.cmd, j.args)
         e.ExecuteJob(j)
         if e.Diff{
             e.checkTakeStateDiff(i+1)
@@ -72,6 +72,7 @@ func (e *EPM) ExecuteJobs(){
 // args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job){
     job.args = e.VarSub(job.args) // substitute vars 
+    fmt.Println("job!", job.cmd, job.args)
     switch(job.cmd){
         case "deploy":
             e.Deploy(job.args)
@@ -147,6 +148,7 @@ func (e *EPM) Query(args []string){
 
     v, _ := e.eth.Get("get", []string{addr, storage})
     e.StoreVar(varName, v)
+    fmt.Printf("\tresult: %s = %s\n",varName, v)
 }
 
 func (e *EPM) Log(args []string){
