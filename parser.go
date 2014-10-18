@@ -12,7 +12,13 @@ import (
     "encoding/hex"
     "github.com/project-douglas/lllc-server"
     "github.com/eris-ltd/eth-go-mods/ethutil"
+    "github.com/eris-ltd/eth-go-mods/ethreact" // ...
     "log"
+)
+
+var (
+    StateDiffOpen = "!{"
+    StateDiffClose = "!}"
 )
 
 // an EPM Job
@@ -32,7 +38,13 @@ type EPM struct{
     vars map[string]string
 
     pkgdef string // latest pkgdef we are parsing
-    state map[string]map[string]string// latest ethstate
+    //states map[string]State// latest ethstates for taking diffs, by name
+    Diff bool
+    states map[string]map[string]map[string]string // map from names (of diffs) to states
+    diffName  map[int][]string //map job numbers to names of diffs invoked after that job
+    diffSched map[int][]int //map job numbers to diff actions (save or diff ie 0 or 1)
+
+    Ch chan ethreact.Event
     
     log string
 }
@@ -40,13 +52,18 @@ type EPM struct{
 // new empty epm
 func NewEPM(eth ChainInterface, log string) *EPM{
     lllcserver.URL = "http://lllc.erisindustries.com/compile"
-    return &EPM{
+    e := &EPM{
         eth:  eth,
         jobs: []Job{},
         vars: make(map[string]string),
         log: ".epm-log",
-        state: nil,
+        Diff: false, // off by default
+        states: make(map[string]map[string]map[string]string),
+        diffName: make(map[int][]string),
+        diffSched: make(map[int][]int),
+        Ch: nil, // set in main when created... make(chan ethreact.Event, 1), // this needs to be generalized
     }
+    return e
 }
 
 // allowed commands
@@ -61,6 +78,71 @@ func checkCommand(cmd string) bool{
         }
     }
     return r
+}
+
+func parseStateDiff(lines *[]string, startLine int) string{
+    for n, t := range *lines{
+        tt := strings.TrimSpace(t)
+        if len(tt) == 0 || tt[0:1] == "#" {
+            continue
+        }
+        t = strings.Split(t, "#")[0]
+        t = strings.TrimSpace(t)
+        if len(t) == 0{
+            continue
+        } else if len(t) > 2 && (t[:2] == StateDiffOpen || t[:2] == StateDiffClose){
+            // we found a match
+            // shave previous lines
+                *lines = (*lines)[n:]
+            // see if there are other diff statements on this line
+            i := strings.IndexAny(t, " \t")
+            if i != -1{
+                (*lines)[0] = (*lines)[0][i:]
+            } else if len(*lines) >= 1{
+                *lines = (*lines)[1:]
+            }
+            return t[2:]
+        } else{
+            *lines = (*lines)[n:]
+            return ""
+        }
+    }
+    return ""
+}
+
+func (e EPM) newDiffSched(i int){
+    if e.diffSched[i] == nil{
+        e.diffSched[i] = []int{}
+        e.diffName[i] = []string{}
+    }
+}
+
+func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string]bool){
+    // i is 0 for no jobs
+    i := len(e.jobs)
+    for {
+        name := parseStateDiff(lines, startLine)
+        if name != ""{
+            e.newDiffSched(i)
+            // if we've already seen the name, take diff
+            // else, store state
+            e.diffName[i] = append(e.diffName[i], name)
+            if _, ok := diffmap[name]; ok{
+                e.diffSched[i] = append(e.diffSched[i], 1)
+            } else{
+                e.diffSched[i] = append(e.diffSched[i], 0)
+                diffmap[name] = true
+            }
+            /*if s, ok := e.states[name]; ok{
+                fmt.Println("Name of Diff:", name)
+                PrettyPrintAcctDiff(StorageDiff(s, e.CurrentState()))
+            } else{
+                e.states[name] = e.CurrentState()
+            }*/
+        } else{
+            break
+        }
+    }
 }
 
 // peel off the next command and its args
@@ -91,16 +173,22 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
             job.cmd = cmd
             continue
         }
-        // if the line does not begin with white space, we're done
-        if !(t[0:1] == " " || t[0:1] == "\t"){
-            // peel off lines we've read
+        
+        // if the line does not begin with white space, we are done 
+        if !(t[0:1] == " " || t[0:1] == "\t"){ 
+            // peel off lines we've read 
             *lines = (*lines)[line:]
             return &job, nil 
         } 
+        t = strings.TrimSpace(t)
+        // if there is a diff statement, we are done
+        if t[:2] == StateDiffOpen || t[:2] == StateDiffClose{
+            *lines = (*lines)[line:]
+            return &job, nil
+        }
         
         // the line is args. parse them
         // first, eliminate prefix whitespace/tabs
-        t = strings.TrimSpace(t)
         args := strings.Split(t, "=>")
         // should be 'arg1 => arg2'
         if len(args) != 2 && len(args) != 3{
@@ -119,6 +207,7 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
 
 //parse should open a file, read all lines, peel commands into jobs
 func (e *EPM) Parse(filename string) error{
+    fmt.Println("Parsing", filename)
     // set current file to parse
     e.pkgdef = filename
 
@@ -138,14 +227,22 @@ func (e *EPM) Parse(filename string) error{
         lines = append(lines, t)
     }
 
+    diffmap := make(map[string]bool)
+
     l := 0
     startLength := len(lines)
+    // check if we need to start diffs before the jobs
+    e.parseStateDiffs(&lines, l, diffmap)
     for lines != nil{
+        // peel off a job and append
         job, err := peelCmd(&lines, l)
         if err != nil{
             return err
         }
         e.jobs = append(e.jobs, *job)
+        // check if we need to take or diff state after this job
+        // if diff is disabled they will not run, but we need to parse them out
+        e.parseStateDiffs(&lines, l, diffmap)
         l = startLength - len(lines)
     }
     return nil

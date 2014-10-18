@@ -27,17 +27,45 @@ func usr() string{
     return u.HomeDir
 }
 
+func (e *EPM) checkTakeStateDiff(i int){
+    if _, ok := e.diffSched[i]; !ok{
+       return 
+    }
+    e.WaitForBlock()
+    scheds := e.diffSched[i]
+    names := e.diffName[i]
+    for j, sched := range scheds{
+        name := names[j]
+        if sched == 0{
+            // store state
+            e.states[name] = e.CurrentState()
+        } else{
+            // take diff
+            e.WaitForBlock()
+            PrintDiff(name, e.states[name], e.CurrentState())
+        }
+    }
+}
+
 func (e *EPM) ExecuteJobs(){
-    // so we can take a diff after
-    e.state = e.eth.State()
+    if e.Diff{
+        e.checkTakeStateDiff(0)
+    }
     // set gendoug
     gendougaddr, _:= e.eth.Get("gendoug", nil)
     e.StoreVar("GENDOUG", gendougaddr)
-    for _, j := range e.jobs{
+    for i, j := range e.jobs{
         fmt.Println("job!", j.cmd, j.args)
         e.ExecuteJob(j)
+        if e.Diff{
+            e.checkTakeStateDiff(i+1)
+        }
+
        // time.Sleep(time.Second) // this was not necessary for epm but was when called from CI. not sure why :(
         // otherwise, tx reactors get blocked;
+    }
+    if e.Diff{
+        e.checkTakeStateDiff(len(e.jobs))
     }
 }
 // job switch

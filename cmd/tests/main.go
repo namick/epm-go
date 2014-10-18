@@ -12,6 +12,12 @@ import (
 
 var GoPath = os.Getenv("GOPATH")
 
+func Subscribe(eth *ethtest.EthChain, event string) chan ethreact.Event{
+    ch := make(chan ethreact.Event, 1) 
+    eth.Ethereum.Reactor().Subscribe(event, ch)
+    return ch
+}
+
 func NewEthNode() *ethtest.EthChain{
     //lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
     eth := ethtest.NewEth(nil)
@@ -21,12 +27,12 @@ func NewEthNode() *ethtest.EthChain{
     eth.Config.LogLevel = 0
     eth.Config.DougDifficulty = 14
     eth.Init() 
-    eth.Config.Mining = true
+    eth.Config.Mining = false
     eth.Start()
     return eth
 }
 
-
+// test the epm test file mechanism
 func main(){
     // Startup the EthChain
     eth := NewEthNode()
@@ -34,6 +40,8 @@ func main(){
     ethD := epm.NewEthD(eth)
     // setup EPM object with ChainInterface
     e := epm.NewEPM(ethD, ".epm-log-deploy-test")
+    // subscribe to new blocks..
+    e.Ch = Subscribe(eth, "newBlock")
     // epm parse the package definition file
     err := e.Parse(path.Join(epm.TestPath, "test_parse.epm"))
     if err != nil{
@@ -42,12 +50,10 @@ func main(){
     }
     // epm execute jobs
     e.ExecuteJobs()
-    ch := make(chan ethreact.Event, 1)
-    eth.Ethereum.Reactor().Subscribe("newBlock", ch)
-    _ =<- ch
+    e.WaitForBlock()
     e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
 
-    epm.PrintDiff(e.PrevState(), e.CurrentState())
+    //epm.PrintDiff(e.PrevState(), e.CurrentState())
     //eth.GetStorage()
 }
 

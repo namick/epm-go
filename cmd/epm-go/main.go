@@ -98,7 +98,6 @@ func main(){
             fmt.Println("failed tests:", results.FailedTests)
         }
     }
-
     if *diffStorage{
         fmt.Println(epm.PrettyPrintAcctDiff(epm.StorageDiff(e.PrevState(), e.CurrentState())))
     }
