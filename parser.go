@@ -21,6 +21,7 @@ type Job struct{
    args []string  // args may contain unparsed math that will be handled by jobs.go
 }
 
+
 // EPM object. maintains list of jobs and a symbols table
 type EPM struct{
     eth ChainInterface

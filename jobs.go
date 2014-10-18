@@ -21,6 +21,7 @@ var ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", 
 var TestPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "definitions")
 var EPMDIR = path.Join(usr(), ".epm-go")
 
+
 func usr() string{
     u, _ := user.Current()
     return u.HomeDir
@@ -168,12 +169,19 @@ func Modify(contract string, args []string) string{
 
     lll := string(b)
 
+    fmt.Println("contract", contract)
+    fmt.Println("contract path", ContractPath)
     // when we modify a contract, we save it in the .tmp dir in the same relative path as its original root.
     // eg. if ContractPath is ~/ponos and we modify ponos/projects/issue.lll then the modified version will be found in
     //  EPMDIR/.tmp/ponos/projects/somehash.lll
     dirC := path.Dir(contract) // absolute path
     l := len(ContractPath)
-    dir := dirC[l+1:] //this is relative to the contract root (ie. projects/issue.lll)
+    var dir string
+    if dirC != ContractPath{
+        dir = dirC[l+1:] //this is relative to the contract root (ie. projects/issue.lll)
+    } else{
+        dir = ""
+    }
     root := path.Base(ContractPath) // base of the ContractPath should be the root dir of the contracts
     dir = path.Join(root, dir) // add in the root (ie. ponos/projects/issue.lll)
     
@@ -204,13 +212,12 @@ func CheckMakeTmp(){
             fmt.Println("Could not make directory. Exiting", err)
             os.Exit(0)
        }
-       // copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
-       cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
-       err = cmd.Run()
-       if err != nil{
-            fmt.Println("error copying working dir into tmp:", err)
-            os.Exit(0)
-       }
-
-       }
+    }
+   // copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
+   cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
+   err = cmd.Run()
+   if err != nil{
+        fmt.Println("error copying working dir into tmp:", err)
+        os.Exit(0)
+   }
 }
