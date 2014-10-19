@@ -123,6 +123,7 @@ func TestStack(t *testing.T){
     if "0x"+got != epm.Coerce2Hex("ethan"){
         t.Error("got:", got, "expected:", epm.Coerce2Hex("ethan"))
     }
+    eth.Stop()
 }
 
 // not a real test since the diffs just print we don't have access to them programmatically yet

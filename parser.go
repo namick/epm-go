@@ -12,6 +12,7 @@ import (
     "encoding/hex"
     "github.com/project-douglas/lllc-server"
     "github.com/eris-ltd/eth-go-mods/ethutil"
+    "github.com/eris-ltd/eth-go-mods/ethtest" // for ordered state map ... 
     "github.com/eris-ltd/eth-go-mods/ethreact" // ...
     "log"
 )
@@ -40,7 +41,7 @@ type EPM struct{
     pkgdef string // latest pkgdef we are parsing
     //states map[string]State// latest ethstates for taking diffs, by name
     Diff bool
-    states map[string]map[string]map[string]string // map from names (of diffs) to states
+    states map[string]ethtest.State //map[string]map[string]string // map from names (of diffs) to states
     diffName  map[int][]string //map job numbers to names of diffs invoked after that job
     diffSched map[int][]int //map job numbers to diff actions (save or diff ie 0 or 1)
 
@@ -58,7 +59,7 @@ func NewEPM(eth ChainInterface, log string) *EPM{
         vars: make(map[string]string),
         log: ".epm-log",
         Diff: false, // off by default
-        states: make(map[string]map[string]map[string]string),
+        states: make(map[string]ethtest.State), //map[string]map[string]string),
         diffName: make(map[int][]string),
         diffSched: make(map[int][]int),
         Ch: nil, // set in main when created... make(chan ethreact.Event, 1), // this needs to be generalized
