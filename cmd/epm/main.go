@@ -3,6 +3,8 @@ package main
 import (
     "fmt"
     "os"
+    "os/exec"
+    "bytes"
     "path"
     "path/filepath"
     "flag"
@@ -46,6 +48,9 @@ var (
     difficulty = flag.Int("dif", 14, "Set the mining difficulty")
     mining = flag.Bool("mine", true, "To mine or not to mine, that is the question")
     diffStorage = flag.Bool("diff", false, "Show a diff of all contract storage")
+    clean = flag.Bool("clean", false, "Clear out epm related dirs")
+    update = flag.Bool("update", false, "Pull and install the latest epm")
+    install = flag.Bool("install", false, "Re-install epm")
 //    rpc = flag.Bool("rpc", false, "Fire commands over rpc")
 //    rpcHost = flag.String("rpcHost", "localhost", "Set the rpc host")
 //    rpcPort = flag.String("rpcPort", "", "Set the rpc port")
@@ -55,6 +60,24 @@ var (
 
 func main(){
     flag.Parse()
+
+    if *clean || *update || *install{
+        if *clean && *update{
+            cleanupEPM()
+            updateEPM()
+        } else if *clean{
+            cleanupEPM() 
+            if *install{
+                installEPM()
+            }
+        } else if *update{
+            updateEPM()
+        } else if *install{
+            installEPM()
+        }
+
+        os.Exit(0)
+    }
 
     var err error
     epm.ContractPath, err = filepath.Abs(*contractPath)
@@ -104,6 +127,53 @@ func main(){
     }
     //eth.GetStorage()
 }
+
+func cleanupEPM(){
+    dirs := []string{epm.EPMDIR, *database}
+    for _, d := range dirs{
+        err := os.RemoveAll(d)
+        if err != nil{
+            fmt.Println("Error removing dir", d, err)
+        }
+    }
+}
+
+func installEPM(){
+    cur, _ := os.Getwd()
+    os.Chdir(path.Join(GoPath, "src", "github.com", "eris-ltd", "epm-go", "cmd", "epm"))
+    cmd := exec.Command("go", "install")
+    var out bytes.Buffer
+    cmd.Stdout = &out
+    cmd.Run()
+    fmt.Println(out.String())
+    os.Chdir(cur) 
+}
+
+func updateEPM(){
+    cur, _ := os.Getwd()
+
+    // pull changes
+    os.Chdir(path.Join(GoPath, "src", "github.com", "eris-ltd", "epm-go"))
+    cmd := exec.Command("git", "pull", "origin", "master")
+    var out bytes.Buffer
+    cmd.Stdout = &out
+    cmd.Run()
+    res := out.String()
+    fmt.Println(res)
+
+    if strings.Contains(res, "up-to-date"){
+        // return to original dir
+        os.Chdir(cur)
+        return
+    }
+    
+    // install
+    installEPM()
+
+    // return to original dir
+    os.Chdir(cur)
+}
+
 
 // subscribe on the channel
 func Subscribe(eth *ethtest.EthChain, event string) chan ethreact.Event{
@@ -186,7 +256,6 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
         }
         return dir, pkgName, test_
     }
-
 
     // read dir for files
     files, err := ioutil.ReadDir(pkgPath)
