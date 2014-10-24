@@ -1,7 +1,7 @@
 package epm
 
 import (
-    "github.com/eris-ltd/eth-go-mods/ethtest"
+    "github.com/eris-ltd/thelonious/ethtest"
 )
 
 func (e *EPM) WaitForBlock(){

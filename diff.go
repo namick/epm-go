@@ -2,7 +2,7 @@ package epm
 
 import (
     "fmt"
-    "github.com/eris-ltd/eth-go-mods/ethtest"
+    "github.com/eris-ltd/thelonious/ethtest"
 )
 
 

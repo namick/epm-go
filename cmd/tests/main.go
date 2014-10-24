@@ -5,9 +5,9 @@ import (
     "os"
     "path"
     "github.com/eris-ltd/epm-go"
-    "github.com/eris-ltd/eth-go-mods/ethtest"
-    "github.com/eris-ltd/eth-go-mods/ethchain"
-    "github.com/eris-ltd/eth-go-mods/ethreact"
+    "github.com/eris-ltd/thelonious/ethtest"
+    "github.com/eris-ltd/thelonious/ethchain"
+    "github.com/eris-ltd/thelonious/ethreact"
 )
 
 var GoPath = os.Getenv("GOPATH")

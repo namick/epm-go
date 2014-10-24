@@ -5,7 +5,7 @@ import (
     "testing"
     "path"
     "github.com/eris-ltd/epm-go"
-    "github.com/eris-ltd/eth-go-mods/ethreact"
+    "github.com/eris-ltd/thelonious/ethreact"
 )
 
 /*
