@@ -11,7 +11,7 @@ import (
     "io/ioutil"
     "strings"
     "github.com/eris-ltd/epm-go"
-    "github.com/eris-ltd/thelonious/ethtest"
+    "github.com/eris-ltd/thelonious/monk"
     "github.com/eris-ltd/thelonious/ethchain"
     "github.com/eris-ltd/thelonious/ethreact"
 )
@@ -176,7 +176,7 @@ func updateEPM(){
 
 
 // subscribe on the channel
-func Subscribe(eth *ethtest.EthChain, event string) chan ethreact.Event{
+func Subscribe(eth *monk.EthChain, event string) chan ethreact.Event{
     ch := make(chan ethreact.Event, 1) 
     eth.Ethereum.Reactor().Subscribe(event, ch)
     return ch
@@ -184,9 +184,9 @@ func Subscribe(eth *ethtest.EthChain, event string) chan ethreact.Event{
 
 // configure and start an in-process eth node
 // all paths should be made absolute
-func NewEthNode() *ethtest.EthChain{
+func NewEthNode() *monk.EthChain{
     // empty ethchain object
-    eth := ethtest.NewEth(nil)
+    eth := monk.NewEth(nil)
     // configure, configure, configure
     ethchain.GENDOUG = nil
     var err error

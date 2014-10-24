@@ -5,22 +5,22 @@ import (
     "os"
     "path"
     "github.com/eris-ltd/epm-go"
-    "github.com/eris-ltd/thelonious/ethtest"
+    "github.com/eris-ltd/thelonious/monk"
     "github.com/eris-ltd/thelonious/ethchain"
     "github.com/eris-ltd/thelonious/ethreact"
 )
 
 var GoPath = os.Getenv("GOPATH")
 
-func Subscribe(eth *ethtest.EthChain, event string) chan ethreact.Event{
+func Subscribe(eth *monk.EthChain, event string) chan ethreact.Event{
     ch := make(chan ethreact.Event, 1) 
     eth.Ethereum.Reactor().Subscribe(event, ch)
     return ch
 }
 
-func NewEthNode() *ethtest.EthChain{
+func NewEthNode() *monk.EthChain{
     //lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
-    eth := ethtest.NewEth(nil)
+    eth := monk.NewEth(nil)
     ethchain.GENDOUG = nil
     ethchain.GenesisConfig = "genesis.json"
     eth.Config.RootDir = ".ethchain"
