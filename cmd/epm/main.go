@@ -217,6 +217,10 @@ func NewEthNode() *monk.EthChain{
     eth.Config.LogLevel = *logLevel
     eth.Config.DougDifficulty = *difficulty
     eth.Config.Mining = *mining
+
+    // set LLL path
+    epm.LLLURL = eth.Config.LLLPath
+
     // initialize and start
     eth.Init() 
     eth.Start()

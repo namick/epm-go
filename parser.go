@@ -20,6 +20,7 @@ import (
 var (
     StateDiffOpen = "!{"
     StateDiffClose = "!}"
+    LLLURL = "http://lllc.erisindustries.com/compile"
 )
 
 // an EPM Job
@@ -52,7 +53,8 @@ type EPM struct{
 
 // new empty epm
 func NewEPM(eth ChainInterface, log string) *EPM{
-    lllcserver.URL = "http://lllc.erisindustries.com/compile"
+    lllcserver.URL = LLLURL 
+    fmt.Println("url: ", LLLURL)
     e := &EPM{
         eth:  eth,
         jobs: []Job{},
