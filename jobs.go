@@ -27,26 +27,6 @@ func usr() string{
     return u.HomeDir
 }
 
-func (e *EPM) checkTakeStateDiff(i int){
-    if _, ok := e.diffSched[i]; !ok{
-       return 
-    }
-    e.WaitForBlock()
-    scheds := e.diffSched[i]
-    names := e.diffName[i]
-    for j, sched := range scheds{
-        name := names[j]
-        if sched == 0{
-            // store state
-            e.states[name] = e.CurrentState()
-        } else{
-            // take diff
-            e.WaitForBlock()
-            PrintDiff(name, e.states[name], e.CurrentState())
-        }
-    }
-}
-
 func (e *EPM) ExecuteJobs(){
     if e.Diff{
         e.checkTakeStateDiff(0)
@@ -96,6 +76,7 @@ func (e *EPM) ExecuteJob(job Job){
                 fmt.Println(err)
             }
         case "epm":
+            e.EPMx(job.args[0])
             
     }
     fmt.Println(e.vars)
@@ -106,6 +87,21 @@ func (e *EPM) ExecuteJob(job Job){
     Interaction with BlockChain is strictly through Get() and Push() methods of ChainInterface
     Hides details of in-process vs. rpc
 */
+
+func (e *EPM) EPMx(filename string){
+    // save the old jobs, empty the job list
+    oldjobs := e.jobs
+    e.jobs = []Job{}
+
+    if err := e.Parse(filename); err != nil{
+        fmt.Println("failed to parse pdx file:", filename)
+        fmt.Println(err)
+        os.Exit(0)
+    }
+
+    e.ExecuteJobs()
+    e.jobs = oldjobs
+}
 
 func (e *EPM) Deploy(args []string){
     //fmt.Println("deploy!")

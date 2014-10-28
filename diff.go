@@ -13,6 +13,26 @@ func (e *EPM) CurrentState() monk.State{ //map[string]string{
     return e.eth.State()
 }
 
+func (e *EPM) checkTakeStateDiff(i int){
+    if _, ok := e.diffSched[i]; !ok{
+       return 
+    }
+    e.WaitForBlock()
+    scheds := e.diffSched[i]
+    names := e.diffName[i]
+    for j, sched := range scheds{
+        name := names[j]
+        if sched == 0{
+            // store state
+            e.states[name] = e.CurrentState()
+        } else{
+            // take diff
+            e.WaitForBlock()
+            PrintDiff(name, e.states[name], e.CurrentState())
+        }
+    }
+}
+
 func StorageDiff(pre, post monk.State) monk.State{ //map[string]string) map[string]map[string]string{
     diff := monk.State{make(map[string]monk.Storage), []string{}}
     // for each account in post, compare all elements. 
