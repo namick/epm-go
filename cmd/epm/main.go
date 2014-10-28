@@ -39,7 +39,17 @@ var TestExt = "pdt"
 */
 
 var (
-    contractPath = flag.String("c", ".", "Set the contract root path")
+    defaultContractPath = "."
+    defaultPackagePath = "."
+    defaultGenesis = ""
+    defaultKeys = ""
+    defaultDatabase = ".ethchain"
+    defaultLogLevel = 0
+    defaultDifficulty = 14
+    defaultMining = false
+    defaultDiffStorage = false
+
+    contractPath = flag.String("c", defaultContractPath, "Set the contract root path")
     packagePath = flag.String("p", ".", "Set a .package-definition file")
     genesis = flag.String("g", "", "Set a genesis.json file")
     keys = flag.String("k", "", "Set a keys file")
@@ -51,6 +61,7 @@ var (
     clean = flag.Bool("clean", false, "Clear out epm related dirs")
     update = flag.Bool("update", false, "Pull and install the latest epm")
     install = flag.Bool("install", false, "Re-install epm")
+    interactive = flag.Bool("i", false, "Run epm in interactive mode")
 //    rpc = flag.Bool("rpc", false, "Fire commands over rpc")
 //    rpcHost = flag.String("rpcHost", "localhost", "Set the rpc host")
 //    rpcPort = flag.String("rpcPort", "", "Set the rpc port")
@@ -89,10 +100,6 @@ func main(){
     // make ~/.epm-go and ~/.epm-go/.tmp for modified contract files
     epm.CheckMakeTmp()
 
-    // comb directory for package-definition file
-    // exits on error
-    dir, pkg, test_ := getPkgDefFile(*packagePath)        
-
     // Startup the EthChain
     // uses flag variables (global) for config
     eth := NewEthNode()
@@ -102,6 +109,17 @@ func main(){
     e := epm.NewEPM(ethD, ".epm-log")
     // subscribe to new blocks..
     e.Ch = Subscribe(eth, "newBlock")
+
+    // if interactive mode, enable diffs and run the repl
+    if *interactive{
+        e.Diff = true
+        e.Repl()
+        os.Exit(0)
+    }
+    
+    // comb directory for package-definition file
+    // exits on error
+    dir, pkg, test_ := getPkgDefFile(*packagePath)        
 
     // epm parse the package definition file
     err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
@@ -186,18 +204,52 @@ func Subscribe(eth *monk.EthChain, event string) chan ethreact.Event{
 // all paths should be made absolute
 func NewEthNode() *monk.EthChain{
     // empty ethchain object
+    // note this will load `eth-config.json` into Config if it exists
     eth := monk.NewEth(nil)
-    // configure, configure, configure
-    ethchain.GENDOUG = nil
+
+    // we need to overwrite the default monk config with our defaults
+    eth.Config.RootDir, _ = filepath.Abs(defaultDatabase)
+    eth.Config.LogLevel = defaultLogLevel
+    eth.Config.DougDifficulty = defaultDifficulty
+    eth.Config.Mining = defaultMining
+    // then try to read local config file to overwrite defaults
+    // (if it doesnt exist, it will be saved)
+    eth.ReadConfig("eth-config.json")
+    // then apply cli flags
+
+    // compute a map of the flags that have been set
+    // if set, overwrite default/config-file
+    setFlags := make(map[string]bool)
+    flag.Visit(func (f *flag.Flag){
+        setFlags[f.Name] = true
+    })
     var err error
-    if *keys != ""{
+    if setFlags["db"]{
+        eth.Config.RootDir, err = filepath.Abs(*database)
+        if err != nil{
+            fmt.Println(err)
+            os.Exit(0)
+        }
+    }
+    if setFlags["log"]{
+        eth.Config.LogLevel = *logLevel
+    }
+    if setFlags["dif"]{
+        eth.Config.DougDifficulty = *difficulty
+    }
+    if setFlags["mine"]{
+        eth.Config.Mining = *mining
+    }
+
+    ethchain.GENDOUG = nil
+    if *keys != defaultKeys {
         eth.Config.KeyFile, err = filepath.Abs(*keys)
         if err != nil{
             fmt.Println(err)
             os.Exit(0)
         }
     }
-    if *genesis != ""{
+    if *genesis != defaultGenesis{
         eth.Config.GenesisConfig, err = filepath.Abs(*genesis)
         if err != nil{
             fmt.Println(err)
@@ -209,14 +261,7 @@ func NewEthNode() *monk.EthChain{
             os.Exit(0)
         }
     }
-    eth.Config.RootDir, err = filepath.Abs(*database)
-    if err != nil{
-        fmt.Println(err)
-        os.Exit(0)
-    }
-    eth.Config.LogLevel = *logLevel
-    eth.Config.DougDifficulty = *difficulty
-    eth.Config.Mining = *mining
+
 
     // set LLL path
     epm.LLLURL = eth.Config.LLLPath
