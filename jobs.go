@@ -68,6 +68,7 @@ func (e *EPM) ExecuteJobs(){
         e.checkTakeStateDiff(len(e.jobs))
     }
 }
+
 // job switch
 // args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job){
@@ -88,7 +89,16 @@ func (e *EPM) ExecuteJob(job Job){
             e.Set(job.args)
         case "endow":
             e.Endow(job.args)
+        case "test":
+            e.WaitForBlock()
+            err := e.ExecuteTest(job.args[0], 0) 
+            if err != nil{
+                fmt.Println(err)
+            }
+        case "epm":
+            
     }
+    fmt.Println(e.vars)
 }
 
 /*

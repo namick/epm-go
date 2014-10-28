@@ -70,7 +70,7 @@ func NewEPM(eth ChainInterface, log string) *EPM{
 }
 
 // allowed commands
-var CMDS = []string{"deploy", "modify-deploy", "transact", "query", "log", "set", "endow"}
+var CMDS = []string{"deploy", "modify-deploy", "transact", "query", "log", "set", "endow", "test", "epm"}
 
 // make sure command is valid
 func checkCommand(cmd string) bool{
@@ -153,14 +153,14 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
     job := Job{"", []string{}}
     for line, t := range *lines{
         // ignore comments and blank lines
-        //fmt.Println("next line:", line, t)
         tt := strings.TrimSpace(t)
         if len(tt) == 0 || tt[0:1] == "#" {
             continue
         }
+        // ignore comments at end of the line
         t = strings.Split(t, "#")[0]
 
-        // if no cmd yet
+        // if no cmd yet, this should be a cmd
         if job.cmd == ""{
             // cmd syntax check
             t = strings.TrimSpace(t)
@@ -194,7 +194,8 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
         // first, eliminate prefix whitespace/tabs
         args := strings.Split(t, "=>")
         // should be 'arg1 => arg2'
-        if len(args) != 2 && len(args) != 3{
+        // TODO: tailor lengths to the job cmd
+        if len(args) > 3{
             return nil, fmt.Errorf("Syntax error: improper argument formatting on line %d", line+startLine)
         }
         for _, a := range args{
@@ -208,7 +209,6 @@ func peelCmd(lines *[]string, startLine int) (*Job, error){
     return &job, nil
 }
 
-//parse should open a file, read all lines, peel commands into jobs
 func (e *EPM) Parse(filename string) error{
     fmt.Println("Parsing", filename)
     // set current file to parse
@@ -229,6 +229,12 @@ func (e *EPM) Parse(filename string) error{
         t := scanner.Text()
         lines = append(lines, t)
     }
+    return e.parse(lines)
+}
+
+// parse should take a list of lines, peel commands into jobs
+// lines either come from a file or from iepm
+func (e *EPM) parse(lines []string) error{
 
     diffmap := make(map[string]bool)
 

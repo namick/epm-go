@@ -22,30 +22,6 @@ type TestResults struct{
     PkgTestFile string
 }
 
-// pretty print the test results for json (double escape \n!)
-func (t *TestResults) String() string{
-    result := ""
-
-    result += fmt.Sprintf("PkgDefFile: %s\\n", t.PkgDefFile)
-    result += fmt.Sprintf("PkgTestFile: %s\\n", t.PkgTestFile)
-
-    if t.Err != ""{
-        result += fmt.Sprintf("Fail due to error: %s", t.Err)
-        return result
-    }
-
-    if t.Failed > 0{
-        for _, testN := range t.FailedTests{
-            result += fmt.Sprintf("Test %d failed.\\n\\tQuery: %s\\n\\tError: %s", testN, t.Tests[testN], t.Errors[testN])
-            if result[len(result)-1:] != "\n"{
-                result += "\\n"
-            }
-        }
-        return strings.Replace(result, `"`, `\"`, -1) // " 
-    }
-    result += "\\nAll Tests Passed"
-    return strings.Replace(result, `"`, `\"`, -1) // " // essential for color sanity
-}
 
 // run through all tests in file
 // execute each test
@@ -146,4 +122,27 @@ func (e *EPM) ExecuteTest(line string, i int) error{
     return nil
 }
 
+// pretty print the test results for json (double escape \n!)
+func (t *TestResults) String() string{
+    result := ""
 
+    result += fmt.Sprintf("PkgDefFile: %s\\n", t.PkgDefFile)
+    result += fmt.Sprintf("PkgTestFile: %s\\n", t.PkgTestFile)
+
+    if t.Err != ""{
+        result += fmt.Sprintf("Fail due to error: %s", t.Err)
+        return result
+    }
+
+    if t.Failed > 0{
+        for _, testN := range t.FailedTests{
+            result += fmt.Sprintf("Test %d failed.\\n\\tQuery: %s\\n\\tError: %s", testN, t.Tests[testN], t.Errors[testN])
+            if result[len(result)-1:] != "\n"{
+                result += "\\n"
+            }
+        }
+        return strings.Replace(result, `"`, `\"`, -1) // " 
+    }
+    result += "\\nAll Tests Passed"
+    return strings.Replace(result, `"`, `\"`, -1) // " // essential for color sanity
+}
