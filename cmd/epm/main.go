@@ -62,6 +62,7 @@ var (
     update = flag.Bool("update", false, "Pull and install the latest epm")
     install = flag.Bool("install", false, "Re-install epm")
     interactive = flag.Bool("i", false, "Run epm in interactive mode")
+    noGenDoug = flag.Bool("no-gendoug", false, "Turn off gendoug mechanics")
 //    rpc = flag.Bool("rpc", false, "Fire commands over rpc")
 //    rpcHost = flag.String("rpcHost", "localhost", "Set the rpc host")
 //    rpcPort = flag.String("rpcPort", "", "Set the rpc port")
@@ -99,6 +100,11 @@ func main(){
 
     // make ~/.epm-go and ~/.epm-go/.tmp for modified contract files
     epm.CheckMakeTmp()
+
+    if *noGenDoug{
+        ethchain.NoGenDoug = true
+        fmt.Println("no gendoug!")
+    }
 
     // Startup the EthChain
     // uses flag variables (global) for config
@@ -140,7 +146,9 @@ func main(){
         results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
         if err != nil{
             fmt.Println(err)
-            fmt.Println("failed tests:", results.FailedTests)
+            if results != nil{
+                fmt.Println("failed tests:", results.FailedTests)
+            }
         }
     }
     //eth.GetStorage()
