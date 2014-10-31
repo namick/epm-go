@@ -19,6 +19,7 @@ import (
 var GoPath = os.Getenv("GOPATH")
 
 // adjust these to suit all your deformed nefarious extension name desires. Muahahaha
+// but actually don't because you might break something ;)
 var PkgExt = "pdx"
 var TestExt = "pdt"
 

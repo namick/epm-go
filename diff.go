@@ -2,13 +2,13 @@ package epm
 
 import (
     "fmt"
-    "github.com/eris-ltd/decerver-interfaces"
+    "github.com/eris-ltd/decerver-interfaces/core"
 )
 
 
-func (e *EPM) CurrentState() types.State{ //map[string]string{
+func (e *EPM) CurrentState() core.State{ //map[string]string{
     if e.eth == nil{
-        return types.State{}
+        return core.State{}
     }
     return e.eth.State()
 }
@@ -33,12 +33,12 @@ func (e *EPM) checkTakeStateDiff(i int){
     }
 }
 
-func StorageDiff(pre, post types.State) types.State{ //map[string]string) map[string]map[string]string{
-    diff := types.State{make(map[string]types.Storage), []string{}}
+func StorageDiff(pre, post core.State) core.State{ //map[string]string) map[string]map[string]string{
+    diff := core.State{make(map[string]core.Storage), []string{}}
     // for each account in post, compare all elements. 
     for _, addr := range post.Order{
         acct := post.State[addr]
-        diff.State[addr] = types.Storage{make(map[string]string), []string{}}
+        diff.State[addr] = core.Storage{make(map[string]interface{}), []string{}}
         diff.Order = append(diff.Order, addr)
         acct2 := pre.State[addr]
         // for each storage in the post acct, check for diff in 2. 
@@ -58,7 +58,7 @@ func StorageDiff(pre, post types.State) types.State{ //map[string]string) map[st
    return diff
 }
 
-func PrettyPrintAcctDiff(dif types.State) string{ //map[string]string) string{
+func PrettyPrintAcctDiff(dif core.State) string{ //map[string]string) string{
     result := ""
     for _, addr := range dif.Order{
         acct := dif.State[addr]
@@ -67,14 +67,15 @@ func PrettyPrintAcctDiff(dif types.State) string{ //map[string]string) string{
         }
         result += addr + ":\n"
         for _, store := range acct.Order{
-            val := acct.Storage[store]
+            v := acct.Storage[store]
+            val := v.(string)
             result += "\t"+store+": "+val+"\n"
         }
     }
     return result
 }
 
-func PrintDiff(name string, pre, post types.State){  //map[string]string) {
+func PrintDiff(name string, pre, post core.State){  //map[string]string) {
     /*
     fmt.Println("pre")
     fmt.Println(PrettyPrintAcctDiff(pre))

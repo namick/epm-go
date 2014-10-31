@@ -1,7 +1,7 @@
 package epm
 
 import (
-    "github.com/eris-ltd/decerver-interfaces"
+    "github.com/eris-ltd/decerver-interfaces/core"
 )
 
 func (e *EPM) WaitForBlock(){
@@ -25,7 +25,7 @@ func (e *EPM) WaitForBlock(){
 type ChainInterface interface{
     Get(query string, args []string) (string, error)
     Push(kind string, args []string) (string, error)
-    State() types.State //map[string]string // the full chain state ... this won't scale
+    State() core.State //map[string]string // the full chain state ... this won't scale
     // need these to motivate block formation so we can take diffs
     StartMining() bool
     StopMining() bool
@@ -44,7 +44,7 @@ type EthChain interface{
     Msg(string, []string)
     DeployContract(string, string) string
     GetStorageAt(string, string) string
-    GetState() types.State //map[string]string
+    GetState() core.State //map[string]string
     GenDoug() string
     StartMining() bool
     StopMining() bool
@@ -95,7 +95,7 @@ func (e *EthD) StopMining() bool{
     return e.chain.StopMining()
 }
 
-func (e *EthD) State() types.State{ //map[string]string {
+func (e *EthD) State() core.State{ //map[string]string {
    return e.chain.GetState()
 }
 
