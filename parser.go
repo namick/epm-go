@@ -437,7 +437,7 @@ func Coerce2Hex(s string) string{
     if len(s) > 32{
         return "0x"+s
     }
-    pad := s + strings.Repeat("\x00", (32-len(s)))
+    pad := strings.Repeat("\x00", (32-len(s))) + s
     ret := "0x"+hex.EncodeToString([]byte(pad))
     //fmt.Println("result:", ret)
     return ret
