@@ -1,14 +1,14 @@
 package epm
 
 import (
-    "github.com/eris-ltd/thelonious/monk"
+    "github.com/eris-ltd/decerver-interfaces"
 )
 
 func (e *EPM) WaitForBlock(){
     e.eth.StartMining()
     _ =<-e.Ch
     v := false
-    for !v {
+    for !v { // does this fix a bug?
         v = e.eth.StopMining()
     }
 }
@@ -25,7 +25,7 @@ func (e *EPM) WaitForBlock(){
 type ChainInterface interface{
     Get(query string, args []string) (string, error)
     Push(kind string, args []string) (string, error)
-    State() monk.State //map[string]string // the full chain state ... this won't scale
+    State() types.State //map[string]string // the full chain state ... this won't scale
     // need these to motivate block formation so we can take diffs
     StartMining() bool
     StopMining() bool
@@ -44,7 +44,7 @@ type EthChain interface{
     Msg(string, []string)
     DeployContract(string, string) string
     GetStorageAt(string, string) string
-    GetState() monk.State //map[string]string
+    GetState() types.State //map[string]string
     GenDoug() string
     StartMining() bool
     StopMining() bool
@@ -95,7 +95,7 @@ func (e *EthD) StopMining() bool{
     return e.chain.StopMining()
 }
 
-func (e *EthD) State() monk.State{ //map[string]string {
+func (e *EthD) State() types.State{ //map[string]string {
    return e.chain.GetState()
 }
 

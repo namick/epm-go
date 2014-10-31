@@ -25,6 +25,7 @@ func (e *EPM) Repl(){
         // check lines for special syntax things
 
         // else parse for normal cmds
+        lines = lines[:len(lines) - 1] // shave off trailing new line
         err := e.parse(lines)
         if err != nil{
             fmt.Println("!>> Parse error:", err)
@@ -34,14 +35,6 @@ func (e *EPM) Repl(){
         e.ExecuteJobs()
         // wait for a block
         e.WaitForBlock()
-        /*
-        if test_{
-            results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
-            if err != nil{
-                fmt.Println(err)
-                fmt.Println("failed tests:", results.FailedTests)
-            }
-        }*/
         // remove jobs for next run
         e.jobs = []Job{}
     }

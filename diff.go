@@ -2,13 +2,13 @@ package epm
 
 import (
     "fmt"
-    "github.com/eris-ltd/thelonious/monk"
+    "github.com/eris-ltd/decerver-interfaces"
 )
 
 
-func (e *EPM) CurrentState() monk.State{ //map[string]string{
+func (e *EPM) CurrentState() types.State{ //map[string]string{
     if e.eth == nil{
-        return monk.State{}
+        return types.State{}
     }
     return e.eth.State()
 }
@@ -33,12 +33,12 @@ func (e *EPM) checkTakeStateDiff(i int){
     }
 }
 
-func StorageDiff(pre, post monk.State) monk.State{ //map[string]string) map[string]map[string]string{
-    diff := monk.State{make(map[string]monk.Storage), []string{}}
+func StorageDiff(pre, post types.State) types.State{ //map[string]string) map[string]map[string]string{
+    diff := types.State{make(map[string]types.Storage), []string{}}
     // for each account in post, compare all elements. 
     for _, addr := range post.Order{
         acct := post.State[addr]
-        diff.State[addr] = monk.Storage{make(map[string]string), []string{}}
+        diff.State[addr] = types.Storage{make(map[string]string), []string{}}
         diff.Order = append(diff.Order, addr)
         acct2 := pre.State[addr]
         // for each storage in the post acct, check for diff in 2. 
@@ -58,7 +58,7 @@ func StorageDiff(pre, post monk.State) monk.State{ //map[string]string) map[stri
    return diff
 }
 
-func PrettyPrintAcctDiff(dif monk.State) string{ //map[string]string) string{
+func PrettyPrintAcctDiff(dif types.State) string{ //map[string]string) string{
     result := ""
     for _, addr := range dif.Order{
         acct := dif.State[addr]
@@ -74,7 +74,7 @@ func PrettyPrintAcctDiff(dif monk.State) string{ //map[string]string) string{
     return result
 }
 
-func PrintDiff(name string, pre, post monk.State){  //map[string]string) {
+func PrintDiff(name string, pre, post types.State){  //map[string]string) {
     /*
     fmt.Println("pre")
     fmt.Println(PrettyPrintAcctDiff(pre))
