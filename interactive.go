@@ -34,7 +34,7 @@ func (e *EPM) Repl(){
         // epm execute jobs
         e.ExecuteJobs()
         // wait for a block
-        e.WaitForBlock()
+        e.chain.Commit()
         // remove jobs for next run
         e.jobs = []Job{}
     }

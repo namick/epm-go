@@ -6,10 +6,19 @@ import (
     "path/filepath"
     "flag"
     "github.com/eris-ltd/epm-go"
-    "github.com/eris-ltd/thelonious/monk"
-    "github.com/eris-ltd/thelonious/ethchain"
-    "github.com/eris-ltd/thelonious/ethreact"
+    "github.com/eris-ltd/thelonious/monkmonk"
+    "github.com/eris-ltd/thelonious/monkchain"
+    "github.com/eris-ltd/thelonious/monkreact"
 )
+
+/*
+    #########################
+    Deprecating. Use `epm -i`
+    ########################
+
+    really just need a nice way to map `iepm` to `epm -i` while preserving other cli flags
+
+*/
 
 var GoPath = os.Getenv("GOPATH")
 

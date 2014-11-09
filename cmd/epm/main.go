@@ -12,8 +12,7 @@ import (
     "strings"
     "github.com/eris-ltd/epm-go"
     "github.com/eris-ltd/thelonious/monk"
-    "github.com/eris-ltd/thelonious/ethchain"
-    "github.com/eris-ltd/thelonious/ethreact"
+    "github.com/eris-ltd/thelonious/monkchain"
 )
 
 var GoPath = os.Getenv("GOPATH")
@@ -103,19 +102,19 @@ func main(){
     epm.CheckMakeTmp()
 
     if *noGenDoug{
-        ethchain.NoGenDoug = true
+        monkchain.NoGenDoug = true
         fmt.Println("no gendoug!")
     }
 
     // Startup the EthChain
     // uses flag variables (global) for config
-    eth := NewEthNode()
+    monkmod := NewMonkModule()
     // Create ChainInterface instance
-    ethD := epm.NewEthD(eth)
+    //ethD := epm.NewEthD(eth)
     // setup EPM object with ChainInterface
-    e := epm.NewEPM(ethD, ".epm-log")
+    e := epm.NewEPM(monkmod, ".epm-log")
     // subscribe to new blocks..
-    e.Ch = Subscribe(eth, "newBlock")
+    //e.Ch = Subscribe(eth, "newBlock")
 
     // if interactive mode, enable diffs and run the repl
     if *interactive{
@@ -201,29 +200,21 @@ func updateEPM(){
     os.Chdir(cur)
 }
 
-
-// subscribe on the channel
-func Subscribe(eth *monk.EthChain, event string) chan ethreact.Event{
-    ch := make(chan ethreact.Event, 1) 
-    eth.Ethereum.Reactor().Subscribe(event, ch)
-    return ch
-}
-
 // configure and start an in-process eth node
 // all paths should be made absolute
-func NewEthNode() *monk.EthChain{
+func NewMonkModule() *monk.MonkModule{
     // empty ethchain object
     // note this will load `eth-config.json` into Config if it exists
-    eth := monk.NewEth(nil)
+    m := monk.NewMonk(nil)
 
     // we need to overwrite the default monk config with our defaults
-    eth.Config.RootDir, _ = filepath.Abs(defaultDatabase)
-    eth.Config.LogLevel = defaultLogLevel
-    eth.Config.DougDifficulty = defaultDifficulty
-    eth.Config.Mining = defaultMining
+    m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
+    m.Config.LogLevel = defaultLogLevel
+    m.Config.DougDifficulty = defaultDifficulty
+    m.Config.Mining = defaultMining
     // then try to read local config file to overwrite defaults
     // (if it doesnt exist, it will be saved)
-    eth.ReadConfig("eth-config.json")
+    m.ReadConfig("eth-config.json")
     // then apply cli flags
 
     // compute a map of the flags that have been set
@@ -234,37 +225,37 @@ func NewEthNode() *monk.EthChain{
     })
     var err error
     if setFlags["db"]{
-        eth.Config.RootDir, err = filepath.Abs(*database)
+        m.Config.RootDir, err = filepath.Abs(*database)
         if err != nil{
             fmt.Println(err)
             os.Exit(0)
         }
     }
     if setFlags["log"]{
-        eth.Config.LogLevel = *logLevel
+        m.Config.LogLevel = *logLevel
     }
     if setFlags["dif"]{
-        eth.Config.DougDifficulty = *difficulty
+        m.Config.DougDifficulty = *difficulty
     }
     if setFlags["mine"]{
-        eth.Config.Mining = *mining
+        m.Config.Mining = *mining
     }
 
-    ethchain.GENDOUG = nil
+    monkchain.GENDOUG = nil
     if *keys != defaultKeys {
-        eth.Config.KeyFile, err = filepath.Abs(*keys)
+        m.Config.KeyFile, err = filepath.Abs(*keys)
         if err != nil{
             fmt.Println(err)
             os.Exit(0)
         }
     }
     if *genesis != defaultGenesis{
-        eth.Config.GenesisConfig, err = filepath.Abs(*genesis)
+        m.Config.GenesisConfig, err = filepath.Abs(*genesis)
         if err != nil{
             fmt.Println(err)
             os.Exit(0)
         }
-        eth.Config.ContractPath, err = filepath.Abs(*contractPath)
+        m.Config.ContractPath, err = filepath.Abs(*contractPath)
         if err != nil{
             fmt.Println(err)
             os.Exit(0)
@@ -273,12 +264,12 @@ func NewEthNode() *monk.EthChain{
 
 
     // set LLL path
-    epm.LLLURL = eth.Config.LLLPath
+    epm.LLLURL = m.Config.LLLPath
 
     // initialize and start
-    eth.Init() 
-    eth.Start()
-    return eth
+    m.Init() 
+    m.Start()
+    return m
 }
 
 // looks for pkg-def file

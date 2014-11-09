@@ -69,7 +69,7 @@ func TestVarSub(t *testing.T){
 
 func TestMath(t *testing.T){
     args := []string{`3+5-1`, `0x3+0x5-0x2+0x1a`, `10+0x10`, `"a"+0x1+0xc`}
-    expected := []string{`0x07`, `0x20`, `0x1a`, `0x610000000000000000000000000000000000000000000000000000000000000d`}
+    expected := []string{`0x07`, `0x20`, `0x1a`, `0x6e`} //when strings were right padded: 610000000000000000000000000000000000000000000000000000000000000d`}
     res := DoMath(args)
     for i, r := range res{
         if r!=expected[i]{

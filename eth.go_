@@ -4,6 +4,12 @@ import (
     "github.com/eris-ltd/deCerver-interfaces/modules"
 )
 
+/*
+    this file is entirely deprecated
+    however something like it will need to be revived to make way for rpc
+    ***coming soon***
+*/
+
 func (e *EPM) WaitForBlock(){
     e.eth.StartMining()
     _ =<-e.Ch

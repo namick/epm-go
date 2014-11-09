@@ -11,8 +11,7 @@ import (
     "encoding/binary"
     "encoding/hex"
     "github.com/project-douglas/lllc-server"
-    "github.com/eris-ltd/thelonious/ethutil"
-    "github.com/eris-ltd/thelonious/ethreact" // ...
+    "github.com/eris-ltd/thelonious/monkutil"
     "github.com/eris-ltd/deCerver-interfaces/modules" // for ordered state map ... 
     "log"
 )
@@ -32,7 +31,7 @@ type Job struct{
 
 // EPM object. maintains list of jobs and a symbols table
 type EPM struct{
-    eth ChainInterface
+    chain modules.Blockchain
 
     lllcURL string
 
@@ -46,17 +45,17 @@ type EPM struct{
     diffName  map[int][]string //map job numbers to names of diffs invoked after that job
     diffSched map[int][]int //map job numbers to diff actions (save or diff ie 0 or 1)
 
-    Ch chan ethreact.Event
+    //Ch chan monkreact.Event
     
     log string
 }
 
 // new empty epm
-func NewEPM(eth ChainInterface, log string) *EPM{
+func NewEPM(chain modules.Blockchain, log string) *EPM{
     lllcserver.URL = LLLURL 
     fmt.Println("url: ", LLLURL)
     e := &EPM{
-        eth:  eth,
+        chain:  chain,
         jobs: []Job{},
         vars: make(map[string]string),
         log: ".epm-log",
@@ -64,7 +63,6 @@ func NewEPM(eth ChainInterface, log string) *EPM{
         states: make(map[string]modules.State), //map[string]map[string]string),
         diffName: make(map[int][]string),
         diffSched: make(map[int][]int),
-        Ch: nil, // set in main when created... make(chan ethreact.Event, 1), // this needs to be generalized
     }
     return e
 }
@@ -376,7 +374,7 @@ func DoMath(args []string) []string{
         if err != nil{
             log.Fatal(err)
         }
-        result := ethutil.BigD(tokenBigBytes)
+        result := monkutil.BigD(tokenBigBytes)
         // start with the second token, and go up in twos (should be odd num of tokens)
         for j := 0; j < (len(tokens)-1)/2; j ++{
             op := tokens[2*j+1]
@@ -385,7 +383,7 @@ func DoMath(args []string) []string{
             if err != nil{
                 log.Fatal(err)
             }
-            tokenBigInt := ethutil.BigD(nBigBytes)
+            tokenBigInt := monkutil.BigD(nBigBytes)
             switch (op){
                 case "+":
                     result.Add(result, tokenBigInt)

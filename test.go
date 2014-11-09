@@ -100,7 +100,7 @@ func (e *EPM) ExecuteTest(line string, i int) error{
     //expected := args[2]
 
     // retrieve the value
-    val, _ := e.eth.Get("get", []string{addHex(addr), addHex(storage)})
+    val := e.chain.StorageAt(addHex(addr), addHex(storage))
     val = addHex(val)
     
     if args[2] != "_"{

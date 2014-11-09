@@ -27,13 +27,18 @@ func usr() string{
     return u.HomeDir
 }
 
+func (e *EPM) WaitForBlock(){
+    e.chain.Commit()
+}
+
 func (e *EPM) ExecuteJobs(){
     if e.Diff{
         e.checkTakeStateDiff(0)
     }
-    // set gendoug
-    gendougaddr, _:= e.eth.Get("gendoug", nil)
-    e.StoreVar("GENDOUG", gendougaddr)
+    // TODO: set gendoug...
+    //gendougaddr, _:= e.eth.Get("gendoug", nil)
+    //e.StoreVar("GENDOUG", gendougaddr)
+
     for i, j := range e.jobs{
         //fmt.Println("job!", j.cmd, j.args)
         e.ExecuteJob(j)
@@ -53,7 +58,7 @@ func (e *EPM) ExecuteJobs(){
 // args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job){
     job.args = e.VarSub(job.args) // substitute vars 
-    fmt.Println("job!", job.cmd, job.args)
+    //fmt.Println("job!", job.cmd, job.args)
     switch(job.cmd){
         case "deploy":
             e.Deploy(job.args)
@@ -70,7 +75,7 @@ func (e *EPM) ExecuteJob(job Job){
         case "endow":
             e.Endow(job.args)
         case "test":
-            e.WaitForBlock()
+            e.chain.Commit() 
             err := e.ExecuteTest(job.args[0], 0) 
             if err != nil{
                 fmt.Println(err)
@@ -79,7 +84,7 @@ func (e *EPM) ExecuteJob(job Job){
             e.EPMx(job.args[0])
             
     }
-    fmt.Println(e.vars)
+    //fmt.Println(e.vars)
 }
 
 /*
@@ -121,7 +126,7 @@ func (e *EPM) Deploy(args []string){
          return
     }
     // deploy contract
-    addr, _ := e.eth.Push("create", []string{"0x"+hex.EncodeToString(b)})
+    addr, _ := e.chain.Script("0x"+hex.EncodeToString(b), "bytes")
     // save contract address
     e.StoreVar(key, addr)
 }
@@ -138,11 +143,11 @@ func (e *EPM) ModifyDeploy(args []string){
 }
 
 func (e *EPM) Transact(args []string){
-    to := args[0:1]
+    to := args[0]
     dataS := args[1]
     data := strings.Split(dataS, " ")
     data = DoMath(data)
-    e.eth.Push("tx", append(to, data...))
+    e.chain.Msg(to, data)
 }
 
 func (e *EPM) Query(args []string){
@@ -152,7 +157,7 @@ func (e *EPM) Query(args []string){
 
     //fmt.Println("running query:", addr, storage)
 
-    v, _ := e.eth.Get("get", []string{addr, storage})
+    v := e.chain.StorageAt(addr, storage)
     e.StoreVar(varName, v)
     fmt.Printf("\tresult: %s = %s\n",varName, v)
 }
@@ -190,7 +195,7 @@ func (e *EPM) Set(args []string){
 func (e *EPM) Endow(args []string){
     addr := args[0]
     value := args[1]
-    e.eth.Push("endow", []string{addr, value})
+    e.chain.Tx(addr, value)
 }
 
 // apply substitution/replace pairs from args to contract
