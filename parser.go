@@ -12,7 +12,7 @@ import (
     "encoding/hex"
     "github.com/project-douglas/lllc-server"
     "github.com/eris-ltd/thelonious/monkutil"
-    "github.com/eris-ltd/deCerver-interfaces/modules" // for ordered state map ... 
+    "github.com/eris-ltd/decerver-interfaces/modules" // for ordered state map ... 
     "log"
 )
 

@@ -35,7 +35,7 @@ var TestExt = "pdt"
                 - `-k` allows one to set a keys.txt file (with one hex-encoded private key per line)
                 - `-db` allows one to set the location of an eth levelDB database to use
             - the `-rpc`, `-rpcHost` and `-rpcPort` flags specify to use rpc and the params. `-rpc` alone will use the defaults, while using one of host/port will choose the default for the other
-            - the `d`, `-host` and `-port` commands allow one to specify to pass commands through a deCerver, and to set the host/port 
+            - the `d`, `-host` and `-port` commands allow one to specify to pass commands through a decerver, and to set the host/port 
 */
 
 var (
@@ -66,8 +66,8 @@ var (
 //    rpc = flag.Bool("rpc", false, "Fire commands over rpc")
 //    rpcHost = flag.String("rpcHost", "localhost", "Set the rpc host")
 //    rpcPort = flag.String("rpcPort", "", "Set the rpc port")
-//    host = flag.String("host", "localhost", "Set the deCerver host")
-//    port = flag.String("port", "", "Set the deCerver port")
+//    host = flag.String("host", "localhost", "Set the decerver host")
+//    port = flag.String("port", "", "Set the decerver port")
 )
 
 func main(){
