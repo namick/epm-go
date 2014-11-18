@@ -8,10 +8,10 @@ import (
     "regexp"
     "strconv"
     "bytes"
+    "math/big"
     "encoding/binary"
     "encoding/hex"
     "github.com/project-douglas/lllc-server"
-    "github.com/eris-ltd/thelonious/monkutil"
     "github.com/eris-ltd/decerver-interfaces/modules" // for ordered state map ... 
     "log"
 )
@@ -45,8 +45,6 @@ type EPM struct{
     diffName  map[int][]string //map job numbers to names of diffs invoked after that job
     diffSched map[int][]int //map job numbers to diff actions (save or diff ie 0 or 1)
 
-    //Ch chan monkreact.Event
-    
     log string
 }
 
@@ -374,7 +372,7 @@ func DoMath(args []string) []string{
         if err != nil{
             log.Fatal(err)
         }
-        result := monkutil.BigD(tokenBigBytes)
+        result := new(big.Int).SetBytes(tokenBigBytes)
         // start with the second token, and go up in twos (should be odd num of tokens)
         for j := 0; j < (len(tokens)-1)/2; j ++{
             op := tokens[2*j+1]
@@ -383,7 +381,7 @@ func DoMath(args []string) []string{
             if err != nil{
                 log.Fatal(err)
             }
-            tokenBigInt := monkutil.BigD(nBigBytes)
+            tokenBigInt := new(big.Int).SetBytes(nBigBytes)
             switch (op){
                 case "+":
                     result.Add(result, tokenBigInt)

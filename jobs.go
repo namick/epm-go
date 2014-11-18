@@ -120,7 +120,7 @@ func (e *EPM) Deploy(args []string){
     } else {
         p = path.Join(ContractPath, contract)
     }
-    b, err := lllcserver.Compile(p)
+    b, err := lllcserver.Compile(p, false)
     if err != nil{
         fmt.Println("error compiling!", err)
          return
