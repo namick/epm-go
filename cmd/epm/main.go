@@ -12,7 +12,7 @@ import (
     "strings"
     "github.com/eris-ltd/epm-go"
     "github.com/eris-ltd/thelonious/monk"
-    "github.com/eris-ltd/thelonious/monkchain"
+    "github.com/eris-ltd/thelonious/monkdoug"
 )
 
 var GoPath = os.Getenv("GOPATH")
@@ -101,14 +101,11 @@ func main(){
     // make ~/.epm-go and ~/.epm-go/.tmp for modified contract files
     epm.CheckMakeTmp()
 
-    if *noGenDoug{
-        monkchain.NoGenDoug = true
-        fmt.Println("no gendoug!")
-    }
-
     // Startup the EthChain
     // uses flag variables (global) for config
     monkmod := NewMonkModule()
+
+
     // Create ChainInterface instance
     //ethD := epm.NewEthD(eth)
     // setup EPM object with ChainInterface
@@ -210,11 +207,11 @@ func NewMonkModule() *monk.MonkModule{
     // we need to overwrite the default monk config with our defaults
     m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
     m.Config.LogLevel = defaultLogLevel
-    m.Config.DougDifficulty = defaultDifficulty
     m.Config.Mining = defaultMining
     // then try to read local config file to overwrite defaults
     // (if it doesnt exist, it will be saved)
     m.ReadConfig("eth-config.json")
+
     // then apply cli flags
 
     // compute a map of the flags that have been set
@@ -234,14 +231,10 @@ func NewMonkModule() *monk.MonkModule{
     if setFlags["log"]{
         m.Config.LogLevel = *logLevel
     }
-    if setFlags["dif"]{
-        m.Config.DougDifficulty = *difficulty
-    }
     if setFlags["mine"]{
         m.Config.Mining = *mining
     }
 
-    monkchain.GENDOUG = nil
     if *keys != defaultKeys {
         m.Config.KeyFile, err = filepath.Abs(*keys)
         if err != nil{
@@ -261,6 +254,19 @@ func NewMonkModule() *monk.MonkModule{
             os.Exit(0)
         }
     }
+
+    // Handle genesis config 
+    g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
+    if *noGenDoug{
+        g.NoGenDoug = true
+        fmt.Println("no gendoug!")
+    }
+    g.Difficulty = defaultDifficulty
+    if setFlags["dif"]{
+        g.Difficulty = *difficulty
+    }
+
+    m.SetGenesis(g)
 
 
     // set LLL path
