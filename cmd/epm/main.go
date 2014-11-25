@@ -56,7 +56,7 @@ var (
     database = flag.String("db", ".ethchain", "Set the location of an eth-go root directory")
     logLevel = flag.Int("log", 0, "Set the eth log level")
     difficulty = flag.Int("dif", 14, "Set the mining difficulty")
-    mining = flag.Bool("mine", true, "To mine or not to mine, that is the question")
+    mining = flag.Bool("mine", false, "To mine or not to mine, that is the question")
     diffStorage = flag.Bool("diff", false, "Show a diff of all contract storage")
     clean = flag.Bool("clean", false, "Clear out epm related dirs")
     update = flag.Bool("update", false, "Pull and install the latest epm")
@@ -207,10 +207,10 @@ func NewMonkModule() *monk.MonkModule{
     // we need to overwrite the default monk config with our defaults
     m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
     m.Config.LogLevel = defaultLogLevel
-    m.Config.Mining = defaultMining
     // then try to read local config file to overwrite defaults
     // (if it doesnt exist, it will be saved)
     m.ReadConfig("eth-config.json")
+    m.Config.Mining = defaultMining
 
     // then apply cli flags
 
@@ -265,6 +265,8 @@ func NewMonkModule() *monk.MonkModule{
     if setFlags["dif"]{
         g.Difficulty = *difficulty
     }
+
+    g.Consensus = "constant"
 
     m.SetGenesis(g)
 
