@@ -6,19 +6,18 @@ import (
     "path"
     "github.com/eris-ltd/epm-go"
     "github.com/eris-ltd/thelonious/monk"
-    "github.com/eris-ltd/thelonious/monkchain"
 )
 
 var GoPath = os.Getenv("GOPATH")
 
 func NewMonkModule() *monk.MonkModule{
-    //lllcserver.PathToLLL = path.Join("/Users/BatBuddha/cpp-ethereum/build/lllc/lllc") 
     m := monk.NewMonk(nil)
-    monkchain.GENDOUG = nil
-    monkchain.GenesisConfig = "genesis.json"
     m.Config.RootDir = ".ethchain"
     m.Config.LogLevel = 0
-    m.Config.DougDifficulty = 14
+    m.Config.GenesisConfig = "genesis.json"
+    g := m.LoadGenesis(m.Config.GenesisConfig)
+    g.Difficulty = 14
+    m.SetGenesis(g)
     m.Init() 
     m.Config.Mining = false
     m.Start()
