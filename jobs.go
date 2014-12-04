@@ -27,7 +27,7 @@ func usr() string {
 	return u.HomeDir
 }
 
-func (e *EPM) WaitForBlock() {
+func (e *EPM) Commit() {
 	e.chain.Commit()
 }
 

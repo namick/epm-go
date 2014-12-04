@@ -41,7 +41,7 @@ func main() {
 	}
 	// epm execute jobs
 	e.ExecuteJobs()
-	e.WaitForBlock()
+	e.Commit()
 	e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
 
 	//epm.PrintDiff(e.PrevState(), e.CurrentState())

@@ -28,7 +28,7 @@ func TestDeploy(t *testing.T) {
 	//fmt.Println("addr", addr)
 	//0x60, 5050
 
-	e.WaitForBlock()
+	e.Commit()
 	got := m.StorageAt(addr, "0x60")
 	if got != "5050" {
 		t.Error("got:", got, "expected:", "0x5050")
@@ -52,7 +52,7 @@ func TestModifyDeploy(t *testing.T) {
 	//fmt.Println("doug addr2", addr2)
 	//0x60, 0x5050
 
-	e.WaitForBlock()
+	e.Commit()
 	got1 := m.StorageAt(addr, "0x60")
 	if got1 != "5050" {
 		t.Error("got:", got1, "expected:", "0x5050")
@@ -76,7 +76,7 @@ func iTestQuery(t *testing.T) {
 	}
 	e.ExecuteJobs()
 
-	e.WaitForBlock()
+	e.Commit()
 	a := e.Vars()["B"]
 	if a != "0x5050" {
 		t.Error("got:", a, "expecxted:", "0x5050")
@@ -101,7 +101,7 @@ func TestStack(t *testing.T) {
 	// fmt.Println("addr3", addr3)
 	//0x60, 0x5050
 
-	e.WaitForBlock()
+	e.Commit()
 	got := m.StorageAt(addr2, addr1)
 	if got != "15" {
 		t.Error("got:", got, "expected:", "0x15")
@@ -136,5 +136,5 @@ func TestDiff(t *testing.T) {
 	e.Diff = true
 	e.ExecuteJobs()
 
-	e.WaitForBlock()
+	e.Commit()
 }

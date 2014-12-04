@@ -116,7 +116,7 @@ func main() {
 	// epm execute jobs
 	e.ExecuteJobs()
 	// wait for a block
-	e.WaitForBlock()
+	e.Commit()
 	if test_ {
 		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
 		if err != nil {
