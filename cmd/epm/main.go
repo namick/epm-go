@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/eris-ltd/epm-go"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -22,7 +23,7 @@ var (
 	defaultGenesis      = ""
 	defaultKeys         = ""
 	defaultDatabase     = ".ethchain"
-	defaultLogLevel     = 0
+	defaultLogLevel     = 5
 	defaultDifficulty   = 14
 	defaultMining       = false
 	defaultDiffStorage  = false
@@ -31,6 +32,8 @@ var (
 	packagePath  = flag.String("p", ".", "Set a .package-definition file")
 	genesis      = flag.String("g", "", "Set a genesis.json file")
 	keys         = flag.String("k", "", "Set a keys file")
+	chainType    = flag.String("t", "thel", "Set the chain type (thelonious, genesis, bitcoin, ethereum)")
+	interactive  = flag.Bool("i", false, "Run epm in interactive mode")
 	database     = flag.String("db", ".ethchain", "Set the location of an eth-go root directory")
 	logLevel     = flag.Int("log", 0, "Set the eth log level")
 	difficulty   = flag.Int("dif", 14, "Set the mining difficulty")
@@ -39,14 +42,11 @@ var (
 	clean        = flag.Bool("clean", false, "Clear out epm related dirs")
 	update       = flag.Bool("update", false, "Pull and install the latest epm")
 	install      = flag.Bool("install", false, "Re-install epm")
-	interactive  = flag.Bool("i", false, "Run epm in interactive mode")
 	noGenDoug    = flag.Bool("no-gendoug", false, "Turn off gendoug mechanics")
 
-//    rpc = flag.Bool("rpc", false, "Fire commands over rpc")
-//    rpcHost = flag.String("rpcHost", "localhost", "Set the rpc host")
-//    rpcPort = flag.String("rpcPort", "", "Set the rpc port")
-//    host = flag.String("host", "localhost", "Set the decerver host")
-//    port = flag.String("port", "", "Set the decerver port")
+	rpc     = flag.Bool("rpc", false, "Fire commands over rpc")
+	rpcHost = flag.String("host", "localhost", "Set the rpc host")
+	rpcPort = flag.String("port", "40404", "Set the rpc port")
 )
 
 func main() {
@@ -68,14 +68,28 @@ func main() {
 	epm.CheckMakeTmp()
 
 	// Startup the chain
-	chain := NewMonkModule()
+	var chain epm.Blockchain
+	switch *chainType {
+	case "thel", "thelonious", "monk":
+		if *rpc {
+			chain = NewMonkRpcModule()
+		} else {
+			chain = NewMonkModule()
+		}
+	case "btc", "bitcoin":
+		log.Fatal("Bitcoin not implemented yet")
+	case "gen", "genesis":
+		chain = NewGenModule()
+	case "eth", "ethereum":
+		if *rpc {
+			//chain = NewEthRpcModule()
+		} else {
+			chain = NewEthModule()
+		}
+	}
 
-	// Create ChainInterface instance
-	//ethD := epm.NewEthD(eth)
 	// setup EPM object with ChainInterface
 	e := epm.NewEPM(chain, ".epm-log")
-	// subscribe to new blocks..
-	//e.Ch = Subscribe(eth, "newBlock")
 
 	// if interactive mode, enable diffs and run the repl
 	if *interactive {
@@ -112,5 +126,4 @@ func main() {
 			}
 		}
 	}
-	//eth.GetStorage()
 }
