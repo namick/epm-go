@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"fmt"
 	"encoding/hex"
 	"github.com/eris-ltd/epm-go"
 	"path"
@@ -14,7 +13,9 @@ import (
 */
 
 func TestDeploy(t *testing.T) {
+	defaultContractPath := epm.ContractPath
 	m := NewMonkModule()
+	epm.ContractPath = defaultContractPath
 	e := epm.NewEPM(m, ".epm-log-test")
 
 	err := e.Parse(path.Join(epm.TestPath, "test_deploy.epm"))

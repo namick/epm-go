@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/project-douglas/lllc-server"
 	"io/ioutil"
+	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -23,8 +23,8 @@ var (
 )
 
 // What to do if a job errs
-var (
-	PersistOnErr = iota
+const (
+	PersistOnErr int = iota
 	ReturnOnErr
 	FailOnErr
 )
@@ -38,7 +38,7 @@ func (e *EPM) Commit() {
 }
 
 // Execute parsed jobs
-func (e *EPM) ExecuteJobs() {
+func (e *EPM) ExecuteJobs() error {
 	if e.Diff {
 		e.checkTakeStateDiff(0)
 	}
@@ -69,6 +69,7 @@ func (e *EPM) ExecuteJobs() {
 	if e.Diff {
 		e.checkTakeStateDiff(len(e.jobs))
 	}
+	return nil
 }
 
 // Job switch
