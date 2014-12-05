@@ -7,10 +7,16 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"os/user"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+func usr() string {
+	u, _ := user.Current()
+	return u.HomeDir
+}
 
 // make sure command is valid
 func checkCommand(cmd string) bool {
@@ -295,4 +301,25 @@ func parseLine(line string) []string {
 		args[i] = strings.TrimSpace(a)
 	}
 	return args
+}
+
+func CheckMakeTmp() {
+	_, err := os.Stat(path.Join(EPMDIR, ".tmp"))
+	if err != nil {
+		err := os.MkdirAll(path.Join(EPMDIR, ".tmp"), 0777) //wtf!
+		if err != nil {
+			fmt.Println("Could not make directory. Exiting", err)
+			os.Exit(0)
+		}
+	}
+	// copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
+	root := path.Base(ContractPath)
+	if _, err = os.Stat(path.Join(EPMDIR, ".tmp", root)); err != nil {
+		cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
+		err = cmd.Run()
+		if err != nil {
+			fmt.Println("error copying working dir into tmp:", err)
+			os.Exit(0)
+		}
+	}
 }

@@ -1,36 +1,43 @@
 package epm
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"github.com/project-douglas/lllc-server"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
-	//"time"
-	"crypto/sha256"
-	"encoding/hex"
-	"github.com/project-douglas/lllc-server"
 )
 
 var GOPATH = os.Getenv("GOPATH")
 
-// should be set to the "current" directory if using epm-cli
-var ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "contracts")
-var TestPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "definitions")
-var EPMDIR = path.Join(usr(), ".epm-go")
+// TODO: Should be set to the "current" directory if using epm-cli
+var (
+	ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "contracts")
+	TestPath     = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "definitions")
+	EPMDIR       = path.Join(usr(), ".epm-go")
+)
 
-func usr() string {
-	u, _ := user.Current()
-	return u.HomeDir
-}
+// What to do if a job errs
+var (
+	PersistOnErr = iota
+	ReturnOnErr
+	FailOnErr
+)
 
+// Default to fail on error
+var ErrMode = FailOnErr
+
+// Commit changes to the db (ie. mine a block)
 func (e *EPM) Commit() {
 	e.chain.Commit()
 }
 
+// Execute parsed jobs
 func (e *EPM) ExecuteJobs() {
 	if e.Diff {
 		e.checkTakeStateDiff(0)
@@ -40,10 +47,20 @@ func (e *EPM) ExecuteJobs() {
 	//e.StoreVar("GENDOUG", gendougaddr)
 
 	for i, j := range e.jobs {
-		//fmt.Println("job!", j.cmd, j.args)
-		e.ExecuteJob(j)
+		err := e.ExecuteJob(j)
 		if e.Diff {
 			e.checkTakeStateDiff(i + 1)
+		}
+
+		if err != nil {
+			switch ErrMode {
+			case ReturnOnErr:
+				return err
+			case FailOnErr:
+				log.Fatal(err)
+			case PersistOnErr:
+				continue
+			}
 		}
 
 		// time.Sleep(time.Second) // this was not necessary for epm but was when called from CI. not sure why :(
@@ -54,62 +71,60 @@ func (e *EPM) ExecuteJobs() {
 	}
 }
 
-// job switch
-// args are still raw input from user (but only 2 or 3)
-func (e *EPM) ExecuteJob(job Job) {
+// Job switch
+// Args are still raw input from user (but only 2 or 3)
+func (e *EPM) ExecuteJob(job Job) error {
 	job.args = e.VarSub(job.args) // substitute vars
-	//fmt.Println("job!", job.cmd, job.args)
 	switch job.cmd {
 	case "deploy":
-		e.Deploy(job.args)
+		return e.Deploy(job.args)
 	case "modify-deploy":
-		e.ModifyDeploy(job.args)
+		return e.ModifyDeploy(job.args)
 	case "transact":
-		e.Transact(job.args)
+		return e.Transact(job.args)
 	case "query":
-		e.Query(job.args)
+		return e.Query(job.args)
 	case "log":
-		e.Log(job.args)
+		return e.Log(job.args)
 	case "set":
-		e.Set(job.args)
+		return e.Set(job.args)
 	case "endow":
-		e.Endow(job.args)
+		return e.Endow(job.args)
 	case "test":
 		e.chain.Commit()
 		err := e.ExecuteTest(job.args[0], 0)
 		if err != nil {
 			fmt.Println(err)
+			return err
 		}
 	case "epm":
-		e.EPMx(job.args[0])
-
+		return e.EPMx(job.args[0])
 	}
-	//fmt.Println(e.vars)
+	return nil
 }
 
-/*
-   The following are the "jobs" functions that EPM knows
-   Interaction with BlockChain is strictly through Get() and Push() methods of ChainInterface
-   Hides details of in-process vs. rpc
-*/
-
-func (e *EPM) EPMx(filename string) {
+// Deploy a pdx from a pdx
+func (e *EPM) EPMx(filename string) error {
 	// save the old jobs, empty the job list
 	oldjobs := e.jobs
 	e.jobs = []Job{}
 
 	if err := e.Parse(filename); err != nil {
-		fmt.Println("failed to parse pdx file:", filename)
-		fmt.Println(err)
-		os.Exit(0)
+		fmt.Println("failed to parse pdx file:", filename, err)
+		return err
 	}
 
-	e.ExecuteJobs()
+	err := e.ExecuteJobs()
+	if err != nil {
+		return err
+	}
+	// return to old jobs
 	e.jobs = oldjobs
+	return nil
 }
 
-func (e *EPM) Deploy(args []string) {
-	//fmt.Println("deploy!")
+// Deploy a contract and save its address
+func (e *EPM) Deploy(args []string) error {
 	contract := args[0]
 	key := args[1]
 	contract = strings.Trim(contract, "\"")
@@ -122,47 +137,54 @@ func (e *EPM) Deploy(args []string) {
 	}
 	b, err := lllcserver.Compile(p, false)
 	if err != nil {
-		fmt.Println("error compiling!", err)
-		return
+		return fmt.Errorf("Error compiling %s: %s", contract, err.Error())
 	}
 	// deploy contract
 	addr, _ := e.chain.Script("0x"+hex.EncodeToString(b), "bytes")
 	// save contract address
 	e.StoreVar(key, addr)
+	return nil
 }
 
-func (e *EPM) ModifyDeploy(args []string) {
-	//fmt.Println("modify-deploy!")
+// Modify lines in the contract prior to deploy, and save its address
+func (e *EPM) ModifyDeploy(args []string) error {
 	contract := args[0]
 	key := args[1]
 	args = args[2:]
 
 	contract = strings.Trim(contract, "\"")
-	newName := Modify(path.Join(ContractPath, contract), args)
-	e.Deploy([]string{newName, key})
+	newName, err := Modify(path.Join(ContractPath, contract), args)
+	if err != nil {
+		return err
+	}
+	return e.Deploy([]string{newName, key})
 }
 
-func (e *EPM) Transact(args []string) {
+// Send a transaction with data to a contract
+func (e *EPM) Transact(args []string) error {
 	to := args[0]
 	dataS := args[1]
 	data := strings.Split(dataS, " ")
 	data = DoMath(data)
 	e.chain.Msg(to, data)
+	return nil
 }
 
-func (e *EPM) Query(args []string) {
+// Issue a query.
+// TODO: Not currently functional, but not really necessary either
+func (e *EPM) Query(args []string) error {
 	addr := args[0]
 	storage := args[1]
 	varName := args[2]
 
-	//fmt.Println("running query:", addr, storage)
-
 	v := e.chain.StorageAt(addr, storage)
 	e.StoreVar(varName, v)
 	fmt.Printf("\tresult: %s = %s\n", varName, v)
+	return nil
 }
 
-func (e *EPM) Log(args []string) {
+// Log something to the log file
+func (e *EPM) Log(args []string) error {
 	k := args[0]
 	v := args[1]
 
@@ -171,41 +193,44 @@ func (e *EPM) Log(args []string) {
 	if err != nil {
 		f, err = os.Create(e.log)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	} else {
 		f, err = os.OpenFile(e.log, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 	defer f.Close()
 
 	if _, err = f.WriteString(fmt.Sprintf("%s : %s", k, v)); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
-func (e *EPM) Set(args []string) {
+// Set an epm variable
+func (e *EPM) Set(args []string) error {
 	k := args[0]
 	v := args[1]
 	e.StoreVar(k, v)
+	return nil
 }
 
-func (e *EPM) Endow(args []string) {
+// Send a basic transaction transfering value.
+func (e *EPM) Endow(args []string) error {
 	addr := args[0]
 	value := args[1]
 	e.chain.Tx(addr, value)
+	return nil
 }
 
-// apply substitution/replace pairs from args to contract
-// save in temp file
-func Modify(contract string, args []string) string {
+// Apply substitution: replace pairs from args to contract
+// and save in a temporary file
+func Modify(contract string, args []string) (string, error) {
 	b, err := ioutil.ReadFile(contract)
 	if err != nil {
-		fmt.Println("could not open file", contract)
-		fmt.Println(err)
-		os.Exit(0)
+		return "", fmt.Errorf("Could not open file %s: %s", contract, err.Error())
 	}
 
 	lll := string(b)
@@ -238,29 +263,7 @@ func Modify(contract string, args []string) string {
 	newPath := path.Join(EPMDIR, ".tmp", dir, hex.EncodeToString(hash[:])+".lll")
 	err = ioutil.WriteFile(newPath, []byte(lll), 0644)
 	if err != nil {
-		fmt.Println("could not write file", newPath, err)
-		os.Exit(0)
+		return "", fmt.Errorf("Could not write file %s: %s", newPath, err.Error())
 	}
-	return newPath
-}
-
-func CheckMakeTmp() {
-	_, err := os.Stat(path.Join(EPMDIR, ".tmp"))
-	if err != nil {
-		err := os.MkdirAll(path.Join(EPMDIR, ".tmp"), 0777) //wtf!
-		if err != nil {
-			fmt.Println("Could not make directory. Exiting", err)
-			os.Exit(0)
-		}
-	}
-	// copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
-	root := path.Base(ContractPath)
-	if _, err = os.Stat(path.Join(EPMDIR, ".tmp", root)); err != nil {
-		cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
-		err = cmd.Run()
-		if err != nil {
-			fmt.Println("error copying working dir into tmp:", err)
-			os.Exit(0)
-		}
-	}
+	return newPath, nil
 }
