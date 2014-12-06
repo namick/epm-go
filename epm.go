@@ -2,13 +2,15 @@ package epm
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/eris-ltd/decerver-interfaces/events"
 	"github.com/eris-ltd/decerver-interfaces/modules"
+	"github.com/eris-ltd/thelonious/monklog"
 	"github.com/project-douglas/lllc-server"
 	"os"
 	"regexp"
 )
+
+var logger *monklog.Logger = monklog.NewLogger("EPM")
 
 var (
 	StateDiffOpen  = "!{"
@@ -76,7 +78,7 @@ type EPM struct {
 // new empty epm
 func NewEPM(chain Blockchain, log string) *EPM {
 	lllcserver.URL = LLLURL
-	fmt.Println("url: ", LLLURL)
+	logger.Infoln("url: ", LLLURL)
 	e := &EPM{
 		chain:     chain,
 		jobs:      []Job{},
@@ -129,7 +131,7 @@ func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string
 }
 
 func (e *EPM) Parse(filename string) error {
-	fmt.Println("Parsing", filename)
+	logger.Infoln("Parsing", filename)
 	// set current file to parse
 	e.pkgdef = filename
 

@@ -36,8 +36,6 @@ func setKeysFile(flags map[string]bool, config *string, keyfile string) {
 
 func setGenesisPath(flags map[string]bool, config *string, genfile string) {
 	var err error
-	fmt.Println("config:", *config)
-	fmt.Println("genfil:", genfile)
 	if *config != defaultGenesis && genfile != "" {
 		*config, err = filepath.Abs(genfile)
 		if err != nil {

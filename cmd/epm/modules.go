@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/eris-ltd/epm-go"
 	"github.com/eris-ltd/thelonious/monkdoug"
 	"path/filepath"
@@ -51,7 +50,7 @@ func setGenesis(flags map[string]bool, m *monk.MonkModule) {
 	g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
 	if *noGenDoug {
 		g.NoGenDoug = true
-		fmt.Println("no gendoug!")
+		logger.Infoln("No gendoug")
 	}
 	setDifficulty(flags, &(g.Difficulty), *difficulty)
 	g.Consensus = "constant"

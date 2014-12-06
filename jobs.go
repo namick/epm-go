@@ -95,7 +95,7 @@ func (e *EPM) ExecuteJob(job Job) error {
 		e.chain.Commit()
 		err := e.ExecuteTest(job.args[0], 0)
 		if err != nil {
-			fmt.Println(err)
+			logger.Errorln(err)
 			return err
 		}
 	case "epm":
@@ -111,7 +111,7 @@ func (e *EPM) EPMx(filename string) error {
 	e.jobs = []Job{}
 
 	if err := e.Parse(filename); err != nil {
-		fmt.Println("failed to parse pdx file:", filename, err)
+		logger.Errorln("failed to parse pdx file:", filename, err)
 		return err
 	}
 
@@ -180,7 +180,7 @@ func (e *EPM) Query(args []string) error {
 
 	v := e.chain.StorageAt(addr, storage)
 	e.StoreVar(varName, v)
-	fmt.Printf("\tresult: %s = %s\n", varName, v)
+	logger.Errorf("\tresult: %s = %s\n", varName, v)
 	return nil
 }
 
@@ -236,8 +236,6 @@ func Modify(contract string, args []string) (string, error) {
 
 	lll := string(b)
 
-	fmt.Println("contract", contract)
-	fmt.Println("contract path", ContractPath)
 	// when we modify a contract, we save it in the .tmp dir in the same relative path as its original root.
 	// eg. if ContractPath is ~/ponos and we modify ponos/projects/issue.lll then the modified version will be found in
 	//  EPMDIR/.tmp/ponos/projects/somehash.lll

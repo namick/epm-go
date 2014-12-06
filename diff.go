@@ -49,7 +49,6 @@ func StorageDiff(pre, post modules.State) modules.State { //map[string]string) m
 		for _, k := range acct.Order {
 			v := acct.Storage[k]
 			v2, ok := acct2.Storage[k]
-			//fmt.Println(v, v2)
 			// if its not in the pre-state or its different, add to diff
 			if !ok || v2 != v {
 				diff.State[addr].Storage[k] = v

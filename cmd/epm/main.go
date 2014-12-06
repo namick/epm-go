@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
+	"github.com/eris-ltd/thelonious/monklog"
 	"log"
 	"os"
 	"path"
@@ -11,6 +12,8 @@ import (
 )
 
 var GoPath = os.Getenv("GOPATH")
+
+var logger *monklog.Logger = monklog.NewLogger("EPM")
 
 // adjust these to suit all your deformed nefarious extension name desires. Muahahaha
 // but actually don't because you might break something ;)
@@ -52,6 +55,8 @@ var (
 func main() {
 	flag.Parse()
 
+	utils.InitLogging(".epm-go", "", *logLevel, "")
+
 	if *clean || *update || *install {
 		cleanUpdateInstall()
 		os.Exit(0)
@@ -71,23 +76,27 @@ func main() {
 			chain = NewMonkModule()
 		}
 	case "btc", "bitcoin":
-		log.Fatal("Bitcoin not implemented yet")
-	case "gen", "genesis":
-		chain = NewGenModule()
+		if *rpc {
+			log.Fatal("Bitcoin rpc not implemented yet")
+		} else {
+			log.Fatal("Bitcoin not implemented yet")
+		}
 	case "eth", "ethereum":
 		if *rpc {
 			log.Fatal("Eth rpc not implemented yet")
 		} else {
 			chain = NewEthModule()
 		}
+	case "gen", "genesis":
+		chain = NewGenModule()
 	}
 
 	epm.ContractPath, err = filepath.Abs(*contractPath)
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorln(err)
 		os.Exit(0)
 	}
-	fmt.Println("epm contract paht:", epm.ContractPath)
+	logger.Debugln("Contract root:", epm.ContractPath)
 
 	// setup EPM object with ChainInterface
 	e := epm.NewEPM(chain, ".epm-log")
@@ -106,7 +115,7 @@ func main() {
 	// epm parse the package definition file
 	err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorln(err)
 		os.Exit(0)
 	}
 
@@ -121,9 +130,9 @@ func main() {
 	if test_ {
 		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
 		if err != nil {
-			fmt.Println(err)
+			logger.Errorln(err)
 			if results != nil {
-				fmt.Println("failed tests:", results.FailedTests)
+				logger.Errorln("Failed tests:", results.FailedTests)
 			}
 		}
 	}

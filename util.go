@@ -238,7 +238,7 @@ func NumberToBytes(num interface{}, N int) []byte {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, num)
 	if err != nil {
-		fmt.Println("NumberToBytes failed:", err)
+		logger.Errorln("NumberToBytes failed:", err)
 	}
 	//fmt.Println("btyes!", buf.Bytes())
 	if buf.Len() > N {
@@ -311,7 +311,7 @@ func CheckMakeTmp() {
 	if err != nil {
 		err := os.MkdirAll(path.Join(EPMDIR, ".tmp"), 0777) //wtf!
 		if err != nil {
-			fmt.Println("Could not make directory. Exiting", err)
+			logger.Errorln("Could not make directory. Exiting", err)
 			os.Exit(0)
 		}
 	}
@@ -321,7 +321,7 @@ func CheckMakeTmp() {
 		cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
 		err = cmd.Run()
 		if err != nil {
-			fmt.Println("error copying working dir into tmp:", err)
+			logger.Errorln("error copying working dir into tmp:", err)
 			os.Exit(0)
 		}
 	}
