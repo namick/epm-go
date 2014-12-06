@@ -58,12 +58,6 @@ func main() {
 	}
 
 	var err error
-	epm.ContractPath, err = filepath.Abs(*contractPath)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
-	}
-
 	// make ~/.epm-go and ~/.epm-go/.tmp for modified contract files
 	epm.CheckMakeTmp()
 
@@ -82,11 +76,18 @@ func main() {
 		chain = NewGenModule()
 	case "eth", "ethereum":
 		if *rpc {
-			//chain = NewEthRpcModule()
+			log.Fatal("Eth rpc not implemented yet")
 		} else {
 			chain = NewEthModule()
 		}
 	}
+
+	epm.ContractPath, err = filepath.Abs(*contractPath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
+	fmt.Println("epm contract paht:", epm.ContractPath)
 
 	// setup EPM object with ChainInterface
 	e := epm.NewEPM(chain, ".epm-log")
