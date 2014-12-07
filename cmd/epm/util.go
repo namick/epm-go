@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
 	"io/ioutil"
 	"os"
@@ -11,7 +12,7 @@ import (
 )
 
 func cleanupEPM() {
-	dirs := []string{epm.EPMDIR, *database}
+	dirs := []string{epm.EpmDir, *database}
 	for _, d := range dirs {
 		err := os.RemoveAll(d)
 		if err != nil {
@@ -22,7 +23,7 @@ func cleanupEPM() {
 
 func installEPM() {
 	cur, _ := os.Getwd()
-	os.Chdir(path.Join(GoPath, "src", "github.com", "eris-ltd", "epm-go", "cmd", "epm"))
+	os.Chdir(path.Join(utils.ErisLtd, "epm-go", "cmd", "epm"))
 	cmd := exec.Command("go", "install")
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -35,7 +36,7 @@ func updateEPM() {
 	cur, _ := os.Getwd()
 
 	// pull changes
-	os.Chdir(path.Join(GoPath, "src", "github.com", "eris-ltd", "epm-go"))
+	os.Chdir(path.Join(utils.ErisLtd, "epm-go"))
 	cmd := exec.Command("git", "pull", "origin", "master")
 	var out bytes.Buffer
 	cmd.Stdout = &out

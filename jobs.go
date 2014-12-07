@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/project-douglas/lllc-server"
 	"io/ioutil"
 	"log"
@@ -17,9 +18,11 @@ var GOPATH = os.Getenv("GOPATH")
 
 // TODO: Should be set to the "current" directory if using epm-cli
 var (
-	ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "contracts")
-	TestPath     = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "definitions")
-	EPMDIR       = path.Join(usr(), ".epm-go")
+	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
+	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
+
+	EpmDir  = utils.Epm
+	LogFile = path.Join(utils.Logs, "epm", "log")
 )
 
 // What to do if a job errs
@@ -238,7 +241,7 @@ func Modify(contract string, args []string) (string, error) {
 
 	// when we modify a contract, we save it in the .tmp dir in the same relative path as its original root.
 	// eg. if ContractPath is ~/ponos and we modify ponos/projects/issue.lll then the modified version will be found in
-	//  EPMDIR/.tmp/ponos/projects/somehash.lll
+	//  scratch/ponos/projects/somehash.lll
 	dirC := path.Dir(contract) // absolute path
 	l := len(ContractPath)
 	var dir string
@@ -259,7 +262,7 @@ func Modify(contract string, args []string) (string, error) {
 	}
 
 	hash := sha256.Sum256([]byte(lll))
-	newPath := path.Join(EPMDIR, ".tmp", dir, hex.EncodeToString(hash[:])+".lll")
+	newPath := path.Join(EpmDir, dir, hex.EncodeToString(hash[:])+".lll")
 	err = ioutil.WriteFile(newPath, []byte(lll), 0644)
 	if err != nil {
 		return "", fmt.Errorf("Could not write file %s: %s", newPath, err.Error())

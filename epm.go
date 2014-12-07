@@ -89,6 +89,8 @@ func NewEPM(chain Blockchain, log string) *EPM {
 		diffName:  make(map[int][]string),
 		diffSched: make(map[int][]int),
 	}
+	// temp dir
+	CopyContractPath()
 	return e
 }
 
@@ -134,10 +136,6 @@ func (e *EPM) Parse(filename string) error {
 	logger.Infoln("Parsing", filename)
 	// set current file to parse
 	e.pkgdef = filename
-
-	// temp dir
-	// TODO: move it!
-	CheckMakeTmp()
 
 	lines := []string{}
 	f, err := os.Open(filename)

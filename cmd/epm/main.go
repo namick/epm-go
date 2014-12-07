@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 )
 
+// TODO: use a CLI library!
+
 var GoPath = os.Getenv("GOPATH")
 
 var logger *monklog.Logger = monklog.NewLogger("EPM")
@@ -67,54 +69,53 @@ var (
 func main() {
 	flag.Parse()
 
-	utils.InitLogging(".epm-go", "", *logLevel, "")
+	utils.InitLogging(path.Join(utils.Logs, "epm"), "", *logLevel, "")
 
+	// clean, update, or install
+	// exit
 	if *clean || *update || *install {
 		cleanUpdateInstall()
 		os.Exit(0)
 	}
 
 	var err error
-	// make ~/.epm-go and ~/.epm-go/.tmp for modified contract files
-	// TODO: bring into decerver ...
-	epm.CheckMakeTmp()
 
-	// Initialize a chain by ensuring decerver dirs exist
-	// and dropping a chain config and genesis.json in the
-	// specified directory
+	// create ~/.decerver tree and drop monk/gen configs
+	// exit
 	if *ini {
-		args := flag.Args()
-		var p string
-		if len(args) == 0 {
-			p = "."
-		} else {
-			p = args[0]
-		}
-		err := monk.InitChain(p)
-		if err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
+		inity()
 	}
 
+	// deploy the genblock, install into ~/.decerver
+	// exit
 	if *deploy {
-		// deploy the genblock, copy into ~/.decerver, exit
 		monk.DeploySequence(*name, *genesis, *config)
 	}
 
+	// change the currently active chain
+	// exit
 	if *checkout != "" {
-		// change the currently active chain
 		utils.ChangeHead(*checkout)
 	}
 
-	if *addRef != nil {
-		if *name == nil {
+	// add a new reference to a chainId
+	// exit
+	if *addRef != "" {
+		if *name == "" {
 			log.Fatal(`add-ref requires a name to specified as well, \n
                             eg. "add-ref 14c32 -name shitchain"`)
 		}
 		utils.AddRef(*addRef, *name)
 	}
 
+	/*
+	   Now we're actually booting a blockchain
+	   and launching a .pdx or going interactive
+	*/
+
+	// Find the chain's db
+	// If we can't find it by name or chainId
+	// we default to flag, config file, or old default
 	var chainRoot string
 	if *name != "" || *chainId != "" {
 		switch *chainType {
@@ -166,7 +167,7 @@ func main() {
 	logger.Debugln("Contract root:", epm.ContractPath)
 
 	// setup EPM object with ChainInterface
-	e := epm.NewEPM(chain, ".epm-log")
+	e := epm.NewEPM(chain, epm.LogFile)
 
 	// if interactive mode, enable diffs and run the repl
 	if *interactive {
@@ -203,4 +204,19 @@ func main() {
 			}
 		}
 	}
+}
+
+func inity() {
+	args := flag.Args()
+	var p string
+	if len(args) == 0 {
+		p = "."
+	} else {
+		p = args[0]
+	}
+	err := monk.InitChain(p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	os.Exit(0)
 }

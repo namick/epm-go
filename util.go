@@ -306,19 +306,11 @@ func parseLine(line string) []string {
 	return args
 }
 
-func CheckMakeTmp() {
-	_, err := os.Stat(path.Join(EPMDIR, ".tmp"))
-	if err != nil {
-		err := os.MkdirAll(path.Join(EPMDIR, ".tmp"), 0777) //wtf!
-		if err != nil {
-			logger.Errorln("Could not make directory. Exiting", err)
-			os.Exit(0)
-		}
-	}
-	// copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
+func CopyContractPath() {
+	// copy the current dir into scratch/epm. Necessary for finding include files after a modify. :sigh:
 	root := path.Base(ContractPath)
-	if _, err = os.Stat(path.Join(EPMDIR, ".tmp", root)); err != nil {
-		cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
+	if _, err := os.Stat(path.Join(EpmDir, root)); err != nil {
+		cmd := exec.Command("cp", "-r", ContractPath, EpmDir)
 		err = cmd.Run()
 		if err != nil {
 			logger.Errorln("error copying working dir into tmp:", err)
