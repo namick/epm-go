@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
-	"github.com/project-douglas/lllc-server"
+	//"github.com/project-douglas/lllc-server"
 	"io/ioutil"
 	"log"
 	"os"
@@ -139,12 +139,14 @@ func (e *EPM) Deploy(args []string) error {
 	} else {
 		p = path.Join(ContractPath, contract)
 	}
-	b, err := lllcserver.Compile(p, false)
-	if err != nil {
-		return fmt.Errorf("Error compiling %s: %s", contract, err.Error())
-	}
 	// deploy contract
-	addr, _ := e.chain.Script("0x"+hex.EncodeToString(b), "bytes")
+	//addr, err := e.chain.Script("0x"+hex.EncodeToString(b), "bytes")
+	addr, err := e.chain.Script(p, "lll")
+	if err != nil {
+		err = fmt.Errorf("Error compiling %s: %s", contract, err.Error())
+		logger.Errorln(err)
+		return err
+	}
 	// save contract address
 	e.StoreVar(key, addr)
 	return nil

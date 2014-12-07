@@ -12,18 +12,28 @@ import (
    See definitions and contracts for context
 */
 
-func TestDeploy(t *testing.T) {
+func newEpmTest(t *testing.T, pdx string) (*epm.EPM, epm.Blockchain) {
 	defaultContractPath := epm.ContractPath
 	m := NewMonkModule()
 	epm.ContractPath = defaultContractPath
-	e := epm.NewEPM(m, ".epm-log-test")
-
-	err := e.Parse(path.Join(epm.TestPath, "test_deploy.epm"))
+	e, err := epm.NewEPM(m, ".epm-log-test")
 	if err != nil {
 		t.Error(err)
 	}
-	//fmt.Println(e.Jobs())
-	e.ExecuteJobs()
+
+	if err := e.Parse(pdx); err != nil {
+		t.Error(err)
+	}
+
+	if err := e.ExecuteJobs(); err != nil {
+		t.Error(err)
+	}
+
+	return e, m
+}
+
+func TestDeploy(t *testing.T) {
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_deploy.epm"))
 
 	addr := e.Vars()["addr"]
 	//fmt.Println("addr", addr)
@@ -38,14 +48,7 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestModifyDeploy(t *testing.T) {
-	m := NewMonkModule()
-	e := epm.NewEPM(m, ".epm-log-test")
-
-	err := e.Parse(path.Join(epm.TestPath, "test_modify_deploy.epm"))
-	if err != nil {
-		t.Error(err)
-	}
-	e.ExecuteJobs()
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_modify_deploy.epm"))
 
 	addr := e.Vars()["doug"]
 	addr2 := e.Vars()["doug2"]
@@ -59,7 +62,7 @@ func TestModifyDeploy(t *testing.T) {
 		t.Error("got:", got1, "expected:", "0x5050")
 	}
 	got2 := m.StorageAt(addr2, "0x60")
-	if got2 != addr[2:] {
+	if len(got2) < 2 || got2 != addr[2:] {
 		t.Error("got:", got2, "expected:", addr)
 	}
 	m.Shutdown()
@@ -68,14 +71,7 @@ func TestModifyDeploy(t *testing.T) {
 // doesn't work unless we wait a block until actually making the query
 // not going to fly here
 func iTestQuery(t *testing.T) {
-	m := NewMonkModule()
-	e := epm.NewEPM(m, ".epm-log-test")
-
-	err := e.Parse(path.Join(epm.TestPath, "test_query.epm"))
-	if err != nil {
-		t.Error(err)
-	}
-	e.ExecuteJobs()
+	e, _ := newEpmTest(t, path.Join(epm.TestPath, "test_query.epm"))
 
 	e.Commit()
 	a := e.Vars()["B"]
@@ -85,14 +81,7 @@ func iTestQuery(t *testing.T) {
 }
 
 func TestStack(t *testing.T) {
-	m := NewMonkModule()
-	e := epm.NewEPM(m, ".epm-log-test")
-
-	err := e.Parse(path.Join(epm.TestPath, "test_parse.epm"))
-	if err != nil {
-		t.Error(err)
-	}
-	e.ExecuteJobs()
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_parse.epm"))
 
 	addr1 := e.Vars()["A"]
 	addr2 := e.Vars()["B"]
@@ -127,10 +116,9 @@ func TestStack(t *testing.T) {
 // TODO>..
 func TestDiff(t *testing.T) {
 	m := NewMonkModule()
-	e := epm.NewEPM(m, ".epm-log-test")
+	e, _ := epm.NewEPM(m, ".epm-log-test")
 
-	err := e.Parse(path.Join(epm.TestPath, "test_diff.epm"))
-	if err != nil {
+	if err := e.Parse(path.Join(epm.TestPath, "test_diff.epm")); err != nil {
 		t.Error(err)
 	}
 

@@ -306,15 +306,18 @@ func parseLine(line string) []string {
 	return args
 }
 
-func CopyContractPath() {
+func CopyContractPath() error {
 	// copy the current dir into scratch/epm. Necessary for finding include files after a modify. :sigh:
 	root := path.Base(ContractPath)
-	if _, err := os.Stat(path.Join(EpmDir, root)); err != nil {
-		cmd := exec.Command("cp", "-r", ContractPath, EpmDir)
+	p := path.Join(EpmDir, root)
+	// TODO: should we delete and copy even if it does exist?
+	// we might miss changed otherwise
+	if _, err := os.Stat(p); err != nil {
+		cmd := exec.Command("cp", "-r", ContractPath, p)
 		err = cmd.Run()
 		if err != nil {
-			logger.Errorln("error copying working dir into tmp:", err)
-			os.Exit(0)
+			return fmt.Errorf("error copying working dir into tmp: %s", err.Error())
 		}
 	}
+	return nil
 }

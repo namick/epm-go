@@ -14,16 +14,16 @@ import (
 
 // TODO: use a CLI library!
 
-var GoPath = os.Getenv("GOPATH")
-
-var logger *monklog.Logger = monklog.NewLogger("EPM")
-
-// adjust these to suit all your deformed nefarious extension name desires. Muahahaha
-// but actually don't because you might break something ;)
-var PkgExt = "pdx"
-var TestExt = "pdt"
-
 var (
+	GoPath = os.Getenv("GOPATH")
+
+	logger *monklog.Logger = monklog.NewLogger("EPM")
+
+	// adjust these to suit all your deformed nefarious extension name desires. Muahahaha
+	// but actually don't because you might break something ;)
+	PkgExt  = "pdx"
+	TestExt = "pdt"
+
 	defaultContractPath = "."
 	defaultPackagePath  = "."
 	defaultGenesis      = ""
