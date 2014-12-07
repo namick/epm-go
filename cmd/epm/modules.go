@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/eris-ltd/epm-go"
-	"github.com/eris-ltd/thelonious/monkdoug"
 	"path/filepath"
 
 	// modules
@@ -12,9 +11,13 @@ import (
 	"github.com/eris-ltd/thelonious/monk"
 )
 
+// TODO: if we are passed a chainRoot but also db is set
+//   we should copy from the chainroot to db
+// For now, if a chainroot is provided, we use that dir directly
+
 // configure and start an in-process thelonious  node
 // all paths should be made absolute
-func NewMonkModule() epm.Blockchain {
+func NewMonkModule(chainRoot string) epm.Blockchain {
 	// empty ethchain object with default config
 	m := monk.NewMonk(nil)
 
@@ -23,7 +26,7 @@ func NewMonkModule() epm.Blockchain {
 	m.Config.LogLevel = defaultLogLevel
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
-	m.ReadConfig("eth-config.json")
+	m.ReadConfig(*config)
 
 	// then apply cli flags
 	setFlags := specifiedFlags()
@@ -32,6 +35,10 @@ func NewMonkModule() epm.Blockchain {
 	setKeysFile(setFlags, &(m.Config.KeyFile), *keys)
 	setGenesisPath(setFlags, &(m.Config.GenesisConfig), *genesis)
 	setContractPath(setFlags, &(m.Config.ContractPath), *contractPath)
+
+	if chainRoot != "" {
+		m.Config.RootDir = chainRoot
+	}
 
 	// load and set GenesisConfig object
 	setGenesis(setFlags, m)
@@ -45,21 +52,8 @@ func NewMonkModule() epm.Blockchain {
 	return m
 }
 
-func setGenesis(flags map[string]bool, m *monk.MonkModule) {
-	// Handle genesis config
-	g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
-	if *noGenDoug {
-		g.NoGenDoug = true
-		logger.Infoln("No gendoug")
-	}
-	setDifficulty(flags, &(g.Difficulty), *difficulty)
-	g.Consensus = "constant"
-
-	m.SetGenesis(g)
-}
-
 // Deploy genesis blocks using EPM
-func NewGenModule() epm.Blockchain {
+func NewGenModule(chainRoot string) epm.Blockchain {
 	// empty ethchaIn object
 	// note this will load `eth-config.json` into Config if it exists
 	m := genblock.NewGenBlockModule(nil)
@@ -69,7 +63,7 @@ func NewGenModule() epm.Blockchain {
 	m.Config.LogLevel = defaultLogLevel
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
-	m.ReadConfig("eth-config.json")
+	m.ReadConfig(*config)
 
 	// then apply cli flags
 	setFlags := specifiedFlags()
@@ -77,6 +71,10 @@ func NewGenModule() epm.Blockchain {
 	setLogLevel(setFlags, &(m.Config.LogLevel), *logLevel)
 	setKeysFile(setFlags, &(m.Config.KeyFile), *keys)
 	setContractPath(setFlags, &(m.Config.ContractPath), *contractPath)
+
+	if chainRoot != "" {
+		m.Config.RootDir = chainRoot
+	}
 
 	// set LLL path
 	epm.LLLURL = m.Config.LLLPath
@@ -88,7 +86,7 @@ func NewGenModule() epm.Blockchain {
 }
 
 // Rpc module for talking to running thelonious node supporting rpc server
-func NewMonkRpcModule() epm.Blockchain {
+func NewMonkRpcModule(chainRoot string) epm.Blockchain {
 	// empty ethchain object
 	// note this will load `eth-config.json` into Config if it exists
 	m := monkrpc.NewMonkRpcModule()
@@ -98,7 +96,7 @@ func NewMonkRpcModule() epm.Blockchain {
 	m.Config.LogLevel = defaultLogLevel
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
-	m.ReadConfig("eth-config.json")
+	m.ReadConfig(*config)
 
 	// then apply cli flags
 	setFlags := specifiedFlags()
@@ -106,6 +104,10 @@ func NewMonkRpcModule() epm.Blockchain {
 	setLogLevel(setFlags, &(m.Config.LogLevel), *logLevel)
 	setKeysFile(setFlags, &(m.Config.KeyFile), *keys)
 	setContractPath(setFlags, &(m.Config.ContractPath), *contractPath)
+
+	if chainRoot != "" {
+		m.Config.RootDir = chainRoot
+	}
 
 	// set LLL path
 	epm.LLLURL = m.Config.LLLPath
@@ -117,7 +119,7 @@ func NewMonkRpcModule() epm.Blockchain {
 }
 
 // configure and start an in-process eth node
-func NewEthModule() epm.Blockchain {
+func NewEthModule(chainRoot string) epm.Blockchain {
 	// empty ethchain object
 	m := eth.NewEth(nil)
 
@@ -126,7 +128,7 @@ func NewEthModule() epm.Blockchain {
 	m.Config.LogLevel = defaultLogLevel
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
-	m.ReadConfig("eth-config.json")
+	m.ReadConfig(*config)
 
 	// then apply cli flags
 	setFlags := specifiedFlags()
@@ -134,6 +136,10 @@ func NewEthModule() epm.Blockchain {
 	setLogLevel(setFlags, &(m.Config.LogLevel), *logLevel)
 	setKeysFile(setFlags, &(m.Config.KeyFile), *keys)
 	setContractPath(setFlags, &(m.Config.ContractPath), *contractPath)
+
+	if chainRoot != "" {
+		m.Config.RootDir = chainRoot
+	}
 
 	// set LLL path
 	epm.LLLURL = m.Config.LLLPath

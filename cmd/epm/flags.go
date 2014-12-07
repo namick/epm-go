@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/eris-ltd/thelonious/monk"
+	"github.com/eris-ltd/thelonious/monkdoug"
 	"os"
 	"path/filepath"
 )
@@ -72,4 +74,17 @@ func setDifficulty(flags map[string]bool, config *int, d int) {
 	if flags["dif"] {
 		*config = d
 	}
+}
+
+func setGenesis(flags map[string]bool, m *monk.MonkModule) {
+	// Handle genesis config
+	g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
+	if *noGenDoug {
+		g.NoGenDoug = true
+		logger.Infoln("No gendoug")
+	}
+	setDifficulty(flags, &(g.Difficulty), *difficulty)
+	g.Consensus = "constant"
+
+	m.SetGenesis(g)
 }

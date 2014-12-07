@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
+	"github.com/eris-ltd/thelonious/monk"
 	"github.com/eris-ltd/thelonious/monklog"
 	"log"
 	"os"
@@ -25,27 +26,38 @@ var (
 	defaultPackagePath  = "."
 	defaultGenesis      = ""
 	defaultKeys         = ""
-	defaultDatabase     = ".ethchain"
+	defaultDatabase     = ".chain"
 	defaultLogLevel     = 5
 	defaultDifficulty   = 14
 	defaultMining       = false
 	defaultDiffStorage  = false
 
+	ini       = flag.Bool("init", false, "initialize a monkchain config")
+	deploy    = flag.Bool("genesis-deploy", false, "deploy a monkchain")
+	config    = flag.String("config", "monk-config.json", "pick config file")
+	genesis   = flag.String("genesis", "genesis.json", "Set a genesis.json file")
+	name      = flag.String("name", "", "Set the chain by name")
+	chainId   = flag.String("id", "", "Set the chain by id")
+	chainType = flag.String("type", "thel", "Set the chain type (thelonious, genesis, bitcoin, ethereum)")
+
+	checkout = flag.String("checkout", "", "Checkout a chain")
+	addRef   = flag.String("add-ref", "", "Add a new reference to a chainId")
+
+	difficulty = flag.Int("dif", 14, "Set the mining difficulty")
+	mining     = flag.Bool("mine", false, "To mine or not to mine, that is the question")
+	noGenDoug  = flag.Bool("no-gendoug", false, "Turn off gendoug mechanics")
+
+	interactive = flag.Bool("i", false, "Run epm in interactive mode")
+	diffStorage = flag.Bool("diff", false, "Show a diff of all contract storage")
+	clean       = flag.Bool("clean", false, "Clear out epm related dirs")
+	update      = flag.Bool("update", false, "Pull and install the latest epm")
+	install     = flag.Bool("install", false, "Re-install epm")
+
 	contractPath = flag.String("c", defaultContractPath, "Set the contract root path")
 	packagePath  = flag.String("p", ".", "Set a .package-definition file")
-	genesis      = flag.String("g", "", "Set a genesis.json file")
 	keys         = flag.String("k", "", "Set a keys file")
-	chainType    = flag.String("t", "thel", "Set the chain type (thelonious, genesis, bitcoin, ethereum)")
-	interactive  = flag.Bool("i", false, "Run epm in interactive mode")
-	database     = flag.String("db", ".ethchain", "Set the location of an eth-go root directory")
-	logLevel     = flag.Int("log", 0, "Set the eth log level")
-	difficulty   = flag.Int("dif", 14, "Set the mining difficulty")
-	mining       = flag.Bool("mine", false, "To mine or not to mine, that is the question")
-	diffStorage  = flag.Bool("diff", false, "Show a diff of all contract storage")
-	clean        = flag.Bool("clean", false, "Clear out epm related dirs")
-	update       = flag.Bool("update", false, "Pull and install the latest epm")
-	install      = flag.Bool("install", false, "Re-install epm")
-	noGenDoug    = flag.Bool("no-gendoug", false, "Turn off gendoug mechanics")
+	database     = flag.String("db", ".chain", "Set the location of the root directory")
+	logLevel     = flag.Int("log", 5, "Set the eth log level")
 
 	rpc     = flag.Bool("rpc", false, "Fire commands over rpc")
 	rpcHost = flag.String("host", "localhost", "Set the rpc host")
@@ -64,16 +76,71 @@ func main() {
 
 	var err error
 	// make ~/.epm-go and ~/.epm-go/.tmp for modified contract files
+	// TODO: bring into decerver ...
 	epm.CheckMakeTmp()
+
+	// Initialize a chain by ensuring decerver dirs exist
+	// and dropping a chain config and genesis.json in the
+	// specified directory
+	if *ini {
+		args := flag.Args()
+		var p string
+		if len(args) == 0 {
+			p = "."
+		} else {
+			p = args[0]
+		}
+		err := monk.InitChain(p)
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
+	}
+
+	if *deploy {
+		// deploy the genblock, copy into ~/.decerver, exit
+		monk.DeploySequence(*name, *genesis, *config)
+	}
+
+	if *checkout != "" {
+		// change the currently active chain
+		utils.ChangeHead(*checkout)
+	}
+
+	if *addRef != nil {
+		if *name == nil {
+			log.Fatal(`add-ref requires a name to specified as well, \n
+                            eg. "add-ref 14c32 -name shitchain"`)
+		}
+		utils.AddRef(*addRef, *name)
+	}
+
+	var chainRoot string
+	if *name != "" || *chainId != "" {
+		switch *chainType {
+		case "thel", "thelonious", "monk":
+			chainRoot = utils.ResolveChain("thelonious", *name, *chainId)
+		case "btc", "bitcoin":
+			chainRoot = utils.ResolveChain("bitcoin", *name, *chainId)
+		case "eth", "ethereum":
+			chainRoot = utils.ResolveChain("ethereum", *name, *chainId)
+		case "gen", "genesis":
+			chainRoot = utils.ResolveChain("thelonious", *name, *chainId)
+		}
+
+		if chainRoot == "" {
+			log.Fatal("Could not locate chain by name %s or by id %s", *name, *chainId)
+		}
+	}
 
 	// Startup the chain
 	var chain epm.Blockchain
 	switch *chainType {
 	case "thel", "thelonious", "monk":
 		if *rpc {
-			chain = NewMonkRpcModule()
+			chain = NewMonkRpcModule(chainRoot)
 		} else {
-			chain = NewMonkModule()
+			chain = NewMonkModule(chainRoot)
 		}
 	case "btc", "bitcoin":
 		if *rpc {
@@ -85,10 +152,10 @@ func main() {
 		if *rpc {
 			log.Fatal("Eth rpc not implemented yet")
 		} else {
-			chain = NewEthModule()
+			chain = NewEthModule(chainRoot)
 		}
 	case "gen", "genesis":
-		chain = NewGenModule()
+		chain = NewGenModule(chainRoot)
 	}
 
 	epm.ContractPath, err = filepath.Abs(*contractPath)
