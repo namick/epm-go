@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
+	"github.com/eris-ltd/thelonious/monklog"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -149,4 +150,12 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 		}
 	}
 	return pkgPath, pkgName, test_
+}
+
+func exit(err error) {
+	if err != nil {
+		logger.Errorln(err)
+	}
+	monklog.Flush()
+	os.Exit(0)
 }

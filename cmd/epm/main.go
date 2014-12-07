@@ -37,7 +37,7 @@ var (
 	ini       = flag.Bool("init", false, "initialize a monkchain config")
 	deploy    = flag.Bool("genesis-deploy", false, "deploy a monkchain")
 	config    = flag.String("config", "monk-config.json", "pick config file")
-	genesis   = flag.String("genesis", "genesis.json", "Set a genesis.json file")
+	genesis   = flag.String("genesis", "genesis.json", "Set a genesis.json or genesis.pdx file")
 	name      = flag.String("name", "", "Set the chain by name")
 	chainId   = flag.String("id", "", "Set the chain by id")
 	chainType = flag.String("type", "thel", "Set the chain type (thelonious, genesis, bitcoin, ethereum)")
@@ -83,19 +83,19 @@ func main() {
 	// create ~/.decerver tree and drop monk/gen configs
 	// exit
 	if *ini {
-		inity()
+		exit(inity())
 	}
 
 	// deploy the genblock, install into ~/.decerver
 	// exit
 	if *deploy {
-		monk.DeploySequence(*name, *genesis, *config)
+		exit(monk.DeploySequence(*name, *genesis, *config))
 	}
 
 	// change the currently active chain
 	// exit
 	if *checkout != "" {
-		utils.ChangeHead(*checkout)
+		exit(utils.ChangeHead(*checkout))
 	}
 
 	// add a new reference to a chainId
@@ -105,7 +105,7 @@ func main() {
 			log.Fatal(`add-ref requires a name to specified as well, \n
                             eg. "add-ref 14c32 -name shitchain"`)
 		}
-		utils.AddRef(*addRef, *name)
+		exit(utils.AddRef(*addRef, *name))
 	}
 
 	/*
@@ -206,7 +206,7 @@ func main() {
 	}
 }
 
-func inity() {
+func inity() error {
 	args := flag.Args()
 	var p string
 	if len(args) == 0 {
@@ -214,9 +214,5 @@ func inity() {
 	} else {
 		p = args[0]
 	}
-	err := monk.InitChain(p)
-	if err != nil {
-		log.Fatal(err)
-	}
-	os.Exit(0)
+	return monk.InitChain(p)
 }
