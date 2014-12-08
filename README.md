@@ -2,12 +2,11 @@
 
 epm-go
 ======
+Eris Package Manager, written in `go`.
 
-Ethereum Package Manager, written in `go`
+Allows one to specify a suite of contracts to be deployed and setup from a simple `.pdx` (package definition)package file. Also provides `git-like` interface for working with chains.
 
-Allows one to specify a suite of contracts to be deployed and setup from a simple `.package-definition` file.
-
-Interface with blockchain is either in-process through `eth-go-mods/ethtest` or else RPC.
+Interfaces with blockchains are through `decerver-interfaces` blockchain modules. There is currently support for `thelonious` (in-process and rpc), `ethereum` (in-process), and `genesisblock` (for deployments of `thelonious` genesis blocks), and basic support for `bitcoin` (through `blockchain.info`).
 
 Formatting
 ----------
@@ -21,23 +20,50 @@ Testing
 -------
 `go test` can be used to test the parser, or when run in `cmd/tests/` to test the commands. To test a deployment suite, write a txt file consisting of query params (addr, storage) and the expected result. A fourth parameter can be included for storing the result as a variable for later queries. You can test this by running `go run main.go` in `cmd/tests/`. See the test files in `cmd/tests/definitions/` for examples.
 
+Directory
+--------
+As part of the larger suite of Eris libraries centered on the `deCerver`, epm works out of the core directory in `~/.decerver/blockchains`. A `HEAD` file tracks the currently active chain and a `refs` directory allows chains to be named. Otherwise, chains are specified by their `chainId` (signed hash of the genesis block).
+
 Command Line Interface
 ----------------------
-To install the command line tool, cd into `epm-go/cmd/epm-go/` and hit `go install`. Assuming your go bin is on your path, the cli is accessible as `epm-go`. Simply running that will look for a `.package-definition` file in your current directory, deploy it, and run the tests if there are any (in a `.package-definition-test`) file.
+To install the command line tool, cd into `epm-go/cmd/epm/` and hit `go install`. Assuming your `go bin` is on your path, the cli is accessible as `epm`. Simply running that will look for a `.pdx` file in your current directory, deploy it, and run the tests if there are any (in a `.pdt`) file.
 
-Note by default, epm-go starts a new eth-node in the current directory under `.ethchain`. Delete this directory if you wish to clear state before the next deploy.
+Commands:
+- `epm -init <path>`
+    - Initialize the decerver directory tree 
+    - Deposits default config files for a thelonious blockchain and a genesis deployment in <path>.
+- `epm -deploy`
+    - Deploy a genesis block from a genesis.json file. 
+    - The block is saved in a hidden temp folder in the working directory. 
+    - It can be installed into the `~/.decerver` with `epm -install`, or all at once with `epm -deploy -install`. 
+    - Specify a particular `config.json` and `genesis.json` with the `-config` and `-genesis` flags, respectively.
+- `epm -checkout <chainId/name>`
+    - Checkout a chain, making it the current working chain. 
+    - It will be written to the top of the `~/.decerver/blockchains/HEAD` file. 
+    - Use `epm -deploy -checkout` to checkout a chain immediately after deployment, but before installing.
+    - Or run `epm -deploy -install -checkout` to kill all birds with one stone.
+- `epm -[clean | pull | update]`
+    - Clean epm related dirs, pull updates to the source code, and re-install the software, respectively.
+- `epm -add-ref <chainId> -name <name>`
+    - Create a new named reference to a chainId
+- `epm -[refs | head]`
+    - Display the available references, or the current head, respectively.
 
-Configuration options are as follows:
+Flags
+- `-no-gendoug` can be added to force simplified protocols without a genesis doug
+- `-config` to specify a chain config file
+- `-genesis` to specify a genesis.json config file
+- `-name` to attempt to select a chain by name
+- `-chainId` to attempt to select a chain by Id
+- `-type` to specify the protocol type (eg `bitcoin`, `eth`, `thel`, `genblock`, etc.)
+- `-i` to boot into interactive epm mode
+- `-diff` to display storage diffs, as specified by wrapping the commands to be diffed in `!{<diffname>` and `!}<diffname>`
+- `-c` to specify the contract root path
+- `-p` to specify the `.pdx` file
+- `-k` to specify a `.keys` file
+- `-db` to set the root directory
+- `-log` to set the log level
+- `-rpc` to talk to chains using rpc
+- `-host` and `-port` to set the host and port for rpc communication
 
-    General:
-        - `epm-go` will look for a .package-definition file in the current directory, and expect all contracts to have paths beginning in the current dir
-    Paths:
-        - `-c` to set the contract root (ie. the pkg-defn file has contract paths starting from here)
-        - `-p` to specify a .pkg-defn file. The corresponding test file is expected to be in the same location directory
-    Eth:
-        - by default, a fresh eth-instance will be started with no genesis doug. To specify:
-            - `-g` to set a genesis.json configuration file
-            - `-k` to set a keys.txt file (with one hex-encoded private key per line. The corresponding addresses should appear in genesis.json)
-            - `-db` to set the location of an eth levelDB database to use
-        - the `-rpc`, `-rpcHost` and `-rpcPort` flags to use rpc. `-rpc` alone will use the defaults, while using one of host/port will choose the default for the other
-        - the `-d`, `-host` and `-port` flags specify to pass commands through a deCerver, and to set the host/port 
+
