@@ -8,6 +8,7 @@ import (
 	"github.com/eris-ltd/decerver-interfaces/glue/eth"
 	"github.com/eris-ltd/decerver-interfaces/glue/genblock"
 	"github.com/eris-ltd/decerver-interfaces/glue/monkrpc"
+	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/thelonious/monk"
 )
 
@@ -24,6 +25,12 @@ func NewMonkModule(chainRoot string) epm.Blockchain {
 	// we need to overwrite the default monk config with our defaults
 	m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
 	m.Config.LogLevel = defaultLogLevel
+
+	// if the HEAD is set, it overrides the default
+	if c, err := utils.GetHead(); err != nil && c != "" {
+		m.Config.RootDir = utils.ResolveChain("thelonious", c, "")
+	}
+
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
 	m.ReadConfig(*config)
@@ -61,6 +68,12 @@ func NewGenModule(chainRoot string) epm.Blockchain {
 	// we need to overwrite the default monk config with our defaults
 	m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
 	m.Config.LogLevel = defaultLogLevel
+
+	// if the HEAD is set, it overrides the default
+	if c, err := utils.GetHead(); err != nil && c != "" {
+		m.Config.RootDir = utils.ResolveChain("thelonious", c, "")
+	}
+
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
 	m.ReadConfig(*config)
@@ -94,6 +107,12 @@ func NewMonkRpcModule(chainRoot string) epm.Blockchain {
 	// we need to overwrite the default monk config with our defaults
 	m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
 	m.Config.LogLevel = defaultLogLevel
+
+	// if the HEAD is set, it overrides the default
+	if c, err := utils.GetHead(); err != nil && c != "" {
+		m.Config.RootDir = utils.ResolveChain("thelonious", c, "")
+	}
+
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
 	m.ReadConfig(*config)
@@ -126,6 +145,12 @@ func NewEthModule(chainRoot string) epm.Blockchain {
 	// we need to overwrite the default monk config with our defaults
 	m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
 	m.Config.LogLevel = defaultLogLevel
+
+	// if the HEAD is set, it overrides the default
+	if c, err := utils.GetHead(); err != nil && c != "" {
+		m.Config.RootDir = utils.ResolveChain("ethereum", c, "")
+	}
+
 	// then try to read local config file to overwrite defaults
 	// (if it doesnt exist, it will be saved)
 	m.ReadConfig(*config)

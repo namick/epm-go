@@ -58,18 +58,18 @@ func updateEPM() {
 	os.Chdir(cur)
 }
 
-func cleanUpdateInstall() {
-	if *clean && *update {
+func cleanPullUpdate() {
+	if *clean && *pull {
 		cleanupEPM()
 		updateEPM()
 	} else if *clean {
 		cleanupEPM()
-		if *install {
+		if *update {
 			installEPM()
 		}
-	} else if *update {
+	} else if *pull {
 		updateEPM()
-	} else if *install {
+	} else if *update {
 		installEPM()
 	}
 }
