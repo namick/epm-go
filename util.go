@@ -238,7 +238,7 @@ func NumberToBytes(num interface{}, N int) []byte {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, num)
 	if err != nil {
-		fmt.Println("NumberToBytes failed:", err)
+		logger.Errorln("NumberToBytes failed:", err)
 	}
 	//fmt.Println("btyes!", buf.Bytes())
 	if buf.Len() > N {
@@ -306,23 +306,18 @@ func parseLine(line string) []string {
 	return args
 }
 
-func CheckMakeTmp() {
-	_, err := os.Stat(path.Join(EPMDIR, ".tmp"))
-	if err != nil {
-		err := os.MkdirAll(path.Join(EPMDIR, ".tmp"), 0777) //wtf!
-		if err != nil {
-			fmt.Println("Could not make directory. Exiting", err)
-			os.Exit(0)
-		}
-	}
-	// copy the current dir into .tmp. Necessary for finding include files after a modify. :sigh:
+func CopyContractPath() error {
+	// copy the current dir into scratch/epm. Necessary for finding include files after a modify. :sigh:
 	root := path.Base(ContractPath)
-	if _, err = os.Stat(path.Join(EPMDIR, ".tmp", root)); err != nil {
-		cmd := exec.Command("cp", "-r", ContractPath, path.Join(EPMDIR, ".tmp"))
+	p := path.Join(EpmDir, root)
+	// TODO: should we delete and copy even if it does exist?
+	// we might miss changed otherwise
+	if _, err := os.Stat(p); err != nil {
+		cmd := exec.Command("cp", "-r", ContractPath, p)
 		err = cmd.Run()
 		if err != nil {
-			fmt.Println("error copying working dir into tmp:", err)
-			os.Exit(0)
+			return fmt.Errorf("error copying working dir into tmp: %s", err.Error())
 		}
 	}
+	return nil
 }

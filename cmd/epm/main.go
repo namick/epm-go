@@ -3,47 +3,76 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
+	"github.com/eris-ltd/thelonious/monk"
+	"github.com/eris-ltd/thelonious/monklog"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 )
 
-var GoPath = os.Getenv("GOPATH")
-
-// adjust these to suit all your deformed nefarious extension name desires. Muahahaha
-// but actually don't because you might break something ;)
-var PkgExt = "pdx"
-var TestExt = "pdt"
+// TODO: use a CLI library!
 
 var (
+	GoPath = os.Getenv("GOPATH")
+
+	logger *monklog.Logger = monklog.NewLogger("EPM")
+
+	ROOT = ".temp"
+
+	// adjust these to suit all your deformed nefarious extension name desires. Muahahaha
+	// but actually don't because you might break something ;)
+	PkgExt  = "pdx"
+	TestExt = "pdt"
+
 	defaultContractPath = "."
 	defaultPackagePath  = "."
 	defaultGenesis      = ""
 	defaultKeys         = ""
-	defaultDatabase     = ".ethchain"
+	defaultDatabase     = ".chain"
 	defaultLogLevel     = 5
 	defaultDifficulty   = 14
 	defaultMining       = false
 	defaultDiffStorage  = false
 
+	// config setup
+	config    = flag.String("config", "monk-config.json", "pick config file")
+	genesis   = flag.String("genesis", "genesis.json", "Set a genesis.json or genesis.pdx file")
+	name      = flag.String("name", "", "Set the chain by name")
+	chainId   = flag.String("id", "", "Set the chain by id")
+	chainType = flag.String("type", "thel", "Set the chain type (thelonious, genesis, bitcoin, ethereum)")
+
+	// epm commands
+	clean    = flag.Bool("clean", false, "Clear out epm related dirs")
+	pull     = flag.Bool("pull", false, "Pull and install the latest epm")
+	update   = flag.Bool("update", false, "Re-install epm")
+	install  = flag.Bool("install", false, "Install a chain into the decerver")
+	ini      = flag.Bool("init", false, "Initialize a monkchain config")
+	deploy   = flag.Bool("deploy", false, "Deploy a monkchain")
+	checkout = flag.Bool("checkout", false, "Checkout a chain (ie. change HEAD)")
+	addRef   = flag.String("add-ref", "", "Add a new reference to a chainId")
+	refs     = flag.Bool("refs", false, "List the available references")
+	head     = flag.Bool("head", false, "Print the currently active chain")
+
+	// chain options
+	difficulty = flag.Int("dif", 14, "Set the mining difficulty")
+	mining     = flag.Bool("mine", false, "To mine or not to mine, that is the question")
+	noGenDoug  = flag.Bool("no-gendoug", false, "Turn off gendoug mechanics")
+
+	// epm options
+	interactive = flag.Bool("i", false, "Run epm in interactive mode")
+	diffStorage = flag.Bool("diff", false, "Show a diff of all contract storage")
+
+	// paths
 	contractPath = flag.String("c", defaultContractPath, "Set the contract root path")
 	packagePath  = flag.String("p", ".", "Set a .package-definition file")
-	genesis      = flag.String("g", "", "Set a genesis.json file")
 	keys         = flag.String("k", "", "Set a keys file")
-	chainType    = flag.String("t", "thel", "Set the chain type (thelonious, genesis, bitcoin, ethereum)")
-	interactive  = flag.Bool("i", false, "Run epm in interactive mode")
-	database     = flag.String("db", ".ethchain", "Set the location of an eth-go root directory")
-	logLevel     = flag.Int("log", 0, "Set the eth log level")
-	difficulty   = flag.Int("dif", 14, "Set the mining difficulty")
-	mining       = flag.Bool("mine", false, "To mine or not to mine, that is the question")
-	diffStorage  = flag.Bool("diff", false, "Show a diff of all contract storage")
-	clean        = flag.Bool("clean", false, "Clear out epm related dirs")
-	update       = flag.Bool("update", false, "Pull and install the latest epm")
-	install      = flag.Bool("install", false, "Re-install epm")
-	noGenDoug    = flag.Bool("no-gendoug", false, "Turn off gendoug mechanics")
+	database     = flag.String("db", ".chain", "Set the location of the root directory")
+	logLevel     = flag.Int("log", 5, "Set the eth log level")
 
+	// remote
 	rpc     = flag.Bool("rpc", false, "Fire commands over rpc")
 	rpcHost = flag.String("host", "localhost", "Set the rpc host")
 	rpcPort = flag.String("port", "40404", "Set the rpc port")
@@ -52,44 +81,152 @@ var (
 func main() {
 	flag.Parse()
 
-	if *clean || *update || *install {
-		cleanUpdateInstall()
+	utils.InitLogging(path.Join(utils.Logs, "epm"), "", *logLevel, "")
+
+	// clean, update, or install
+	// exit
+	if *clean || *pull || *update {
+		cleanPullUpdate()
 		os.Exit(0)
+	}
+
+	if *refs {
+		r, err := utils.GetRefs()
+		fmt.Println("Available refs:")
+		for rk, rv := range r {
+			fmt.Printf("%s \t : \t %s\n", rk, rv)
+		}
+		exit(err)
+	}
+
+	if *head {
+		chainHead, err := utils.GetHead()
+		fmt.Println("Current head:", chainHead)
+		exit(err)
 	}
 
 	var err error
-	epm.ContractPath, err = filepath.Abs(*contractPath)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
+
+	// create ~/.decerver tree and drop monk/gen configs
+	// exit
+	if *ini {
+		exit(inity())
 	}
 
-	// make ~/.epm-go and ~/.epm-go/.tmp for modified contract files
-	epm.CheckMakeTmp()
+	// deploy the genblock, install into ~/.decerver
+	// possibly checkout the newly deployed
+	// exit
+	if *deploy {
+		chainId, err := monk.DeployChain(ROOT, *genesis, *config)
+		if err != nil {
+			exit(err)
+		}
+		if *install {
+			if err := monk.InstallChain(ROOT, *name, *genesis, *config, chainId); err != nil {
+				exit(err)
+			}
+		}
+		if *checkout {
+			exit(utils.ChangeHead(chainId))
+		}
+		exit(nil)
+	}
+
+	if *install {
+		chainId, err := monk.ChainIdFromDb(ROOT)
+		if err != nil {
+			exit(err)
+		}
+		exit(monk.InstallChain(ROOT, *name, *genesis, *config, chainId))
+	}
+
+	// change the currently active chain
+	// exit
+	if *checkout {
+		args := flag.Args()
+		if len(args) == 0 {
+			exit(fmt.Errorf("Please specify the chain to checkout"))
+		}
+		if err := utils.ChangeHead(args[0]); err != nil {
+			exit(err)
+		}
+		logger.Infoln("Checked out new head: ", args[0])
+		exit(nil)
+	}
+
+	// add a new reference to a chainId
+	// exit
+	if *addRef != "" {
+		if *name == "" {
+			log.Fatal(`add-ref requires a name to specified as well, \n
+                            eg. "add-ref 14c32 -name shitchain"`)
+		}
+		exit(utils.AddRef(*addRef, *name))
+	}
+
+	/*
+	   Now we're actually booting a blockchain
+	   and launching a .pdx or going interactive
+	*/
+
+	// Find the chain's db
+	// If we can't find it by name or chainId
+	// name flag > chainId flag > db flag > config file > HEAD > old default
+	var chainRoot string
+	if *name != "" || *chainId != "" {
+		switch *chainType {
+		case "thel", "thelonious", "monk":
+			chainRoot = utils.ResolveChain("thelonious", *name, *chainId)
+		case "btc", "bitcoin":
+			chainRoot = utils.ResolveChain("bitcoin", *name, *chainId)
+		case "eth", "ethereum":
+			chainRoot = utils.ResolveChain("ethereum", *name, *chainId)
+		case "gen", "genesis":
+			chainRoot = utils.ResolveChain("thelonious", *name, *chainId)
+		}
+
+		if chainRoot == "" {
+			log.Fatal("Could not locate chain by name %s or by id %s", *name, *chainId)
+		}
+	}
 
 	// Startup the chain
 	var chain epm.Blockchain
 	switch *chainType {
 	case "thel", "thelonious", "monk":
 		if *rpc {
-			chain = NewMonkRpcModule()
+			chain = NewMonkRpcModule(chainRoot)
 		} else {
-			chain = NewMonkModule()
+			chain = NewMonkModule(chainRoot)
 		}
 	case "btc", "bitcoin":
-		log.Fatal("Bitcoin not implemented yet")
-	case "gen", "genesis":
-		chain = NewGenModule()
+		if *rpc {
+			log.Fatal("Bitcoin rpc not implemented yet")
+		} else {
+			log.Fatal("Bitcoin not implemented yet")
+		}
 	case "eth", "ethereum":
 		if *rpc {
-			//chain = NewEthRpcModule()
+			log.Fatal("Eth rpc not implemented yet")
 		} else {
-			chain = NewEthModule()
+			chain = NewEthModule(chainRoot)
 		}
+	case "gen", "genesis":
+		chain = NewGenModule(chainRoot)
 	}
 
+	epm.ContractPath, err = filepath.Abs(*contractPath)
+	if err != nil {
+		logger.Errorln(err)
+		os.Exit(0)
+	}
+	logger.Debugln("Contract root:", epm.ContractPath)
+
 	// setup EPM object with ChainInterface
-	e := epm.NewEPM(chain, ".epm-log")
+	e, err := epm.NewEPM(chain, epm.LogFile)
+	if err != nil {
+		exit(err)
+	}
 
 	// if interactive mode, enable diffs and run the repl
 	if *interactive {
@@ -105,7 +242,7 @@ func main() {
 	// epm parse the package definition file
 	err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorln(err)
 		os.Exit(0)
 	}
 
@@ -120,10 +257,21 @@ func main() {
 	if test_ {
 		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
 		if err != nil {
-			fmt.Println(err)
+			logger.Errorln(err)
 			if results != nil {
-				fmt.Println("failed tests:", results.FailedTests)
+				logger.Errorln("Failed tests:", results.FailedTests)
 			}
 		}
 	}
+}
+
+func inity() error {
+	args := flag.Args()
+	var p string
+	if len(args) == 0 {
+		p = "."
+	} else {
+		p = args[0]
+	}
+	return monk.InitChain(p)
 }

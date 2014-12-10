@@ -64,7 +64,7 @@ func (e *EPM) Test(filename string) (*TestResults, error) {
 		if err != nil {
 			results.Failed += 1
 			results.FailedTests = append(results.FailedTests, i)
-			fmt.Println(err)
+			logger.Errorln(err)
 		}
 	}
 	var err error

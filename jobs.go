@@ -4,7 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/project-douglas/lllc-server"
+	"github.com/eris-ltd/decerver-interfaces/glue/utils"
+	//"github.com/project-douglas/lllc-server"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,9 +18,11 @@ var GOPATH = os.Getenv("GOPATH")
 
 // TODO: Should be set to the "current" directory if using epm-cli
 var (
-	ContractPath = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "contracts")
-	TestPath     = path.Join(GOPATH, "src", "github.com", "eris-ltd", "epm-go", "cmd", "tests", "definitions")
-	EPMDIR       = path.Join(usr(), ".epm-go")
+	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
+	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
+
+	EpmDir  = utils.Epm
+	LogFile = path.Join(utils.Logs, "epm", "log")
 )
 
 // What to do if a job errs
@@ -95,7 +98,7 @@ func (e *EPM) ExecuteJob(job Job) error {
 		e.chain.Commit()
 		err := e.ExecuteTest(job.args[0], 0)
 		if err != nil {
-			fmt.Println(err)
+			logger.Errorln(err)
 			return err
 		}
 	case "epm":
@@ -111,7 +114,7 @@ func (e *EPM) EPMx(filename string) error {
 	e.jobs = []Job{}
 
 	if err := e.Parse(filename); err != nil {
-		fmt.Println("failed to parse pdx file:", filename, err)
+		logger.Errorln("failed to parse pdx file:", filename, err)
 		return err
 	}
 
@@ -136,12 +139,14 @@ func (e *EPM) Deploy(args []string) error {
 	} else {
 		p = path.Join(ContractPath, contract)
 	}
-	b, err := lllcserver.Compile(p, false)
-	if err != nil {
-		return fmt.Errorf("Error compiling %s: %s", contract, err.Error())
-	}
 	// deploy contract
-	addr, _ := e.chain.Script("0x"+hex.EncodeToString(b), "bytes")
+	//addr, err := e.chain.Script("0x"+hex.EncodeToString(b), "bytes")
+	addr, err := e.chain.Script(p, "lll")
+	if err != nil {
+		err = fmt.Errorf("Error compiling %s: %s", contract, err.Error())
+		logger.Errorln(err)
+		return err
+	}
 	// save contract address
 	e.StoreVar(key, addr)
 	return nil
@@ -180,7 +185,7 @@ func (e *EPM) Query(args []string) error {
 
 	v := e.chain.StorageAt(addr, storage)
 	e.StoreVar(varName, v)
-	fmt.Printf("\tresult: %s = %s\n", varName, v)
+	logger.Errorf("\tresult: %s = %s\n", varName, v)
 	return nil
 }
 
@@ -236,11 +241,9 @@ func Modify(contract string, args []string) (string, error) {
 
 	lll := string(b)
 
-	fmt.Println("contract", contract)
-	fmt.Println("contract path", ContractPath)
 	// when we modify a contract, we save it in the .tmp dir in the same relative path as its original root.
 	// eg. if ContractPath is ~/ponos and we modify ponos/projects/issue.lll then the modified version will be found in
-	//  EPMDIR/.tmp/ponos/projects/somehash.lll
+	//  scratch/ponos/projects/somehash.lll
 	dirC := path.Dir(contract) // absolute path
 	l := len(ContractPath)
 	var dir string
@@ -261,7 +264,7 @@ func Modify(contract string, args []string) (string, error) {
 	}
 
 	hash := sha256.Sum256([]byte(lll))
-	newPath := path.Join(EPMDIR, ".tmp", dir, hex.EncodeToString(hash[:])+".lll")
+	newPath := path.Join(EpmDir, dir, hex.EncodeToString(hash[:])+".lll")
 	err = ioutil.WriteFile(newPath, []byte(lll), 0644)
 	if err != nil {
 		return "", fmt.Errorf("Could not write file %s: %s", newPath, err.Error())

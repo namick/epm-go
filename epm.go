@@ -2,13 +2,15 @@ package epm
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/eris-ltd/decerver-interfaces/events"
 	"github.com/eris-ltd/decerver-interfaces/modules"
+	"github.com/eris-ltd/thelonious/monklog"
 	"github.com/project-douglas/lllc-server"
 	"os"
 	"regexp"
 )
+
+var logger *monklog.Logger = monklog.NewLogger("EPM")
 
 var (
 	StateDiffOpen  = "!{"
@@ -50,6 +52,8 @@ type Blockchain interface {
 	Commit()
 	AutoCommit(toggle bool)
 	IsAutocommit() bool
+
+	Shutdown() error
 }
 
 // EPM object. Maintains list of jobs and a symbols table
@@ -74,9 +78,9 @@ type EPM struct {
 }
 
 // new empty epm
-func NewEPM(chain Blockchain, log string) *EPM {
+func NewEPM(chain Blockchain, log string) (*EPM, error) {
 	lllcserver.URL = LLLURL
-	fmt.Println("url: ", LLLURL)
+	//logger.Infoln("url: ", LLLURL)
 	e := &EPM{
 		chain:     chain,
 		jobs:      []Job{},
@@ -87,7 +91,9 @@ func NewEPM(chain Blockchain, log string) *EPM {
 		diffName:  make(map[int][]string),
 		diffSched: make(map[int][]int),
 	}
-	return e
+	// temp dir
+	err := CopyContractPath()
+	return e, err
 }
 
 // allowed commands
@@ -129,13 +135,9 @@ func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string
 }
 
 func (e *EPM) Parse(filename string) error {
-	fmt.Println("Parsing", filename)
+	logger.Infoln("Parsing ", filename)
 	// set current file to parse
 	e.pkgdef = filename
-
-	// temp dir
-	// TODO: move it!
-	CheckMakeTmp()
 
 	lines := []string{}
 	f, err := os.Open(filename)
