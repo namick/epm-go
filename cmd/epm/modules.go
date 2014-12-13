@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/eris-ltd/epm-go"
 	"os"
 	"path"

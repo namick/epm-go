@@ -18,7 +18,7 @@ import (
 var (
 	GoPath = os.Getenv("GOPATH")
 
-	logger *monklog.Logger = monklog.NewLogger("EPM")
+	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
 
 	ROOT = ".temp"
 
@@ -174,7 +174,6 @@ func main() {
 	// Find the chain's db
 	// If we can't find it by name or chainId
 	// should be: name flag > chainId flag > db flag > config file > HEAD > old default
-	// for now: name flag > chainId flag > HEAD
 	var chainRoot string
 	if *name != "" || *chainId != "" {
 		// these will check the name and id

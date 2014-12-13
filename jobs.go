@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
+	"github.com/eris-ltd/thelonious/monklog"
 	//"github.com/project-douglas/lllc-server"
 	"io/ioutil"
 	"log"
@@ -60,6 +61,7 @@ func (e *EPM) ExecuteJobs() error {
 			case ReturnOnErr:
 				return err
 			case FailOnErr:
+                monklog.Flush()
 				log.Fatal(err)
 			case PersistOnErr:
 				continue
@@ -140,11 +142,10 @@ func (e *EPM) Deploy(args []string) error {
 		p = path.Join(ContractPath, contract)
 	}
 	// deploy contract
-	//addr, err := e.chain.Script("0x"+hex.EncodeToString(b), "bytes")
 	addr, err := e.chain.Script(p, "lll")
 	if err != nil {
-		err = fmt.Errorf("Error compiling %s: %s", contract, err.Error())
-		logger.Errorln(err)
+		err = fmt.Errorf("Error compiling %s: %s", p, err.Error())
+		logger.Infoln(err.Error())
 		return err
 	}
 	// save contract address

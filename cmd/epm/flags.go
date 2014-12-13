@@ -79,6 +79,7 @@ func setDifficulty(flags map[string]bool, config *int, d int) {
 	}
 }
 
+// TODO: handle properly (deployed already vs not...)
 func setGenesis(flags map[string]bool, m *monk.MonkModule) {
 	// Handle genesis config
 	g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
