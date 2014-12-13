@@ -101,7 +101,9 @@ func main() {
 
 	if *head {
 		chainHead, err := utils.GetHead()
-		fmt.Println("Current head:", chainHead)
+		if err == nil {
+			fmt.Println("Current head:", chainHead)
+		}
 		exit(err)
 	}
 
@@ -171,22 +173,32 @@ func main() {
 
 	// Find the chain's db
 	// If we can't find it by name or chainId
-	// name flag > chainId flag > db flag > config file > HEAD > old default
+	// should be: name flag > chainId flag > db flag > config file > HEAD > old default
+	// for now: name flag > chainId flag > HEAD
 	var chainRoot string
 	if *name != "" || *chainId != "" {
+		// these will check the name and id
 		switch *chainType {
 		case "thel", "thelonious", "monk":
-			chainRoot = utils.ResolveChain("thelonious", *name, *chainId)
+			*chainType = "thelonious"
 		case "btc", "bitcoin":
-			chainRoot = utils.ResolveChain("bitcoin", *name, *chainId)
+			*chainType = "bitcoin"
 		case "eth", "ethereum":
-			chainRoot = utils.ResolveChain("ethereum", *name, *chainId)
+			*chainType = "ethereum"
 		case "gen", "genesis":
-			chainRoot = utils.ResolveChain("thelonious", *name, *chainId)
+			*chainType = "thelonious"
 		}
 
+		chainRoot = utils.ResolveChain(*chainType, *name, *chainId)
+
 		if chainRoot == "" {
-			log.Fatal("Could not locate chain by name %s or by id %s", *name, *chainId)
+			// chainRoot, err = utils.GetHead()
+			// if err != nil{
+			//     exit(fmt.Errorf("Error reading head file!"))
+			// }
+			// if chainRoot == ""{
+			exit(fmt.Errorf("Could not locate chain by name %s or by id %s", *name, *chainId))
+			// }
 		}
 	}
 

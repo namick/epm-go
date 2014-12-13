@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/eris-ltd/epm-go"
+	"os"
+	"path"
 	"path/filepath"
 
 	// modules
@@ -31,9 +34,19 @@ func NewMonkModule(chainRoot string) epm.Blockchain {
 		m.Config.RootDir = utils.ResolveChain("thelonious", c, "")
 	}
 
-	// then try to read local config file to overwrite defaults
-	// (if it doesnt exist, it will be saved)
-	m.ReadConfig(*config)
+	// if the chainRoot is set, it overwrites the head
+	if chainRoot != "" {
+		m.Config.RootDir = chainRoot
+	}
+
+	// if there's a config file in the root dir, use that
+	// else fall back on default or flag
+	c := path.Join(m.Config.RootDir, "config.json")
+	if _, err := os.Stat(c); err == nil {
+		m.ReadConfig(c)
+	} else {
+		m.ReadConfig(*config)
+	}
 
 	// then apply cli flags
 	setFlags := specifiedFlags()
@@ -43,10 +56,7 @@ func NewMonkModule(chainRoot string) epm.Blockchain {
 	setGenesisPath(setFlags, &(m.Config.GenesisConfig), *genesis)
 	setContractPath(setFlags, &(m.Config.ContractPath), *contractPath)
 
-	if chainRoot != "" {
-		m.Config.RootDir = chainRoot
-	}
-
+	logger.Infoln("Root directory: ", m.Config.RootDir)
 	// load and set GenesisConfig object
 	setGenesis(setFlags, m)
 

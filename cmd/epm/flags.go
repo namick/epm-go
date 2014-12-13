@@ -27,7 +27,8 @@ func setLogLevel(flags map[string]bool, config *int, loglevel int) {
 
 func setKeysFile(flags map[string]bool, config *string, keyfile string) {
 	var err error
-	if keyfile != defaultKeys {
+	if flags["k"] {
+		//if keyfile != defaultKeys {
 		*config, err = filepath.Abs(keyfile)
 		if err != nil {
 			fmt.Println(err)
@@ -38,7 +39,8 @@ func setKeysFile(flags map[string]bool, config *string, keyfile string) {
 
 func setGenesisPath(flags map[string]bool, config *string, genfile string) {
 	var err error
-	if *config != defaultGenesis && genfile != "" {
+	if flags["genesis"] {
+		//if *config != defaultGenesis && genfile != "" {
 		*config, err = filepath.Abs(genfile)
 		if err != nil {
 			fmt.Println(err)
@@ -49,7 +51,8 @@ func setGenesisPath(flags map[string]bool, config *string, genfile string) {
 
 func setContractPath(flags map[string]bool, config *string, cpath string) {
 	var err error
-	if cpath != defaultContractPath {
+	if flags["c"] {
+		//if cpath != defaultContractPath {
 		*config, err = filepath.Abs(cpath)
 		if err != nil {
 			fmt.Println(err)

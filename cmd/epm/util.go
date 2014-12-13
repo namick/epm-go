@@ -100,7 +100,7 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 
 		_, err := os.Stat(path.Join(dir, pkgName) + "." + TestExt)
 		if err != nil {
-			logger.Errorln("There was no test found for package-definition %s. Deploying without test ...\n", pkgName)
+			logger.Errorf("There was no test found for package-definition %s. Deploying without test ...\n", pkgName)
 			test_ = false
 		} else {
 			test_ = true
