@@ -29,8 +29,8 @@ func NewMonkModule(chainRoot string) epm.Blockchain {
 	m.Config.LogLevel = defaultLogLevel
 
 	// if the HEAD is set, it overrides the default
-	if c, err := utils.GetHead(); err != nil && c != "" {
-		m.Config.RootDir = utils.ResolveChain("thelonious", c, "")
+	if c, err := utils.GetHead(); err == nil && c != "" {
+		m.Config.RootDir = path.Join(utils.Blockchains, "thelonious", c)
 	}
 
 	// if the chainRoot is set, it overwrites the head
