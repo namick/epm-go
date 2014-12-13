@@ -65,6 +65,7 @@ var (
 	// epm options
 	interactive = flag.Bool("i", false, "Run epm in interactive mode")
 	diffStorage = flag.Bool("diff", false, "Show a diff of all contract storage")
+	dontClear   = flag.Bool("dont-clear", false, "Stop epm from clearing the epm cache on startup")
 
 	// paths
 	contractPath = flag.String("c", defaultContractPath, "Set the contract root path")
@@ -234,6 +235,15 @@ func main() {
 	ifExit(err)
 
 	logger.Debugln("Contract root:", epm.ContractPath)
+
+	// clear the cache
+	if !*dontClear {
+		err := os.RemoveAll(utils.Epm)
+		if err != nil {
+			logger.Errorln("Error clearing cache: ", err)
+		}
+		utils.InitDataDir(utils.Epm)
+	}
 
 	// setup EPM object with ChainInterface
 	e, err := epm.NewEPM(chain, epm.LogFile)
