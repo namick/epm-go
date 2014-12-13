@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+    color "github.com/daviddengcn/go-colortext"
 )
 
 // TODO: use a CLI library!
@@ -92,11 +93,18 @@ func main() {
 
 	if *refs {
 		r, err := utils.GetRefs()
+        h, _ := utils.GetHead()
 		fmt.Println("Available refs:")
 		for rk, rv := range r {
-			fmt.Printf("%s \t : \t %s\n", rk, rv)
+            if rv == h || rk == h{
+                color.ChangeColor(color.Yellow, true, color.None, false)
+			    fmt.Printf("%s \t : \t %s\n", rk, rv)
+                color.ResetColor()
+            } else {
+			    fmt.Printf("%s \t : \t %s\n", rk, rv)
+            }
 		}
-		exit(err)
+        exit(err)
 	}
 
 	if *head {
