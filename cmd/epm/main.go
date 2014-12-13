@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	color "github.com/daviddengcn/go-colortext"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
 	"github.com/eris-ltd/thelonious/monk"
@@ -11,7 +12,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-    color "github.com/daviddengcn/go-colortext"
 )
 
 // TODO: use a CLI library!
@@ -93,18 +93,18 @@ func main() {
 
 	if *refs {
 		r, err := utils.GetRefs()
-        h, _ := utils.GetHead()
+		h, _ := utils.GetHead()
 		fmt.Println("Available refs:")
 		for rk, rv := range r {
-            if rv == h || rk == h{
-                color.ChangeColor(color.Yellow, true, color.None, false)
-			    fmt.Printf("%s \t : \t %s\n", rk, rv)
-                color.ResetColor()
-            } else {
-			    fmt.Printf("%s \t : \t %s\n", rk, rv)
-            }
+			if rv == h || rk == h {
+				color.ChangeColor(color.Yellow, true, color.None, false)
+				fmt.Printf("%s \t : \t %s\n", rk, rv)
+				color.ResetColor()
+			} else {
+				fmt.Printf("%s \t : \t %s\n", rk, rv)
+			}
 		}
-        exit(err)
+		exit(err)
 	}
 
 	if *head {
@@ -128,13 +128,10 @@ func main() {
 	// exit
 	if *deploy {
 		chainId, err := monk.DeployChain(ROOT, *genesis, *config)
-		if err != nil {
-			exit(err)
-		}
+		ifExit(err)
 		if *install {
-			if err := monk.InstallChain(ROOT, *name, *genesis, *config, chainId); err != nil {
-				exit(err)
-			}
+			err := monk.InstallChain(ROOT, *name, *genesis, *config, chainId)
+			ifExit(err)
 		}
 		if *checkout {
 			exit(utils.ChangeHead(chainId))
@@ -144,9 +141,7 @@ func main() {
 
 	if *install {
 		chainId, err := monk.ChainIdFromDb(ROOT)
-		if err != nil {
-			exit(err)
-		}
+		ifExit(err)
 		exit(monk.InstallChain(ROOT, *name, *genesis, *config, chainId))
 	}
 
@@ -211,6 +206,7 @@ func main() {
 
 	// Startup the chain
 	var chain epm.Blockchain
+	logger.Debugln("Loading chain ", *chainType)
 	switch *chainType {
 	case "thel", "thelonious", "monk":
 		if *rpc {
@@ -235,17 +231,13 @@ func main() {
 	}
 
 	epm.ContractPath, err = filepath.Abs(*contractPath)
-	if err != nil {
-		logger.Errorln(err)
-		os.Exit(0)
-	}
+	ifExit(err)
+
 	logger.Debugln("Contract root:", epm.ContractPath)
 
 	// setup EPM object with ChainInterface
 	e, err := epm.NewEPM(chain, epm.LogFile)
-	if err != nil {
-		exit(err)
-	}
+	ifExit(err)
 
 	// if interactive mode, enable diffs and run the repl
 	if *interactive {
@@ -260,10 +252,7 @@ func main() {
 
 	// epm parse the package definition file
 	err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
-	if err != nil {
-		logger.Errorln(err)
-		os.Exit(0)
-	}
+	ifExit(err)
 
 	if *diffStorage {
 		e.Diff = true

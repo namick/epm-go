@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
 	"github.com/eris-ltd/thelonious/monklog"
@@ -84,18 +85,15 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 
 	// if its not a directory, look for a corresponding test file
 	f, err := os.Stat(pkgPath)
-	if err != nil {
-		logger.Errorln(err)
-		os.Exit(0)
-	}
+	ifExit(err)
+
 	if !f.IsDir() {
 		dir, fil := path.Split(pkgPath)
 		spl := strings.Split(fil, ".")
 		pkgName = spl[0]
 		ext := spl[1]
 		if ext != PkgExt {
-			logger.Errorln("Did not understand extension. Got %s, expected %s\n", ext, PkgExt)
-			os.Exit(0)
+			exit(fmt.Errorf("Did not understand extension. Got %s, expected %s\n", ext, PkgExt))
 		}
 
 		_, err := os.Stat(path.Join(dir, pkgName) + "." + TestExt)
@@ -110,10 +108,8 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 
 	// read dir for files
 	files, err := ioutil.ReadDir(pkgPath)
-	if err != nil {
-		logger.Errorln("Could not read directory:", err)
-		os.Exit(0)
-	}
+	ifExit(err)
+
 	// find all package-defintion and package-definition-test files
 	candidates := make(map[string]int)
 	candidates_test := make(map[string]int)
@@ -133,11 +129,9 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 	}
 	// exit if too many or no options
 	if len(candidates) > 1 {
-		logger.Errorln("More than one package-definition file available. Please select with the '-p' flag")
-		os.Exit(0)
+		exit(fmt.Errorf("More than one package-definition file available. Please select with the '-p' flag"))
 	} else if len(candidates) == 0 {
-		logger.Errorln("No package-definition files found for extensions", PkgExt, TestExt)
-		os.Exit(0)
+		exit(fmt.Errorf("No package-definition files found for extensions", PkgExt, TestExt))
 	}
 	// this should run once (there's only one candidate)
 	for k, _ := range candidates {
@@ -158,4 +152,12 @@ func exit(err error) {
 	}
 	monklog.Flush()
 	os.Exit(0)
+}
+
+func ifExit(err error) {
+	if err != nil {
+		logger.Errorln(err)
+		monklog.Flush()
+		os.Exit(0)
+	}
 }
