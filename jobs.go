@@ -61,7 +61,7 @@ func (e *EPM) ExecuteJobs() error {
 			case ReturnOnErr:
 				return err
 			case FailOnErr:
-                monklog.Flush()
+				monklog.Flush()
 				log.Fatal(err)
 			case PersistOnErr:
 				continue
@@ -148,6 +148,7 @@ func (e *EPM) Deploy(args []string) error {
 		logger.Infoln(err.Error())
 		return err
 	}
+	logger.Warnf("Deployed %s as %s\n", addr, key)
 	// save contract address
 	e.StoreVar(key, addr)
 	return nil
@@ -186,7 +187,7 @@ func (e *EPM) Query(args []string) error {
 
 	v := e.chain.StorageAt(addr, storage)
 	e.StoreVar(varName, v)
-	logger.Errorf("\tresult: %s = %s\n", varName, v)
+	logger.Warnf("\tresult: %s = %s\n", varName, v)
 	return nil
 }
 
