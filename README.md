@@ -4,21 +4,26 @@ epm-go
 ======
 Eris Package Manager, written in `go`.
 
-Allows one to specify a suite of contracts to be deployed and setup from a simple `.pdx` (package definition)package file. Also provides `git-like` interface for working with chains.
+Allows one to specify a suite of contracts to be deployed and setup from a simple `.pdx` (package definition) file, and easily tested using a `.pdt` file. Also provides a `git-like` interface for working with multiple chains.
 
-Interfaces with blockchains are through `decerver-interfaces` blockchain modules. There is currently support for `thelonious` (in-process and rpc), `ethereum` (in-process), and `genesisblock` (for deployments of `thelonious` genesis blocks), and basic support for `bitcoin` (through `blockchain.info`).
+Interfacing with blockchains is through `decerver-interfaces` blockchain modules. While theoretically any chain can be supported (provided it satisfied the interface), there is currently support for `thelonious` (in-process and rpc), `ethereum` (in-process), and `genesisblock` (for deployments of `thelonious` genesis blocks), and basic support for `bitcoin` (through `blockchain.info`).
+
+If you would like epm to be able to work with your blockchain, submit a pull-request to `eris-ltd/decerver-interfaces` with a wrapper for your chain in `decerver-interfaces/glue` that satisfies the `Blockchain` interface, as defined in `decerver-interfaces/modules/modules.go`. See the other wrappers in `decerver-interfaces/glue` for examples and inspiration.
+
 
 Formatting
 ----------
-Ethereum input data and storage deals strictly in 32-byte segments or words, most conveniently represented as 64 hex characters. When representing data, strings are right padded while ints/hex are left padded.
+Ethereum input data and storage deals strictly in 32-byte segments or words, most conveniently represented as 64 hex characters. When representing data, strings are right padded while ints/hex are left padded. 
+
+*IMPORTANT*: contracts deployed with `epm` by default use our version of the LLL compiler, which in addition to adding some opcodes, changes strings to also be left padded. I repeat, both strings and ints/hex are left padded by default. Stay tuned for improvement :)
 
 EPM accepts integers, strings, and explicitly hexidecimal strings (ie. "0x45"). If your string is strictly hex characters but missing a "0x", it will be treated as a normal string. Addresses should be prefixed with "0x" whenever possible. Integers in base-10 will be handled, hopefully ok.
 
-Values stored as EPM variables will be immediately converted to the proper hex representation. That is, if you store "dog", you will find it later as "0x646f67000000..."
+Values stored as EPM variables will be immediately converted to the proper hex representation. That is, if you store "dog", you will find it later as `0x0000000000000000000000000000000000000000000000000000646f67`.
 
 Testing
 -------
-`go test` can be used to test the parser, or when run in `cmd/tests/` to test the commands. To test a deployment suite, write a txt file consisting of query params (addr, storage) and the expected result. A fourth parameter can be included for storing the result as a variable for later queries. You can test this by running `go run main.go` in `cmd/tests/`. See the test files in `cmd/tests/definitions/` for examples.
+`go test` can be used to test the parser, or when run in `cmd/tests/` to test the commands. To test a deployment suite, write a txt file where each line consists of query params (addr, storage) and the expected result. A fourth parameter can be included for storing the result as a variable for later queries. You can test this by running `go run main.go` in `cmd/tests/`. See the test files in `cmd/tests/definitions/` for examples.
 
 Directory
 --------
