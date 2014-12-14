@@ -218,6 +218,13 @@ func main() {
 		exit(utils.AddRef(*addRef, *name))
 	}
 
+
+    if len(flag.Args()) > 0{
+        logger.Errorln("Did not understand command. Did you forget a - ?")
+        logger.Errorln("Run `epm -help` to see the list of commands")
+        exit(nil)
+    }
+
 	/*********************************************
 	   Now we're actually booting a blockchain
 	   and launching a .pdx or going interactive
