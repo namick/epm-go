@@ -115,7 +115,7 @@ func main() {
 		fmt.Println("Available refs:")
 		for rk, rv := range r {
 			if rv == h || rk == h {
-				color.ChangeColor(color.Yellow, true, color.None, false)
+				color.ChangeColor(color.Green, true, color.None, false)
 				fmt.Printf("%s \t : \t %s\n", rk, rv)
 				color.ResetColor()
 			} else {
