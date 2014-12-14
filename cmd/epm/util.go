@@ -34,7 +34,7 @@ func installEPM() {
 	os.Chdir(cur)
 }
 
-func pullErisRepo(repo, branch string){
+func pullErisRepo(repo, branch string) {
 	// pull changes
 	os.Chdir(path.Join(utils.ErisLtd, repo))
 	cmd := exec.Command("git", "pull", "origin", branch)
@@ -48,8 +48,8 @@ func pullErisRepo(repo, branch string){
 func updateEPM() {
 	cur, _ := os.Getwd()
 
-    pullErisRepo("epm-go", "master")
-    pullErisRepo("decerver-interfaces", "master")
+	pullErisRepo("epm-go", "master")
+	pullErisRepo("decerver-interfaces", "master")
 
 	// install
 	installEPM()

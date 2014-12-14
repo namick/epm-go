@@ -51,6 +51,7 @@ var (
 	update   = flag.Bool("update", false, "Re-install epm")
 	plop     = flag.String("plop", "", "Plop the default genesis.json or config.json into current dir for editing")
 	ini      = flag.Bool("init", false, "Initialize a monkchain config")
+	fetch    = flag.String("fetch", "", "Fetch a dapp chain")
 	deploy   = flag.Bool("deploy", false, "Deploy a monkchain")
 	install  = flag.Bool("install", false, "Install a chain into the decerver")
 	checkout = flag.Bool("checkout", false, "Checkout a chain (ie. change HEAD)")
@@ -141,6 +142,10 @@ func main() {
 
 	// fail if `epm -init` has not been run
 	ifExit(checkInit())
+
+	if *fetch != "" {
+		exit(monk.FetchInstallChain(*fetch)) //"693186115fcd0306b14dff8787e0e05763c0c007e796f8aa64d4f6f4f2692563", "92.243.15.73:30303", "G.json"))
+	}
 
 	// deploy the genblock into a local .temp
 	// possibly install into ~/.decerver
