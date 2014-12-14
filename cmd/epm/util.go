@@ -34,23 +34,22 @@ func installEPM() {
 	os.Chdir(cur)
 }
 
-func updateEPM() {
-	cur, _ := os.Getwd()
-
+func pullErisRepo(repo, branch string){
 	// pull changes
-	os.Chdir(path.Join(utils.ErisLtd, "epm-go"))
-	cmd := exec.Command("git", "pull", "origin", "master")
+	os.Chdir(path.Join(utils.ErisLtd, repo))
+	cmd := exec.Command("git", "pull", "origin", branch)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Run()
 	res := out.String()
 	logger.Infoln(res)
+}
 
-	if strings.Contains(res, "up-to-date") {
-		// return to original dir
-		os.Chdir(cur)
-		return
-	}
+func updateEPM() {
+	cur, _ := os.Getwd()
+
+    pullErisRepo("epm-go", "master")
+    pullErisRepo("decerver-interfaces", "master")
 
 	// install
 	installEPM()
