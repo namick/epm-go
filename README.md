@@ -1,7 +1,8 @@
-[![Stories in Ready](https://badge.waffle.io/eris-ltd/deCerver.png?label=ready&title=Ready)](https://waffle.io/eris-ltd/deCerver)
+[![Stories in Ready](https://badge.waffle.io/eris-ltd/deCerver.png?label=ready&title=Ready)](https://waffle.io/eris-ltd/deCerver)[![GoDoc](https://godoc.org/github.com/epm-go?status.png)](https://godoc.org/github.com/eris-ltd/epm-go)
 
-epm-go
+Eris Package Manager: The Smart Contract Package Manager
 ======
+
 Eris Package Manager, written in `go`.
 
 Allows one to specify a suite of contracts to be deployed and setup from a simple `.pdx` (package definition) file, 
