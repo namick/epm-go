@@ -150,21 +150,28 @@ func main() {
 		// if genesis or config are not specified
 		// use defaults set by `epm -init`
 		// and copy into working dir
-		if *genesis == "" {
-			*genesis = path.Join(utils.Blockchains, "genesis.json")
-			utils.Copy(*genesis, "genesis.json")
-			vi("genesis.json")
+		deployGen := *genesis
+		deployConf := *config
+		tempGen := ".genesis.json"
+		tempConf := ".config.json"
+
+		if deployGen == "" {
+			deployGen = path.Join(utils.Blockchains, "genesis.json")
 		}
-		if *config == "" {
-			*config = path.Join(utils.Blockchains, "config.json")
-			ifExit(utils.Copy(*config, "config.json"))
-			vi("config.json")
+		if deployConf == "" {
+			deployConf = path.Join(utils.Blockchains, "config.json")
 		}
 
-		chainId, err := monk.DeployChain(ROOT, *genesis, *config)
+		ifExit(utils.Copy(deployGen, tempGen))
+		vi(tempGen)
+
+		ifExit(utils.Copy(deployConf, tempConf))
+		vi(tempConf)
+
+		chainId, err := monk.DeployChain(ROOT, tempGen, tempConf)
 		ifExit(err)
 		if *install {
-			err := monk.InstallChain(ROOT, *name, *genesis, *config, chainId)
+			err := monk.InstallChain(ROOT, *name, tempGen, tempConf, chainId)
 			ifExit(err)
 		}
 		if *checkout {
@@ -218,12 +225,11 @@ func main() {
 		exit(utils.AddRef(*addRef, *name))
 	}
 
-
-    if len(flag.Args()) > 0{
-        logger.Errorln("Did not understand command. Did you forget a - ?")
-        logger.Errorln("Run `epm -help` to see the list of commands")
-        exit(nil)
-    }
+	if len(flag.Args()) > 0 {
+		logger.Errorln("Did not understand command. Did you forget a - ?")
+		logger.Errorln("Run `epm -help` to see the list of commands")
+		exit(nil)
+	}
 
 	/*********************************************
 	   Now we're actually booting a blockchain
@@ -234,10 +240,8 @@ func main() {
 	// hierarchy : name > chainId > db > config > HEAD > default
 	var chainRoot string
 	if *name != "" || *chainId != "" {
-		chainRoot = utils.ResolveChain(*chainType, *name, *chainId)
-		if chainRoot == "" {
-			exit(fmt.Errorf("Could not locate chain by name %s or by id %s", *name, *chainId))
-		}
+		chainRoot, err = utils.ResolveChain(*chainType, *name, *chainId)
+		ifExit(err)
 	}
 
 	// Startup the chain

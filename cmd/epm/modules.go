@@ -80,7 +80,7 @@ func NewGenModule(chainRoot string) epm.Blockchain {
 
 	// if the HEAD is set, it overrides the default
 	if c, err := utils.GetHead(); err != nil && c != "" {
-		m.Config.RootDir = utils.ResolveChain("thelonious", c, "")
+		m.Config.RootDir, _ = utils.ResolveChain("thelonious", c, "")
 	}
 
 	// then try to read local config file to overwrite defaults
@@ -119,7 +119,7 @@ func NewMonkRpcModule(chainRoot string) epm.Blockchain {
 
 	// if the HEAD is set, it overrides the default
 	if c, err := utils.GetHead(); err != nil && c != "" {
-		m.Config.RootDir = utils.ResolveChain("thelonious", c, "")
+		m.Config.RootDir, _ = utils.ResolveChain("thelonious", c, "")
 	}
 
 	// then try to read local config file to overwrite defaults
@@ -157,7 +157,7 @@ func NewEthModule(chainRoot string) epm.Blockchain {
 
 	// if the HEAD is set, it overrides the default
 	if c, err := utils.GetHead(); err != nil && c != "" {
-		m.Config.RootDir = utils.ResolveChain("ethereum", c, "")
+		m.Config.RootDir, _ = utils.ResolveChain("ethereum", c, "")
 	}
 
 	// then try to read local config file to overwrite defaults
