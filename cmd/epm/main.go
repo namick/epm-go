@@ -21,10 +21,10 @@ var (
 
 	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
 
+	// location for blockchain database before install
 	ROOT = ".temp"
 
-	// adjust these to suit all your deformed nefarious extension name desires. Muahahaha
-	// but actually don't because you might break something ;)
+	// epm extensions
 	PkgExt  = "pdx"
 	TestExt = "pdt"
 
@@ -39,23 +39,24 @@ var (
 	defaultDiffStorage  = false
 
 	// config setup
-	config    = flag.String("config", "monk-config.json", "pick config file")
-	genesis   = flag.String("genesis", "genesis.json", "Set a genesis.json or genesis.pdx file")
+	config    = flag.String("config", "", "pick config file")
+	genesis   = flag.String("genesis", "", "Set a genesis.json or genesis.pdx file")
 	name      = flag.String("name", "", "Set the chain by name")
 	chainId   = flag.String("id", "", "Set the chain by id")
 	chainType = flag.String("type", "thel", "Set the chain type (thelonious, genesis, bitcoin, ethereum)")
 
-	// epm commands
+	// epm commands (run and exit)
 	clean    = flag.Bool("clean", false, "Clear out epm related dirs")
 	pull     = flag.Bool("pull", false, "Pull and install the latest epm")
 	update   = flag.Bool("update", false, "Re-install epm")
-	install  = flag.Bool("install", false, "Install a chain into the decerver")
+	plop     = flag.String("plop", "", "Plop the default genesis.json or config.json into current dir for editing")
 	ini      = flag.Bool("init", false, "Initialize a monkchain config")
 	deploy   = flag.Bool("deploy", false, "Deploy a monkchain")
+	install  = flag.Bool("install", false, "Install a chain into the decerver")
 	checkout = flag.Bool("checkout", false, "Checkout a chain (ie. change HEAD)")
-	addRef   = flag.String("add-ref", "", "Add a new reference to a chainId")
 	refs     = flag.Bool("refs", false, "List the available references")
 	head     = flag.Bool("head", false, "Print the currently active chain")
+	addRef   = flag.String("add-ref", "", "Add a new reference to a chainId")
 
 	// chain options
 	difficulty = flag.Int("dif", 14, "Set the mining difficulty")
@@ -83,15 +84,31 @@ var (
 func main() {
 	flag.Parse()
 
+	var err error
+
 	utils.InitLogging(path.Join(utils.Logs, "epm"), "", *logLevel, "")
 
 	// clean, update, or install
 	// exit
 	if *clean || *pull || *update {
 		cleanPullUpdate()
-		os.Exit(0)
+		exit(nil)
 	}
 
+	// plop the config or genesis defaults into current dir
+	if *plop != "" {
+		switch *plop {
+		case "genesis":
+			ifExit(utils.Copy(path.Join(utils.Blockchains, "genesis.json"), "genesis.json"))
+		case "config":
+			ifExit(utils.Copy(path.Join(utils.Blockchains, "config.json"), "config.json"))
+		default:
+			logger.Errorln("Unknown plop option. Should be 'config' or 'genesis'")
+		}
+		exit(nil)
+	}
+
+	// list the refs (git branch)
 	if *refs {
 		r, err := utils.GetRefs()
 		h, _ := utils.GetHead()
@@ -108,6 +125,7 @@ func main() {
 		exit(err)
 	}
 
+	// print current head
 	if *head {
 		chainHead, err := utils.GetHead()
 		if err == nil {
@@ -116,18 +134,33 @@ func main() {
 		exit(err)
 	}
 
-	var err error
-
-	// create ~/.decerver tree and drop monk/gen configs
-	// exit
+	// create ~/.decerver tree and drop default monk/gen configs in there
 	if *ini {
-		exit(inity())
+		exit(monk.InitChain())
 	}
 
-	// deploy the genblock, install into ~/.decerver
+	// fail if `epm -init` has not been run
+	ifExit(checkInit())
+
+	// deploy the genblock into a local .temp
+	// possibly install into ~/.decerver
+	//   (will move local .temp and local configs)
 	// possibly checkout the newly deployed
-	// exit
 	if *deploy {
+		// if genesis or config are not specified
+		// use defaults set by `epm -init`
+		// and copy into working dir
+		if *genesis == "" {
+			*genesis = path.Join(utils.Blockchains, "genesis.json")
+			utils.Copy(*genesis, "genesis.json")
+			vi("genesis.json")
+		}
+		if *config == "" {
+			*config = path.Join(utils.Blockchains, "config.json")
+			ifExit(utils.Copy(*config, "config.json"))
+			vi("config.json")
+		}
+
 		chainId, err := monk.DeployChain(ROOT, *genesis, *config)
 		ifExit(err)
 		if *install {
@@ -140,14 +173,30 @@ func main() {
 		exit(nil)
 	}
 
+	// install a local chain into the decerver tree
 	if *install {
+		// if config/genesis present locally, set them
+		if _, err := os.Stat("config.json"); err == nil {
+			*config = "config.json"
+		}
+		if _, err := os.Stat("genesis.json"); err == nil {
+			*genesis = "genesis.json"
+		}
+
+		// if not found locally or specified, fail
+		if *config == "" {
+			exit(fmt.Errorf("No config.json found. Please specify with -config flag"))
+		}
+		if *genesis == "" {
+			exit(fmt.Errorf("No genesis.json found. Please specify with -genesis flag"))
+		}
 		chainId, err := monk.ChainIdFromDb(ROOT)
 		ifExit(err)
+		logger.Infoln("Installing chain ", chainId)
 		exit(monk.InstallChain(ROOT, *name, *genesis, *config, chainId))
 	}
 
 	// change the currently active chain
-	// exit
 	if *checkout {
 		args := flag.Args()
 		if len(args) == 0 {
@@ -161,7 +210,6 @@ func main() {
 	}
 
 	// add a new reference to a chainId
-	// exit
 	if *addRef != "" {
 		if *name == "" {
 			log.Fatal(`add-ref requires a name to specified as well, \n
@@ -170,38 +218,18 @@ func main() {
 		exit(utils.AddRef(*addRef, *name))
 	}
 
-	/*
+	/*********************************************
 	   Now we're actually booting a blockchain
 	   and launching a .pdx or going interactive
-	*/
+	***********************************************/
 
 	// Find the chain's db
-	// If we can't find it by name or chainId
-	// should be: name flag > chainId flag > db flag > config file > HEAD > old default
+	// hierarchy : name > chainId > db > config > HEAD > default
 	var chainRoot string
 	if *name != "" || *chainId != "" {
-		// these will check the name and id
-		switch *chainType {
-		case "thel", "thelonious", "monk":
-			*chainType = "thelonious"
-		case "btc", "bitcoin":
-			*chainType = "bitcoin"
-		case "eth", "ethereum":
-			*chainType = "ethereum"
-		case "gen", "genesis":
-			*chainType = "thelonious"
-		}
-
 		chainRoot = utils.ResolveChain(*chainType, *name, *chainId)
-
 		if chainRoot == "" {
-			// chainRoot, err = utils.GetHead()
-			// if err != nil{
-			//     exit(fmt.Errorf("Error reading head file!"))
-			// }
-			// if chainRoot == ""{
 			exit(fmt.Errorf("Could not locate chain by name %s or by id %s", *name, *chainId))
-			// }
 		}
 	}
 
@@ -272,6 +300,7 @@ func main() {
 	e.ExecuteJobs()
 	// wait for a block
 	e.Commit()
+	// run tests
 	if test_ {
 		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
 		if err != nil {
@@ -281,15 +310,4 @@ func main() {
 			}
 		}
 	}
-}
-
-func inity() error {
-	args := flag.Args()
-	var p string
-	if len(args) == 0 {
-		p = "."
-	} else {
-		p = args[0]
-	}
-	return monk.InitChain(p)
 }

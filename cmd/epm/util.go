@@ -146,6 +146,23 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 	return pkgPath, pkgName, test_
 }
 
+func checkInit() error {
+	if _, err := os.Stat(path.Join(utils.Blockchains, "config.json")); err != nil {
+		return fmt.Errorf("Could not find default config. Did you run `epm -init` ?")
+	}
+	if _, err := os.Stat(path.Join(utils.Blockchains, "genesis.json")); err != nil {
+		return fmt.Errorf("Could not find default genesis.json. Did you run `epm -init` ?")
+	}
+	return nil
+}
+
+func vi(file string) error {
+	cmd := exec.Command("vim", file)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
 func exit(err error) {
 	if err != nil {
 		logger.Errorln(err)
