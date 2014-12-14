@@ -152,8 +152,8 @@ func main() {
 		// and copy into working dir
 		deployGen := *genesis
 		deployConf := *config
-		tempGen := ".genesis.json"
-		tempConf := ".config.json"
+		tempGen := "genesis.json"
+		tempConf := "config.json"
 
 		if deployGen == "" {
 			deployGen = path.Join(utils.Blockchains, "genesis.json")
