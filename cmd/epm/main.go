@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	color "github.com/daviddengcn/go-colortext"
+	"github.com/eris-ltd/decerver-interfaces/dapps"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
 	"github.com/eris-ltd/thelonious/monk"
@@ -58,6 +60,7 @@ var (
 	refs     = flag.Bool("refs", false, "List the available references")
 	head     = flag.Bool("head", false, "Print the currently active chain")
 	addRef   = flag.String("add-ref", "", "Add a new reference to a chainId")
+	run      = flag.String("run", "", "Run an installed dapp chain")
 
 	// chain options
 	difficulty = flag.Int("dif", 14, "Set the mining difficulty")
@@ -144,7 +147,7 @@ func main() {
 	ifExit(checkInit())
 
 	if *fetch != "" {
-		exit(monk.FetchInstallChain(*fetch)) //"693186115fcd0306b14dff8787e0e05763c0c007e796f8aa64d4f6f4f2692563", "92.243.15.73:30303", "G.json"))
+		exit(monk.FetchInstallChain(*fetch))
 	}
 
 	// deploy the genblock into a local .temp
@@ -228,6 +231,31 @@ func main() {
                             eg. "add-ref 14c32 -name shitchain"`)
 		}
 		exit(utils.AddRef(*addRef, *name))
+	}
+
+	if *run != "" {
+		dapp := *run
+
+		p, err := monk.CheckGetPackageFile(path.Join(utils.Apps, dapp))
+		ifExit(err)
+
+		var chainId string
+		for _, dep := range p.ModuleDependencies {
+			if dep.Name == "monk" {
+				d := &dapps.MonkData{}
+				ifExit(json.Unmarshal(dep.Data, d))
+				chainId = d.ChainId
+			}
+		}
+		if chainId == "" {
+			exit(fmt.Errorf("Dapp is missing monk dependency or chainId!"))
+		}
+
+		m := monk.NewMonk(nil)
+		m.Config.RootDir = path.Join(utils.Blockchains, "thelonious", chainId)
+		ifExit(m.Init())
+		m.Start()
+		m.WaitForShutdown()
 	}
 
 	if len(flag.Args()) > 0 {
