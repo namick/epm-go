@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/eris-ltd/epm-go"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,6 +14,33 @@ import (
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/thelonious/monk"
 )
+
+func loadChain(chainRoot string) epm.Blockchain {
+	logger.Debugln("Loading chain ", *chainType)
+	switch *chainType {
+	case "thel", "thelonious", "monk":
+		if *rpc {
+			return NewMonkRpcModule(chainRoot)
+		} else {
+			return NewMonkModule(chainRoot)
+		}
+	case "btc", "bitcoin":
+		if *rpc {
+			log.Fatal("Bitcoin rpc not implemented yet")
+		} else {
+			log.Fatal("Bitcoin not implemented yet")
+		}
+	case "eth", "ethereum":
+		if *rpc {
+			log.Fatal("Eth rpc not implemented yet")
+		} else {
+			return NewEthModule(chainRoot)
+		}
+	case "gen", "genesis":
+		return NewGenModule(chainRoot)
+	}
+	return nil
+}
 
 // TODO: if we are passed a chainRoot but also db is set
 //   we should copy from the chainroot to db

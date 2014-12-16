@@ -54,6 +54,7 @@ type Blockchain interface {
 	IsAutocommit() bool
 
 	Shutdown() error
+	WaitForShutdown()
 }
 
 // EPM object. Maintains list of jobs and a symbols table

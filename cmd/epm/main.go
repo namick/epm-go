@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	color "github.com/daviddengcn/go-colortext"
-	"github.com/eris-ltd/decerver-interfaces/dapps"
 	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/epm-go"
 	"github.com/eris-ltd/thelonious/monk"
@@ -60,7 +58,8 @@ var (
 	refs     = flag.Bool("refs", false, "List the available references")
 	head     = flag.Bool("head", false, "Print the currently active chain")
 	addRef   = flag.String("add-ref", "", "Add a new reference to a chainId")
-	run      = flag.String("run", "", "Run an installed dapp chain")
+	runDapp  = flag.String("run-dapp", "", "Run an installed dapp chain")
+	run      = flag.String("run", "", "Run an installed chain")
 
 	// chain options
 	difficulty = flag.Int("dif", 14, "Set the mining difficulty")
@@ -227,35 +226,27 @@ func main() {
 	// add a new reference to a chainId
 	if *addRef != "" {
 		if *name == "" {
-			log.Fatal(`add-ref requires a name to specified as well, \n
+			log.Fatal(`add-ref requires a name to be specified as well, \n
                             eg. "add-ref 14c32 -name shitchain"`)
 		}
 		exit(utils.AddRef(*addRef, *name))
 	}
 
 	if *run != "" {
-		dapp := *run
-
-		p, err := monk.CheckGetPackageFile(path.Join(utils.Apps, dapp))
+		chainId, err := utils.ResolveChainId(*chainType, *run, *run)
 		ifExit(err)
+		logger.Infoln("Running chain ", chainId)
+		chain := loadChain(path.Join(utils.Blockchains, "thelonious", chainId))
+		chain.WaitForShutdown()
+	}
 
-		var chainId string
-		for _, dep := range p.ModuleDependencies {
-			if dep.Name == "monk" {
-				d := &dapps.MonkData{}
-				ifExit(json.Unmarshal(dep.Data, d))
-				chainId = d.ChainId
-			}
-		}
-		if chainId == "" {
-			exit(fmt.Errorf("Dapp is missing monk dependency or chainId!"))
-		}
-
-		m := monk.NewMonk(nil)
-		m.Config.RootDir = path.Join(utils.Blockchains, "thelonious", chainId)
-		ifExit(m.Init())
-		m.Start()
-		m.WaitForShutdown()
+	if *runDapp != "" {
+		dapp := *runDapp
+		chainId, err := utils.ChainIdFromDapp(dapp)
+		ifExit(err)
+		logger.Infoln("Running chain ", chainId)
+		chain := loadChain(path.Join(utils.Blockchains, "thelonious", chainId))
+		chain.WaitForShutdown()
 	}
 
 	if len(flag.Args()) > 0 {
@@ -279,29 +270,7 @@ func main() {
 
 	// Startup the chain
 	var chain epm.Blockchain
-	logger.Debugln("Loading chain ", *chainType)
-	switch *chainType {
-	case "thel", "thelonious", "monk":
-		if *rpc {
-			chain = NewMonkRpcModule(chainRoot)
-		} else {
-			chain = NewMonkModule(chainRoot)
-		}
-	case "btc", "bitcoin":
-		if *rpc {
-			log.Fatal("Bitcoin rpc not implemented yet")
-		} else {
-			log.Fatal("Bitcoin not implemented yet")
-		}
-	case "eth", "ethereum":
-		if *rpc {
-			log.Fatal("Eth rpc not implemented yet")
-		} else {
-			chain = NewEthModule(chainRoot)
-		}
-	case "gen", "genesis":
-		chain = NewGenModule(chainRoot)
-	}
+	chain = loadChain(chainRoot)
 
 	epm.ContractPath, err = filepath.Abs(*contractPath)
 	ifExit(err)
