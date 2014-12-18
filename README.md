@@ -3,22 +3,38 @@
 Eris Package Manager: The Smart Contract Package Manager
 ======
 
-Eris Package Manager, written in `go`.
+Eris Package Manager, written in `go`. EPM makes it easy to spin up blockchains and to deploy suites of contracts or transactions on them.
 
-Allows one to specify a suite of contracts to be deployed and setup from a simple `.pdx` (package definition) file, 
-and easily tested using a `.pdt` file. Also provides a `git-like` interface for working with multiple blockchains.
+At its core is a domain specifc language for specifying contract suite deploy sequences, and a git-like interface for managing multiple blockchains.
 
-Interfacing with blockchains is done through `decerver-interfaces` blockchain modules. 
+For tutorials, see the [website](https://epm.io)
+
+epm-go uses the same spec as the [ruby original](https://github.com/project-douglas/epm), but this is subject to change in an upcoming version. If you have input, please make an issue.
+
+Blockchains
+-----------
+
+EPM aims to be chain agnostic, by using `module` wrappers satisfying a [blockchain interface](https://github.com/eris-ltd/decerver-interfaces/blob/master/modules/modules.go#L49), built for compatibility with the eris `decerver` ecosystem. 
 While theoretically any chain can be supported (provided it satisfies the interface), there is currently support for 
-`thelonious` (in-process and rpc), 
-`ethereum` (in-process), 
-and `genesisblock` (for deployments of `thelonious` genesis blocks), 
-and basic support for `bitcoin` (through `blockchain.info`).
 
-If you would like epm to be able to work with your blockchain, submit a pull-request to `eris-ltd/decerver-interfaces` 
+- `thelonious` (in-process and rpc), 
+- `ethereum` (in-process), 
+- `genesisblock` (for deployments of `thelonious` genesis blocks), 
+- `bitcoin` (through `blockchain.info` api wrapper).
+
+We will continue to add support and functionality as time admits.
+If you would like epm to be able to work with your blockchain or software, submit a pull-request to `eris-ltd/decerver-interfaces` 
 with a wrapper for your chain in `decerver-interfaces/glue` that satisfies the `Blockchain` interface, 
 as defined in `decerver-interfaces/modules/modules.go`. See the other wrappers in `decerver-interfaces/glue` for examples and inspiration.
 
+Install
+--------
+
+1. [Install go](https://golang.org/doc/install)
+2. `go get github.com/eris-ltd/epm-go`
+3. `cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm`
+4. `go get -d .`
+5. `go install`
 
 Formatting
 ----------
@@ -40,10 +56,10 @@ That is, if you store "dog", you will find it later as `0x0000000000000000000000
 Testing
 -------
 `go test` can be used to test the parser, or when run in `cmd/tests/` to test the commands. 
-To test a deployment suite, write a txt file where each line consists of query params (addr, storage) and the expected result. 
+To test a deployment suite, write a `.pdt` file with the same name as the `.pdx`, where each line consists of query params (address, storage) and the expected result. 
 A fourth parameter can be included for storing the result as a variable for later queries. 
 You can test this by running `go run main.go` in `cmd/tests/`. 
-See the test files in `cmd/tests/definitions/` for examples.
+See [here](`https://github.com/eris-ltd/eris-std-lib/blob/master/DTT/tests/c3d.pdt`) for examples.
 
 Directory
 --------
@@ -54,6 +70,7 @@ Otherwise, chains are specified by their `chainId` (signed hash of the genesis b
 Command Line Interface
 ----------------------
 To install the command line tool, cd into `epm-go/cmd/epm/` and hit `go install`. 
+You can get the dependencies with `go get -d`.
 Assuming your `go bin` is on your path, the cli is accessible as `epm`. 
 Simply running that will look for a `.pdx` file in your current directory, deploy it, and run the tests if there are any (in a `.pdt`) file.
 
