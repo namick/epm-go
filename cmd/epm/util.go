@@ -13,8 +13,9 @@ import (
 	"strings"
 )
 
+// TODO: needs work..
 func cleanupEPM() {
-	dirs := []string{epm.EpmDir, *database}
+	dirs := []string{epm.EpmDir}
 	for _, d := range dirs {
 		err := os.RemoveAll(d)
 		if err != nil {
@@ -58,18 +59,18 @@ func updateEPM() {
 	os.Chdir(cur)
 }
 
-func cleanPullUpdate() {
-	if *clean && *pull {
+func cleanPullUpdate(clean, pull, update bool) {
+	if clean && pull {
 		cleanupEPM()
 		updateEPM()
-	} else if *clean {
+	} else if clean {
 		cleanupEPM()
-		if *update {
+		if update {
 			installEPM()
 		}
-	} else if *pull {
+	} else if pull {
 		updateEPM()
-	} else if *update {
+	} else if update {
 		installEPM()
 	}
 }

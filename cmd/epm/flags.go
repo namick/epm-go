@@ -1,33 +1,23 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/eris-ltd/thelonious/monk"
 	"github.com/eris-ltd/thelonious/monkdoug"
 	"os"
 	"path/filepath"
+    "github.com/codegangsta/cli"
 )
 
-func specifiedFlags() map[string]bool {
-	// compute a map of the flags that have been set
-	// for those that are set, we will overwrite default/config-file
-	setFlags := make(map[string]bool)
-	flag.Visit(func(f *flag.Flag) {
-		setFlags[f.Name] = true
-	})
-	return setFlags
-}
-
-func setLogLevel(flags map[string]bool, config *int, loglevel int) {
-	if flags["log"] {
+func setLogLevel(c *cli.Context, config *int, loglevel int) {
+	if c.IsSet("log") {
 		*config = loglevel
 	}
 }
 
-func setKeysFile(flags map[string]bool, config *string, keyfile string) {
+func setKeysFile(c *cli.Context, config *string, keyfile string) {
 	var err error
-	if flags["k"] {
+	if c.IsSet("k") {
 		//if keyfile != defaultKeys {
 		*config, err = filepath.Abs(keyfile)
 		if err != nil {
@@ -37,9 +27,9 @@ func setKeysFile(flags map[string]bool, config *string, keyfile string) {
 	}
 }
 
-func setGenesisPath(flags map[string]bool, config *string, genfile string) {
+func setGenesisPath(c *cli.Context, config *string, genfile string) {
 	var err error
-	if flags["genesis"] {
+	if c.IsSet("genesis") {
 		//if *config != defaultGenesis && genfile != "" {
 		*config, err = filepath.Abs(genfile)
 		if err != nil {
@@ -49,9 +39,9 @@ func setGenesisPath(flags map[string]bool, config *string, genfile string) {
 	}
 }
 
-func setContractPath(flags map[string]bool, config *string, cpath string) {
+func setContractPath(c *cli.Context, config *string, cpath string) {
 	var err error
-	if flags["c"] {
+	if c.IsSet("c") {
 		//if cpath != defaultContractPath {
 		*config, err = filepath.Abs(cpath)
 		if err != nil {
@@ -61,9 +51,9 @@ func setContractPath(flags map[string]bool, config *string, cpath string) {
 	}
 }
 
-func setDb(flags map[string]bool, config *string, dbpath string) {
+func setDb(c *cli.Context, config *string, dbpath string) {
 	var err error
-	if flags["db"] {
+	if c.IsSet("db") {
 		*config, err = filepath.Abs(dbpath)
 		if err != nil {
 			fmt.Println(err)
@@ -72,22 +62,22 @@ func setDb(flags map[string]bool, config *string, dbpath string) {
 	}
 }
 
-func setDifficulty(flags map[string]bool, config *int, d int) {
+func setDifficulty(c *cli.Context, config *int, d int) {
 	*config = defaultDifficulty
-	if flags["dif"] {
+	if c.IsSet("difficulty") {
 		*config = d
 	}
 }
 
 // TODO: handle properly (deployed already vs not...)
-func setGenesis(flags map[string]bool, m *monk.MonkModule) {
+func setGenesis(c *cli.Context, noGenDoug bool, difficulty int, m *monk.MonkModule) {
 	// Handle genesis config
 	g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
-	if *noGenDoug {
+	if noGenDoug {
 		g.NoGenDoug = true
 		logger.Infoln("No gendoug")
 	}
-	setDifficulty(flags, &(g.Difficulty), *difficulty)
+	setDifficulty(c, &(g.Difficulty), difficulty)
 	g.Consensus = "constant"
 
 	m.SetGenesis(g)
