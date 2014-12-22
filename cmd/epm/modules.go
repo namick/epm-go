@@ -18,22 +18,23 @@ import (
 )
 
 func loadChain(c *cli.Context, chainRoot string) epm.Blockchain {
+    rpc := c.Bool("rpc")
 	logger.Debugln("Loading chain ", c.String("type"))
 	switch c.String("type"){
 	case "thel", "thelonious", "monk":
-		if *rpc {
+		if rpc {
 			return NewMonkRpcModule(c, chainRoot)
 		} else {
 			return NewMonkModule(c, chainRoot)
 		}
 	case "btc", "bitcoin":
-		if *rpc {
+		if rpc {
 			log.Fatal("Bitcoin rpc not implemented yet")
 		} else {
 			log.Fatal("Bitcoin not implemented yet")
 		}
 	case "eth", "ethereum":
-		if *rpc {
+		if rpc {
 			log.Fatal("Eth rpc not implemented yet")
 		} else {
 			return NewEthModule(c, chainRoot)

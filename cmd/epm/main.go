@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
     "path"
     "os"
     "github.com/codegangsta/cli"
@@ -15,7 +14,7 @@ var (
 	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
 
 	// location for blockchain database before install
-	ROOT = ".temp"
+	ROOT = ".decerver-local"
 
 	// epm extensions
 	PkgExt  = "pdx"
@@ -30,19 +29,6 @@ var (
 	defaultDifficulty   = 14
 	defaultMining       = false
 	defaultDiffStorage  = false
-
-
-	// paths
-	//contractPath = flag.String("c", defaultContractPath, "Set the contract root path")
-	//packagePath  = flag.String("p", ".", "Set a .package-definition file")
-	//keys         = flag.String("k", "", "Set a keys file")
-	//database     = flag.String("db", ".chain", "Set the location of the root directory")
-	logLevel     = flag.Int("log", 5, "Set the eth log level")
-
-	// remote
-	rpc     = flag.Bool("rpc", false, "Fire commands over rpc")
-	rpcHost = flag.String("host", "localhost", "Set the rpc host")
-	rpcPort = flag.String("port", "40404", "Set the rpc port")
 )
 
 func main() {
@@ -133,8 +119,26 @@ func main() {
 
         cli.IntFlag{
             Name: "log",
-            Value: 5,
+            Value: 2,
             Usage: "set the log level",
+            EnvVar: "EPM_LOG",
+        },
+        
+        // rpc
+        cli.BoolFlag{
+            Name: "rpc",
+            Usage: "run commands over rpc",
+            EnvVar: "",
+        },
+        cli.StringFlag{
+            Name: "host",
+            Value: ".",
+            Usage: "set the rpc host",
+        },
+        cli.IntFlag{
+            Name: "port",
+            Value: 5,
+            Usage: "set the rpc port",
         },
     }
 
@@ -242,8 +246,3 @@ func main() {
 
 
 }
-
-	/*********************************************
-	   Now we're actually booting a blockchain
-	   and launching a .pdx or going interactive
-	***********************************************/
