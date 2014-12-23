@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/eris-ltd/epm-go"
+	"github.com/eris-ltd/epm-go/epm"
+	"github.com/eris-ltd/epm-go/chains"
 	"log"
 	"os"
 	"path"
@@ -13,7 +14,6 @@ import (
 	_"github.com/eris-ltd/decerver-interfaces/glue/eth"
 	_"github.com/eris-ltd/decerver-interfaces/glue/genblock"
 	_"github.com/eris-ltd/decerver-interfaces/glue/monkrpc"
-	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/thelonious/monk"
 )
 
@@ -57,8 +57,8 @@ func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string){
     m.SetProperty("RootDir", root)
 
 	// if the HEAD is set, it overrides the default
-	if c, err := utils.GetHead(); err == nil && c != "" {
-		root, _ = utils.ResolveChain("thelonious", c, c)
+	if c, err := chains.GetHead(); err == nil && c != "" {
+		root, _ = chains.ResolveChain("thelonious", c, c)
         m.SetProperty("RootDir", root)
 		//path.Join(utils.Blockchains, "thelonious", c)
 	}
@@ -89,12 +89,7 @@ func applyFlags(c *cli.Context, m epm.Blockchain){
 	setContractPath(c, m)
 }
 
-// configure and start an in-process thelonious  node
-// all paths should be made absolute
-func NewMonkModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	// empty ethchain object with default config
-	m := monk.NewMonk(nil)
-
+func setupModule(c *cli.Context, m epm.Blockchain, chainRoot string) {
     // TODO: kinda bullshit and useless since we set log level at epm
     // m.Config.LogLevel = defaultLogLevel
 
@@ -103,16 +98,19 @@ func NewMonkModule(c *cli.Context, chainRoot string) epm.Blockchain {
     applyFlags(c, m)
 
 	logger.Infoln("Root directory: ", m.Property("RootDir").(string))
-	// load and set GenesisConfig object
-	setGenesis(c, c.Bool("no-gendoug"), c.Int("difficulty"), m)
-
-	// set LLL path
-	epm.LLLURL = m.Property("LLLPath").(string)
 
 	// initialize and start
 	m.Init()
 	m.Start()
-	return m
+}
+
+
+// configure and start an in-process thelonious  node
+// all paths should be made absolute
+func NewMonkModule(c *cli.Context, chainRoot string) epm.Blockchain {
+	m := monk.NewMonk(nil)
+    setupModule(c, m, chainRoot)
+    return m
 }
 
 /*

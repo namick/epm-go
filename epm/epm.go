@@ -5,6 +5,7 @@ import (
 	"github.com/eris-ltd/decerver-interfaces/events"
 	"github.com/eris-ltd/decerver-interfaces/modules"
 	"github.com/eris-ltd/thelonious/monklog"
+	"github.com/eris-ltd/epm-go/utils"
 	"github.com/project-douglas/lllc-server"
 	"os"
 	"regexp"
@@ -220,5 +221,5 @@ func (e *EPM) StoreVar(key, val string) {
 	if key[:2] == "{{" && key[len(key)-2:] == "}}" {
 		key = key[2 : len(key)-2]
 	}
-	e.vars[key] = Coerce2Hex(val)
+	e.vars[key] = utils.Coerce2Hex(val)
 }

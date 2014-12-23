@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/eris-ltd/decerver-interfaces/glue/utils"
-	"github.com/eris-ltd/epm-go"
+	"github.com/eris-ltd/epm-go/epm"
+	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
 	"io/ioutil"
 	"os"

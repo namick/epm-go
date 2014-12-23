@@ -1,25 +1,17 @@
 package epm
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
 	"os/exec"
-	"os/user"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
+    "github.com/eris-ltd/epm-go/utils"
 )
-
-func usr() string {
-	u, _ := user.Current()
-	return u.HomeDir
-}
 
 // make sure command is valid
 func checkCommand(cmd string) bool {
@@ -202,7 +194,7 @@ func DoMath(args []string) []string {
 
 		// now run through the tokens doin the math
 		// initialize the first value
-		tokenBigBytes, err := hex.DecodeString(stripHex(Coerce2Hex(tokens[0])))
+		tokenBigBytes, err := hex.DecodeString(utils.StripHex(utils.Coerce2Hex(tokens[0])))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -211,7 +203,7 @@ func DoMath(args []string) []string {
 		for j := 0; j < (len(tokens)-1)/2; j++ {
 			op := tokens[2*j+1]
 			n := tokens[2*j+2]
-			nBigBytes, err := hex.DecodeString(stripHex(Coerce2Hex(n)))
+			nBigBytes, err := hex.DecodeString(utils.StripHex(utils.Coerce2Hex(n)))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -231,67 +223,6 @@ func DoMath(args []string) []string {
 		margs = append(margs, resultHex)
 	}
 	return margs
-}
-
-// keeps N bytes of the conversion
-func NumberToBytes(num interface{}, N int) []byte {
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, num)
-	if err != nil {
-		logger.Errorln("NumberToBytes failed:", err)
-	}
-	//fmt.Println("btyes!", buf.Bytes())
-	if buf.Len() > N {
-		return buf.Bytes()[buf.Len()-N:]
-	}
-	return buf.Bytes()
-}
-
-// s can be string, hex, or int.
-// returns properly formatted 32byte hex value
-func Coerce2Hex(s string) string {
-	//fmt.Println("coercing to hex:", s)
-	// is int?
-	i, err := strconv.Atoi(s)
-	if err == nil {
-		return "0x" + hex.EncodeToString(NumberToBytes(int32(i), i/256+1))
-	}
-	// is already prefixed hex?
-	if len(s) > 1 && s[:2] == "0x" {
-		if len(s)%2 == 0 {
-			return s
-		}
-		return "0x0" + s[2:]
-	}
-	// is unprefixed hex?
-	if len(s) > 32 {
-		return "0x" + s
-	}
-	pad := strings.Repeat("\x00", (32-len(s))) + s
-	ret := "0x" + hex.EncodeToString([]byte(pad))
-	//fmt.Println("result:", ret)
-	return ret
-}
-
-func addHex(s string) string {
-	if len(s) < 2 {
-		return "0x" + s
-	}
-
-	if s[:2] != "0x" {
-		return "0x" + s
-	}
-
-	return s
-}
-
-func stripHex(s string) string {
-	if len(s) > 1 {
-		if s[:2] == "0x" {
-			return s[2:]
-		}
-	}
-	return s
 }
 
 // split line and trim space

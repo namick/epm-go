@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/thelonious/monkdoug"
-	"github.com/eris-ltd/epm-go"
+	"github.com/eris-ltd/epm-go/epm"
 	"os"
 	"path/filepath"
     "github.com/codegangsta/cli"
@@ -72,18 +70,4 @@ func setDifficulty(c *cli.Context, config *int, d int) {
 	if c.IsSet("difficulty") {
 		*config = d
 	}
-}
-
-// TODO: handle properly (deployed already vs not...)
-func setGenesis(c *cli.Context, noGenDoug bool, difficulty int, m *monk.MonkModule) {
-	// Handle genesis config
-	g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
-	if noGenDoug {
-		g.NoGenDoug = true
-		logger.Infoln("No gendoug")
-	}
-	setDifficulty(c, &(g.Difficulty), difficulty)
-	g.Consensus = "constant"
-
-	m.SetGenesis(g)
 }

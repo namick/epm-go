@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+    "github.com/eris-ltd/epm-go/utils"
 )
 
 // for parsing/running companion test files for an epm deploy
@@ -99,12 +100,12 @@ func (e *EPM) ExecuteTest(line string, i int) error {
 	//expected := args[2]
 
 	// retrieve the value
-	val := e.chain.StorageAt(addHex(addr), addHex(storage))
-	val = addHex(val)
+	val := e.chain.StorageAt(utils.AddHex(addr), utils.AddHex(storage))
+	val = utils.AddHex(val)
 
 	if args[2] != "_" {
-		expected := Coerce2Hex(margs[2])
-		if stripHex(expected) != stripHex(val) {
+		expected := utils.Coerce2Hex(margs[2])
+		if utils.StripHex(expected) != utils.StripHex(val) {
 			return fmt.Errorf("\t!!!!!Test %d failed. Got: %s, expected %s", i, val, expected)
 		} else {
 			fmt.Println("\tTest Passed (with flying colors!)")
