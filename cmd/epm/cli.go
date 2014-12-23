@@ -70,9 +70,9 @@ func cliFetch(c *cli.Context){
     exit(monk.FetchInstallChain(c.Args().First()))
 }
 
-// deploy the genblock into a local .temp
+// deploy the genblock into a local .decerver-local
 // possibly install into ~/.decerver
-//   (will move local .temp and local configs)
+//   (will move local dir and local configs)
 // possibly checkout the newly deployed
 func cliDeploy(c *cli.Context){
     // if genesis or config are not specified
@@ -103,7 +103,7 @@ func cliDeploy(c *cli.Context){
         ifExit(err)
     }
     if c.Bool("checkout") {
-        exit(chains.ChangeHead(chainId))
+        ifExit(chains.ChangeHead(chainId))
     }
     exit(nil)
 }
@@ -132,7 +132,10 @@ func cliInstall(c *cli.Context){
     chainId, err := monk.ChainIdFromDb(ROOT)
     ifExit(err)
     logger.Infoln("Installing chain ", chainId)
-    exit(monk.InstallChain(ROOT, name, genesis, config, chainId))
+    ifExit(monk.InstallChain(ROOT, name, genesis, config, chainId))
+    if c.Bool("checkout") {
+        ifExit(chains.ChangeHead(chainId))
+    }
 }
 
 // change the currently active chain
@@ -150,11 +153,11 @@ func cliCheckout(c *cli.Context){
 
 // add a new reference to a chainId
 func cliAddRef(c *cli.Context){
-    name := c.String("name")
-    ref := c.Args().First()
+    ref := c.Args().Get(0)
+    name := c.Args().Get(1)
     if name == "" {
         log.Fatal(`add-ref requires a name to be specified as well, \n
-                        eg. "add-ref 14c32 -name shitchain"`)
+                        eg. "add-ref 14c32 mychain"`)
     }
     exit(chains.AddRef(ref, name))
 }
@@ -163,6 +166,7 @@ func cliAddRef(c *cli.Context){
 func cliRun(c *cli.Context){
     run := c.Args().First()
     chainType := c.String("type")
+    fmt.Println("type: ", chainType)
     chainId, err := chains.ResolveChainId(chainType, run, run)
     ifExit(err)
     logger.Infoln("Running chain ", chainId)

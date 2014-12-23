@@ -79,7 +79,7 @@ func ResolveChainType(chainType string) string {
 func ResolveChainId(chainType, name, chainId string) (string, error) {
 	chainType = ResolveChainType(chainType)
 	if chainType == "" {
-		return "", fmt.Errorf("Unknown chain type: ", chainType)
+		return "", fmt.Errorf("Unknown chain type: %s", chainType)
 	}
 
 	var p string
