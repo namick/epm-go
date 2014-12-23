@@ -40,19 +40,7 @@ func main() {
 
     app.Flags = []cli.Flag{
         
-        // chain config
-        cli.StringFlag{
-            Name: "config",
-            Value: "",
-            Usage: "configuration file",
-            EnvVar: "",
-        },
-        cli.StringFlag{
-            Name: "genesis",
-            Value: "",
-            Usage: "genesis file",
-            EnvVar: "",
-        },
+        // which chain
         cli.StringFlag{
             Name: "name",
             Value: "",
@@ -69,24 +57,6 @@ func main() {
             Name: "type",
             Value: "",
             Usage: "set the chain type (thelonious, genesis, bitcoin, ethereum)",
-            EnvVar: "",
-        },
-
-        // client config
-        cli.IntFlag{
-            Name: "d",
-            Value: 14,
-            Usage: "set the mining difficulty",
-            EnvVar: "",
-        },
-        cli.BoolFlag{
-            Name: "mining",
-            Usage: "To mine or not to mine, that is the question",
-            EnvVar: "",
-        },
-        cli.BoolFlag{
-            Name: "no-gendoug",
-            Usage: "Turn off gendoug mechanics",
             EnvVar: "",
         },
 
@@ -117,6 +87,7 @@ func main() {
             Usage: "deploy a .pdx file",
         },
 
+        // log
         cli.IntFlag{
             Name: "log",
             Value: 2,
@@ -176,7 +147,7 @@ func main() {
         {
             Name:      "fetch",
             ShortName: "fetch",
-            Usage:     "sssemble a chain from dapp info",
+            Usage:     "asssemble a chain from dapp info",
             Action: cliFetch,
         }, 
         {
@@ -190,8 +161,16 @@ func main() {
                     Usage: "install the chain following deploy", 
                 },
                 cli.BoolFlag{
-                    Name: "checkout, c",
+                    Name: "checkout, o",
                     Usage: "checkout the chain into head",
+                },
+                cli.StringFlag{
+                    Name: "config, c",
+                    Usage: "specify config file",
+                },
+                cli.StringFlag{
+                    Name: "genesis, g",
+                    Usage: "specify genesis file",
                 },
             },
         }, 

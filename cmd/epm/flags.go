@@ -4,50 +4,55 @@ import (
 	"fmt"
 	"github.com/eris-ltd/thelonious/monk"
 	"github.com/eris-ltd/thelonious/monkdoug"
+	"github.com/eris-ltd/epm-go"
 	"os"
 	"path/filepath"
     "github.com/codegangsta/cli"
 )
 
-func setLogLevel(c *cli.Context, config *int, loglevel int) {
+func setLogLevel(c *cli.Context, m epm.Blockchain) {
+    logLevel := c.Int("log")
 	if c.IsSet("log") {
-		*config = loglevel
+		m.SetProperty("LogLevel", logLevel)
 	}
 }
 
-func setKeysFile(c *cli.Context, config *string, keyfile string) {
-	var err error
+func setKeysFile(c *cli.Context, m epm.Blockchain) {
+    keys :=  c.String("keys")
 	if c.IsSet("k") {
 		//if keyfile != defaultKeys {
-		*config, err = filepath.Abs(keyfile)
+		keysAbs, err := filepath.Abs(keys)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
+        m.SetProperty("KeyFile", keysAbs)
 	}
 }
 
-func setGenesisPath(c *cli.Context, config *string, genfile string) {
-	var err error
+func setGenesisPath(c *cli.Context, m epm.Blockchain){
+    genesis := c.String("genesis")
 	if c.IsSet("genesis") {
 		//if *config != defaultGenesis && genfile != "" {
-		*config, err = filepath.Abs(genfile)
+		genAbs, err := filepath.Abs(genesis)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
+        m.SetProperty("GenesisPath", genAbs)
 	}
 }
 
-func setContractPath(c *cli.Context, config *string, cpath string) {
-	var err error
+func setContractPath(c *cli.Context, m epm.Blockchain){
+    contractPath := c.String("c")
 	if c.IsSet("c") {
 		//if cpath != defaultContractPath {
-		*config, err = filepath.Abs(cpath)
+		cPathAbs, err := filepath.Abs(contractPath)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
+        m.SetProperty("ContractPath", cPathAbs)
 	}
 }
 
