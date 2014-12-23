@@ -11,9 +11,9 @@ import (
     "github.com/codegangsta/cli"
 
 	// modules
-	_"github.com/eris-ltd/decerver-interfaces/glue/eth"
-	_"github.com/eris-ltd/decerver-interfaces/glue/genblock"
-	_"github.com/eris-ltd/decerver-interfaces/glue/monkrpc"
+	"github.com/eris-ltd/decerver-interfaces/glue/eth"
+	"github.com/eris-ltd/decerver-interfaces/glue/genblock"
+	"github.com/eris-ltd/decerver-interfaces/glue/monkrpc"
 	"github.com/eris-ltd/thelonious/monk"
 )
 
@@ -113,136 +113,22 @@ func NewMonkModule(c *cli.Context, chainRoot string) epm.Blockchain {
     return m
 }
 
-/*
-
-// Deploy genesis blocks using EPM
 func NewGenModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	// empty ethchaIn object
-	// note this will load `eth-config.json` into Config if it exists
-	m := genblock.NewGenBlockModule(nil)
-
-	// we need to overwrite the default monk config with our defaults
-	m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
-	m.Config.LogLevel = defaultLogLevel
-
-	// if the HEAD is set, it overrides the default
-	if c, err := utils.GetHead(); err != nil && c != "" {
-		m.Config.RootDir, _ = utils.ResolveChain("thelonious", c, "")
-	}
-
-    config := c.String("config")
-    database  := c.String("db")
-    logLevel := c.Int("log")
-    keys :=  c.String("keys")
-    contractPath := c.String("c")
-
-	// then try to read local config file to overwrite defaults
-	// (if it doesnt exist, it will be saved)
-	m.ReadConfig(config)
-
-	// then apply cli flags
-	setDb(c, &(m.Config.RootDir), database)
-	setLogLevel(c, &(m.Config.LogLevel), logLevel)
-	setKeysFile(c, &(m.Config.KeyFile), keys)
-	setContractPath(c, &(m.Config.ContractPath), contractPath)
-
-	if chainRoot != "" {
-		m.Config.RootDir = chainRoot
-	}
-
-	// set LLL path
-	epm.LLLURL = m.Config.LLLPath
-
-	// initialize and start
-	m.Init()
-	m.Start()
-	return m
+    m := genblock.NewGenBlockModule(nil)
+    setupModule(c, m, chainRoot)
+    return m
 }
 
 // Rpc module for talking to running thelonious node supporting rpc server
 func NewMonkRpcModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	// empty ethchain object
-	// note this will load `eth-config.json` into Config if it exists
 	m := monkrpc.NewMonkRpcModule()
-
-	// we need to overwrite the default monk config with our defaults
-	m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
-	m.Config.LogLevel = defaultLogLevel
-
-	// if the HEAD is set, it overrides the default
-	if c, err := utils.GetHead(); err != nil && c != "" {
-		m.Config.RootDir, _ = utils.ResolveChain("thelonious", c, "")
-	}
-
-    config := c.String("config")
-    database  := c.String("db")
-    logLevel := c.Int("log")
-    keys :=  c.String("keys")
-    contractPath := c.String("c")
-
-	// then try to read local config file to overwrite defaults
-	// (if it doesnt exist, it will be saved)
-	m.ReadConfig(config)
-
-	// then apply cli flags
-	setDb(c, &(m.Config.RootDir), database)
-	setLogLevel(c, &(m.Config.LogLevel), logLevel)
-	setKeysFile(c, &(m.Config.KeyFile), keys)
-	setContractPath(c, &(m.Config.ContractPath), contractPath)
-
-	if chainRoot != "" {
-		m.Config.RootDir = chainRoot
-	}
-
-	// set LLL path
-	epm.LLLURL = m.Config.LLLPath
-
-	// initialize and start
-	m.Init()
-	m.Start()
+    setupModule(c, m, chainRoot)
 	return m
 }
 
 // configure and start an in-process eth node
 func NewEthModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	// empty ethchain object
 	m := eth.NewEth(nil)
-
-	// we need to overwrite the default monk config with our defaults
-	m.Config.RootDir, _ = filepath.Abs(defaultDatabase)
-	m.Config.LogLevel = defaultLogLevel
-
-	// if the HEAD is set, it overrides the default
-	if c, err := utils.GetHead(); err != nil && c != "" {
-		m.Config.RootDir, _ = utils.ResolveChain("ethereum", c, "")
-	}
-
-    config := c.String("config")
-    database  := c.String("db")
-    logLevel := c.Int("log")
-    keys :=  c.String("keys")
-    contractPath := c.String("c")
-
-	// then try to read local config file to overwrite defaults
-	// (if it doesnt exist, it will be saved)
-	m.ReadConfig(config)
-
-	// then apply cli flags
-	setDb(c, &(m.Config.RootDir), database)
-	setLogLevel(c, &(m.Config.LogLevel), logLevel)
-	setKeysFile(c, &(m.Config.KeyFile), keys)
-	setContractPath(c, &(m.Config.ContractPath), contractPath)
-
-	if chainRoot != "" {
-		m.Config.RootDir = chainRoot
-	}
-
-	// set LLL path
-	epm.LLLURL = m.Config.LLLPath
-
-	// initialize and start
-	m.Init()
-	m.Start()
+    setupModule(c, m, chainRoot)
 	return m
 }
-*/

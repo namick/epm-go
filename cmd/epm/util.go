@@ -148,10 +148,10 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 
 func checkInit() error {
 	if _, err := os.Stat(path.Join(utils.Blockchains, "config.json")); err != nil {
-		return fmt.Errorf("Could not find default config. Did you run `epm -init` ?")
+		return fmt.Errorf("Could not find default config. Did you run `epm init` ?")
 	}
 	if _, err := os.Stat(path.Join(utils.Blockchains, "genesis.json")); err != nil {
-		return fmt.Errorf("Could not find default genesis.json. Did you run `epm -init` ?")
+		return fmt.Errorf("Could not find default genesis.json. Did you run `epm init` ?")
 	}
 	return nil
 }

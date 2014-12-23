@@ -4,8 +4,8 @@ import (
     "path"
     "os"
     "github.com/codegangsta/cli"
-	"github.com/eris-ltd/decerver-interfaces/glue/utils"
 	"github.com/eris-ltd/thelonious/monklog"
+	"github.com/eris-ltd/epm-go/utils"
 )
 
 var (

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+    "reflect"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -214,3 +215,21 @@ func InitDecerverDir() error {
 	return err
 }
 
+func SetProperty(cv reflect.Value, field string, value interface{}) error{
+	f := cv.FieldByName(field)
+	kind := f.Kind()
+
+	k := reflect.ValueOf(value).Kind()
+	if kind != k {
+		return fmt.Errorf("Invalid kind. Expected %s, received %s", kind, k)
+	}
+
+	if kind == reflect.String {
+		f.SetString(value.(string))
+	} else if kind == reflect.Int {
+		f.SetInt(int64(value.(int)))
+	} else if kind == reflect.Bool {
+		f.SetBool(value.(bool))
+	}
+	return nil
+}

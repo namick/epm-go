@@ -64,10 +64,3 @@ func setDb(c *cli.Context, config *string, dbpath string) {
 		}
 	}
 }
-
-func setDifficulty(c *cli.Context, config *int, d int) {
-	*config = defaultDifficulty
-	if c.IsSet("difficulty") {
-		*config = d
-	}
-}
