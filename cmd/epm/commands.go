@@ -6,52 +6,45 @@ import (
 
 var (
 	cleanCmd = cli.Command{
-		Name:      "clean",
-		ShortName: "",
-		Usage:     "clean epm related directories",
-		Action:    cliCleanPullUpdate,
+		Name:   "clean",
+		Usage:  "clean epm related directories",
+		Action: cliCleanPullUpdate,
 	}
 
 	plopCmd = cli.Command{
-		Name:      "plop",
-		ShortName: "plop",
-		Usage:     "epm plop <config | genesis>",
-		Action:    cliPlop,
+		Name:   "plop",
+		Usage:  "epm plop <config | genesis>",
+		Action: cliPlop,
 	}
 
 	refsCmd = cli.Command{
-		Name:      "refs",
-		ShortName: "refs",
-		Usage:     "display the chain references",
-		Action:    cliRefs,
+		Name:   "refs",
+		Usage:  "display the chain references",
+		Action: cliRefs,
 	}
 
 	headCmd = cli.Command{
-		Name:      "head",
-		ShortName: "head",
-		Usage:     "display the current working chain",
-		Action:    cliHead,
+		Name:   "head",
+		Usage:  "display the current working chain",
+		Action: cliHead,
 	}
 
 	initCmd = cli.Command{
-		Name:      "init",
-		ShortName: "init",
-		Usage:     "initialize the epm tree in ~/.decerver",
-		Action:    cliInit,
+		Name:   "init",
+		Usage:  "initialize the epm tree in ~/.decerver",
+		Action: cliInit,
 	}
 
 	fetchCmd = cli.Command{
-		Name:      "fetch",
-		ShortName: "fetch",
-		Usage:     "asssemble a chain from dapp info",
-		Action:    cliFetch,
+		Name:   "fetch",
+		Usage:  "asssemble a chain from dapp info",
+		Action: cliFetch,
 	}
 
 	deployCmd = cli.Command{
-		Name:      "deploy",
-		ShortName: "deploy",
-		Usage:     "deploy a chain",
-		Action:    cliDeploy,
+		Name:   "deploy",
+		Usage:  "deploy a chain",
+		Action: cliDeploy,
 		Flags: []cli.Flag{
 			deployInstallFlag,
 			deployCheckoutFlag,
@@ -63,10 +56,9 @@ var (
 	}
 
 	installCmd = cli.Command{
-		Name:      "install",
-		ShortName: "install",
-		Usage:     "install a chain into the decerver tree",
-		Action:    cliInstall,
+		Name:   "install",
+		Usage:  "install a chain into the decerver tree",
+		Action: cliInstall,
 		Flags: []cli.Flag{
 			installCheckoutFlag,
 			nameFlag,
@@ -74,24 +66,21 @@ var (
 	}
 
 	checkoutCmd = cli.Command{
-		Name:      "checkout",
-		ShortName: "checkout",
-		Usage:     "change the current working chain",
-		Action:    cliCheckout,
+		Name:   "checkout",
+		Usage:  "change the current working chain",
+		Action: cliCheckout,
 	}
 
 	addRefCmd = cli.Command{
-		Name:      "add-ref",
-		ShortName: "add-ref",
-		Usage:     "add a new reference to a chain id",
-		Action:    cliAddRef,
+		Name:   "add-ref",
+		Usage:  "add a new reference to a chain id",
+		Action: cliAddRef,
 	}
 
 	runCmd = cli.Command{
-		Name:      "run",
-		ShortName: "run",
-		Usage:     "run a chain by reference or id",
-		Action:    cliRun,
+		Name:   "run",
+		Usage:  "run a chain by reference or id",
+		Action: cliRun,
 		Flags: []cli.Flag{
 			mineFlag,
 			typeFlag,
@@ -99,12 +88,23 @@ var (
 	}
 
 	runDappCmd = cli.Command{
-		Name:      "run-dapp",
-		ShortName: "run-dapp",
-		Usage:     "run a chain by dapp name",
-		Action:    cliRunDapp,
+		Name:   "run-dapp",
+		Usage:  "run a chain by dapp name",
+		Action: cliRunDapp,
 		Flags: []cli.Flag{
 			mineFlag,
+		},
+	}
+
+	configCmd = cli.Command{
+		Name:   "config",
+		Usage:  "epm config <config key 1>:<config value 1> <config key 2>:<config value 2> ...",
+		Action: cliConfig,
+		Flags: []cli.Flag{
+			typeFlag,
+			nameFlag,
+			idFlag,
+			globalFlag,
 		},
 	}
 )

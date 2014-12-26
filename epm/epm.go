@@ -39,6 +39,7 @@ type DecerverModule interface {
 	Start() error
 
 	ReadConfig(string)
+	WriteConfig(string)
 	SetProperty(string, interface{}) error
 	Property(string) interface{}
 }

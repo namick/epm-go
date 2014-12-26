@@ -74,6 +74,7 @@ func main() {
 		addRefCmd,
 		runCmd,
 		runDappCmd,
+		configCmd,
 	}
 
 	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 5, "")
@@ -87,6 +88,8 @@ func main() {
 		}
 	*/
 	app.Run(os.Args)
+
+	monklog.Flush()
 
 	// fail if `epm -init` has not been run
 	// TODO: put this everywhere it needs to be...

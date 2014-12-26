@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 func cliCleanPullUpdate(c *cli.Context) {
@@ -186,6 +187,41 @@ func cliRunDapp(c *cli.Context) {
 	logger.Infoln("Running chain ", chainId)
 	chain := loadChain(c, path.Join(utils.Blockchains, "thelonious", chainId))
 	chain.WaitForShutdown()
+}
+
+func cliConfig(c *cli.Context) {
+	chainType := c.String("type")
+	chainName := c.String("name")
+	id := c.String("id")
+	global := c.Bool("global")
+	var root string
+	if global {
+		root = utils.Blockchains
+	} else {
+		if chainName == "" && id == "" {
+			chainHead, err := chains.GetHead()
+			ifExit(err)
+			chainName = chainHead
+			id = chainHead
+		}
+		chainId, err := chains.ResolveChainId(chainType, chainName, id)
+		ifExit(err)
+		root = path.Join(utils.Blockchains, chainType, chainId)
+	}
+
+	m := newChain(c)
+	m.ReadConfig(path.Join(root, "config.json"))
+
+	args := c.Args()
+	for _, a := range args {
+		sp := strings.Split(a, ":")
+		key := sp[0]
+		value := sp[1]
+		if err := m.SetProperty(key, value); err != nil {
+			logger.Errorln(err)
+		}
+	}
+	m.WriteConfig(path.Join(root, "config.json"))
 }
 
 func cliDeployPdx(c *cli.Context) {

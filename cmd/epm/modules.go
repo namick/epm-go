@@ -17,6 +17,34 @@ import (
 	"github.com/eris-ltd/thelonious/monk"
 )
 
+func newChain(c *cli.Context) epm.Blockchain {
+	rpc := c.Bool("rpc")
+	switch c.String("type") {
+	case "thel", "thelonious", "monk":
+		if rpc {
+			return monkrpc.NewMonkRpcModule()
+		} else {
+			return monk.NewMonk(nil)
+		}
+	case "btc", "bitcoin":
+		if rpc {
+			log.Fatal("Bitcoin rpc not implemented yet")
+		} else {
+			log.Fatal("Bitcoin not implemented yet")
+		}
+	case "eth", "ethereum":
+		if rpc {
+			log.Fatal("Eth rpc not implemented yet")
+		} else {
+			//	return NewEthModule(c, chainRoot)
+		}
+	case "gen", "genesis":
+		//return NewGenModule(c, chainRoot)
+	}
+	return nil
+
+}
+
 // chainroot is a full path to the dir
 func loadChain(c *cli.Context, chainRoot string) epm.Blockchain {
 	rpc := c.Bool("rpc")

@@ -175,4 +175,9 @@ var (
 		Name:  "checkout, o, c",
 		Usage: "checkout the chain into head",
 	}
+
+	globalFlag = cli.BoolFlag{
+		Name:  "global",
+		Usage: "edit the global default config",
+	}
 )
