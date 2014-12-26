@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"github.com/eris-ltd/decerver-interfaces/events"
 	"github.com/eris-ltd/decerver-interfaces/modules"
-	"github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
+	"github.com/eris-ltd/thelonious/monklog"
 	"github.com/project-douglas/lllc-server"
 	"os"
 	"regexp"
@@ -34,18 +34,18 @@ type KeyManager interface {
 	AddressCount() int
 }
 
-type DecerverModule interface{
-    Init() error
-    Start() error
+type DecerverModule interface {
+	Init() error
+	Start() error
 
-    ReadConfig(string)
-    SetProperty(string, interface{}) error
-    Property(string) interface{}
+	ReadConfig(string)
+	SetProperty(string, interface{}) error
+	Property(string) interface{}
 }
 
 type Blockchain interface {
 	KeyManager
-    DecerverModule
+	DecerverModule
 	WorldState() *modules.WorldState
 	State() *modules.State
 	Storage(target string) *modules.Storage

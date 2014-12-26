@@ -3,6 +3,7 @@ package epm
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/eris-ltd/epm-go/utils"
 	"log"
 	"math/big"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"path"
 	"regexp"
 	"strings"
-    "github.com/eris-ltd/epm-go/utils"
 )
 
 // make sure command is valid

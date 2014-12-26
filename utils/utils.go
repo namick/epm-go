@@ -2,20 +2,20 @@ package utils
 
 import (
 	"bytes"
-    "reflect"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"github.com/eris-ltd/thelonious/monklog"
+	"io"
+	"io/ioutil"
+	"log"
 	"os"
-    "os/user"
-    "log"
-    "io"
-    "io/ioutil"
+	"os/user"
 	"path"
+	"reflect"
 	"strconv"
 	"strings"
-    "encoding/json"
-    "github.com/eris-ltd/thelonious/monklog"
 )
 
 var (
@@ -51,7 +51,6 @@ func AbsolutePath(Datadir string, filename string) string {
 	}
 	return path.Join(Datadir, filename)
 }
-
 
 // common golang, really?
 func Copy(src, dst string) error {
@@ -106,7 +105,7 @@ func NumberToBytes(num interface{}, N int) []byte {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, num)
 	if err != nil {
-        // TODO: get this guy a return error?
+		// TODO: get this guy a return error?
 		// logger.Errorln("NumberToBytes failed:", err)
 	}
 	//fmt.Println("btyes!", buf.Bytes())
@@ -215,7 +214,7 @@ func InitDecerverDir() error {
 	return err
 }
 
-func SetProperty(cv reflect.Value, field string, value interface{}) error{
+func SetProperty(cv reflect.Value, field string, value interface{}) error {
 	f := cv.FieldByName(field)
 	kind := f.Kind()
 

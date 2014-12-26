@@ -3,9 +3,9 @@ package epm
 import (
 	"bufio"
 	"fmt"
+	"github.com/eris-ltd/epm-go/utils"
 	"os"
 	"strings"
-    "github.com/eris-ltd/epm-go/utils"
 )
 
 // for parsing/running companion test files for an epm deploy
