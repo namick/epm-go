@@ -36,6 +36,7 @@ func main() {
 	app.Name = "epm"
 	app.Usage = ""
 	app.Action = cliDeployPdx
+    app.EnableBashCompletion = true
 
 	// TODO: global flags only work on global command!
 	app.Flags = []cli.Flag{
