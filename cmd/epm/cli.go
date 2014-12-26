@@ -82,8 +82,8 @@ func cliDeploy(c *cli.Context) {
 	// and copy into working dir
 	deployGen := c.String("genesis")
 	deployConf := c.String("config")
-	tempGen := "genesis.json"
-	tempConf := "config.json"
+	tempGen := ".genesis.json"
+	tempConf := ".config.json"
 
 	if deployGen == "" {
 		deployGen = path.Join(utils.Blockchains, "genesis.json")
@@ -100,13 +100,14 @@ func cliDeploy(c *cli.Context) {
 
 	chainId, err := monk.DeployChain(ROOT, tempGen, tempConf)
 	ifExit(err)
-	if c.Bool("install") {
-		err := monk.InstallChain(ROOT, c.String("name"), tempGen, tempConf, chainId)
-		ifExit(err)
-	}
+
+	err = monk.InstallChain(ROOT, c.String("name"), tempGen, tempConf, chainId)
+	ifExit(err)
+
 	if c.Bool("checkout") {
 		ifExit(chains.ChangeHead(chainId))
 	}
+	logger.Warnf("Deployed and installed chain: %s", chainId)
 	exit(nil)
 }
 

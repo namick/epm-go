@@ -43,25 +43,14 @@ var (
 
 	deployCmd = cli.Command{
 		Name:   "deploy",
-		Usage:  "deploy a chain",
+		Usage:  "deploy a chain and install into the decerver tree",
 		Action: cliDeploy,
 		Flags: []cli.Flag{
-			deployInstallFlag,
 			deployCheckoutFlag,
 			deployConfigFlag,
 			deployGenesisFlag,
 			nameFlag,
 			typeFlag,
-		},
-	}
-
-	installCmd = cli.Command{
-		Name:   "install",
-		Usage:  "install a chain into the decerver tree",
-		Action: cliInstall,
-		Flags: []cli.Flag{
-			installCheckoutFlag,
-			nameFlag,
 		},
 	}
 

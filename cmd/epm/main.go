@@ -72,7 +72,6 @@ func main() {
 		initCmd,
 		fetchCmd,
 		deployCmd,
-		installCmd,
 		checkoutCmd,
 		addRefCmd,
 		runCmd,
@@ -81,7 +80,7 @@ func main() {
 		commandCmd,
 	}
 
-	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 2, "")
+	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 3, "")
 
 	// clean, update, or install
 	// exit
