@@ -25,7 +25,7 @@ var (
 	defaultGenesis      = ""
 	defaultKeys         = ""
 	defaultDatabase     = ".chain"
-	defaultLogLevel     = 5
+	defaultLogLevel     = 2
 	defaultDiffStorage  = false
 )
 
@@ -36,7 +36,7 @@ func main() {
 	app.Name = "epm"
 	app.Usage = ""
 	app.Action = cliDeployPdx
-    app.EnableBashCompletion = true
+	app.EnableBashCompletion = true
 
 	// TODO: global flags only work on global command!
 	app.Flags = []cli.Flag{
@@ -76,9 +76,10 @@ func main() {
 		runCmd,
 		runDappCmd,
 		configCmd,
+		commandCmd,
 	}
 
-	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 5, "")
+	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 2, "")
 
 	// clean, update, or install
 	// exit

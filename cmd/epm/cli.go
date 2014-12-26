@@ -189,24 +189,29 @@ func cliRunDapp(c *cli.Context) {
 	chain.WaitForShutdown()
 }
 
-func cliConfig(c *cli.Context) {
+func resolveRoot(c *cli.Context) string {
 	chainType := c.String("type")
 	chainName := c.String("name")
 	id := c.String("id")
+	if chainName == "" && id == "" {
+		chainHead, err := chains.GetHead()
+		ifExit(err)
+		chainName = chainHead
+		id = chainHead
+	}
+	chainId, err := chains.ResolveChainId(chainType, chainName, id)
+	ifExit(err)
+	root := path.Join(utils.Blockchains, chainType, chainId)
+	return root
+}
+
+func cliConfig(c *cli.Context) {
 	global := c.Bool("global")
 	var root string
 	if global {
 		root = utils.Blockchains
 	} else {
-		if chainName == "" && id == "" {
-			chainHead, err := chains.GetHead()
-			ifExit(err)
-			chainName = chainHead
-			id = chainHead
-		}
-		chainId, err := chains.ResolveChainId(chainType, chainName, id)
-		ifExit(err)
-		root = path.Join(utils.Blockchains, chainType, chainId)
+		root = resolveRoot(c)
 	}
 
 	m := newChain(c)
@@ -222,6 +227,36 @@ func cliConfig(c *cli.Context) {
 		}
 	}
 	m.WriteConfig(path.Join(root, "config.json"))
+}
+
+func cliCommand(c *cli.Context) {
+	root := resolveRoot(c)
+	chain := loadChain(c, root)
+
+	args := c.Args()
+	if len(args) < 3 {
+		exit(fmt.Errorf("You must specify a command and at least 2 arguments"))
+	}
+	cmd := args[0]
+	args = args[1:]
+
+	job := epm.NewJob(cmd, args)
+
+	contractPath := c.String("c")
+	if !c.IsSet("c") {
+		contractPath = defaultContractPath
+	}
+
+	var err error
+	epm.ContractPath, err = filepath.Abs(contractPath)
+	ifExit(err)
+
+	e, err := epm.NewEPM(chain, epm.LogFile)
+	ifExit(err)
+
+	e.AddJob(job)
+	e.ExecuteJobs()
+	e.Commit()
 }
 
 func cliDeployPdx(c *cli.Context) {

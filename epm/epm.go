@@ -166,6 +166,14 @@ func (e *EPM) Parse(filename string) error {
 	return e.parse(lines)
 }
 
+func NewJob(cmd string, args []string) *Job {
+	return &Job{cmd, args}
+}
+
+func (e *EPM) AddJob(job *Job) {
+	e.jobs = append(e.jobs, *job)
+}
+
 // parse should take a list of lines, peel commands into jobs
 // lines either come from a file or from iepm
 func (e *EPM) parse(lines []string) error {
@@ -182,7 +190,7 @@ func (e *EPM) parse(lines []string) error {
 		if err != nil {
 			return err
 		}
-		e.jobs = append(e.jobs, *job)
+		e.AddJob(job)
 		// check if we need to take or diff state after this job
 		// if diff is disabled they will not run, but we need to parse them out
 		e.parseStateDiffs(&lines, l, diffmap)
@@ -219,7 +227,8 @@ func (e *EPM) Jobs() []Job {
 }
 
 func (e *EPM) StoreVar(key, val string) {
-	if key[:2] == "{{" && key[len(key)-2:] == "}}" {
+
+	if len(key) > 4 && key[:2] == "{{" && key[len(key)-2:] == "}}" {
 		key = key[2 : len(key)-2]
 	}
 	e.vars[key] = utils.Coerce2Hex(val)

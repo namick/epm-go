@@ -107,4 +107,16 @@ var (
 			globalFlag,
 		},
 	}
+
+	commandCmd = cli.Command{
+		Name:   "cmd",
+		Usage:  "epm cmd deploy contract.lll",
+		Action: cliCommand,
+		Flags: []cli.Flag{
+			typeFlag,
+			nameFlag,
+			idFlag,
+			contractPathFlag,
+		},
+	}
 )
