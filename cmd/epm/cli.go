@@ -112,6 +112,10 @@ func cliDeploy(c *cli.Context) {
 
 // install a local chain into the decerver tree
 func cliInstall(c *cli.Context) {
+	if _, err := os.Stat(ROOT); err != nil {
+		exit(fmt.Errorf("No %s directory found. There must be a %s present in order to install", ROOT, ROOT))
+	}
+
 	var config string
 	var genesis string
 	name := c.String("name")
