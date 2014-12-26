@@ -138,14 +138,7 @@ func findPrefixMatch(dirPath, prefix string) (string, error) {
 // Maximum entries in the HEAD file
 var MaxHead = 100
 
-// The HEAD file is a running list of the latest head
-// so we can go back if we mess up or forget
-func ChangeHead(head string) error {
-	head, err := ResolveChainId("thelonious", head, head)
-	if err != nil {
-		return err
-	}
-
+func changeHead(head string) error {
 	b, err := ioutil.ReadFile(utils.HEAD)
 	if err != nil {
 		return err
@@ -163,6 +156,20 @@ func ChangeHead(head string) error {
 		return err
 	}
 	return nil
+}
+
+func NullHead() error {
+	return changeHead("")
+}
+
+// The HEAD file is a running list of the latest head
+// so we can go back if we mess up or forget
+func ChangeHead(head string) error {
+	head, err := ResolveChainId("thelonious", head, head)
+	if err != nil {
+		return err
+	}
+	return changeHead(head)
 }
 
 // Add a reference name to a chainId

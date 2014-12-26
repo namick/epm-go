@@ -224,7 +224,21 @@ func cliConfig(c *cli.Context) {
 func cliRemove(c *cli.Context) {
 	root := resolveRoot(c)
 	if confirm("This will permanently delete the directory: " + root) {
+		// remove the directory
 		os.RemoveAll(root)
+		// remove from head (if current head)
+		h, _ := chains.GetHead()
+		if strings.Contains(root, h) {
+			chains.NullHead()
+		}
+		// remove refs
+		refs, err := chains.GetRefs()
+		ifExit(err)
+		for k, v := range refs {
+			if strings.Contains(root, v) {
+				os.Remove(path.Join(utils.Blockchains, "refs", k))
+			}
+		}
 	}
 }
 
