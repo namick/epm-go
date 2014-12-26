@@ -2,13 +2,16 @@ package epm
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/eris-ltd/decerver-interfaces/events"
 	"github.com/eris-ltd/decerver-interfaces/modules"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
 	"github.com/project-douglas/lllc-server"
+	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var logger *monklog.Logger = monklog.NewLogger("EPM")
@@ -90,7 +93,7 @@ type EPM struct {
 	log string
 }
 
-// new empty epm
+// New empty EPM
 func NewEPM(chain Blockchain, log string) (*EPM, error) {
 	lllcserver.URL = LLLURL
 	//logger.Infoln("url: ", LLLURL)
@@ -147,6 +150,7 @@ func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string
 	}
 }
 
+// Parse a pdx file into a series of EPM jobs
 func (e *EPM) Parse(filename string) error {
 	logger.Infoln("Parsing ", filename)
 	// set current file to parse
@@ -166,10 +170,12 @@ func (e *EPM) Parse(filename string) error {
 	return e.parse(lines)
 }
 
+// New EPM Job
 func NewJob(cmd string, args []string) *Job {
 	return &Job{cmd, args}
 }
 
+// Add job to EPM jobs
 func (e *EPM) AddJob(job *Job) {
 	e.jobs = append(e.jobs, *job)
 }
@@ -218,14 +224,49 @@ func (e *EPM) VarSub(args []string) []string {
 	return args
 }
 
+// Read EPM variables in from a file
+func (e *EPM) ReadVars(file string) error {
+	f, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	sp := strings.Split(string(f), "\n")
+	for _, kv := range sp {
+		kvsp := strings.Split(kv, ":")
+		if len(kvsp) != 2 {
+			return fmt.Errorf("Invalid variable formatting in %s", file)
+		}
+		k := kvsp[0]
+		v := kvsp[1]
+		e.vars[k] = v
+	}
+	return nil
+}
+
+// Write EPM variables to file
+func (e *EPM) WriteVars(file string) error {
+	vars := e.Vars()
+	s := ""
+	for k, v := range vars {
+		s += k + ":" + v + "\n"
+	}
+	// remove final new line
+	s = s[:len(s)-1]
+	err := ioutil.WriteFile(file, []byte(s), 0600)
+	return err
+}
+
+// Return map of EPM variables.
 func (e *EPM) Vars() map[string]string {
 	return e.vars
 }
 
+// Return list of jobs
 func (e *EPM) Jobs() []Job {
 	return e.jobs
 }
 
+// Store a variable (strips {{ }} from key if necessary)
 func (e *EPM) StoreVar(key, val string) {
 
 	if len(key) > 4 && key[:2] == "{{" && key[len(key)-2:] == "}}" {

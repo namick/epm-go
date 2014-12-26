@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
@@ -154,6 +156,22 @@ func checkInit() error {
 		return fmt.Errorf("Could not find default genesis.json. Did you run `epm init` ?")
 	}
 	return nil
+}
+
+func resolveRoot(c *cli.Context) string {
+	chainType := c.String("type")
+	chainName := c.String("name")
+	id := c.String("id")
+	if chainName == "" && id == "" {
+		chainHead, err := chains.GetHead()
+		ifExit(err)
+		chainName = chainHead
+		id = chainHead
+	}
+	chainId, err := chains.ResolveChainId(chainType, chainName, id)
+	ifExit(err)
+	root := path.Join(utils.Blockchains, chainType, chainId)
+	return root
 }
 
 func vi(file string) error {

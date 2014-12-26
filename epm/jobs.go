@@ -175,6 +175,7 @@ func (e *EPM) Transact(args []string) error {
 	data := strings.Split(dataS, " ")
 	data = DoMath(data)
 	e.chain.Msg(to, data)
+	logger.Warnf("Sent %s to %s", data, to)
 	return nil
 }
 
@@ -230,6 +231,7 @@ func (e *EPM) Endow(args []string) error {
 	addr := args[0]
 	value := args[1]
 	e.chain.Tx(addr, value)
+	logger.Warnf("Endowed %s with %s", addr, value)
 	return nil
 }
 

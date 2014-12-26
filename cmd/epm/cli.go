@@ -15,6 +15,9 @@ import (
 	"strings"
 )
 
+var EPMVars = "epm.vars"
+
+// TODO !
 func cliCleanPullUpdate(c *cli.Context) {
 
 }
@@ -33,7 +36,7 @@ func cliPlop(c *cli.Context) {
 
 }
 
-// list the refs (git branch)
+// list the refs
 func cliRefs(c *cli.Context) {
 	r, err := chains.GetRefs()
 	h, _ := chains.GetHead()
@@ -189,22 +192,6 @@ func cliRunDapp(c *cli.Context) {
 	chain.WaitForShutdown()
 }
 
-func resolveRoot(c *cli.Context) string {
-	chainType := c.String("type")
-	chainName := c.String("name")
-	id := c.String("id")
-	if chainName == "" && id == "" {
-		chainHead, err := chains.GetHead()
-		ifExit(err)
-		chainName = chainHead
-		id = chainHead
-	}
-	chainId, err := chains.ResolveChainId(chainType, chainName, id)
-	ifExit(err)
-	root := path.Join(utils.Blockchains, chainType, chainId)
-	return root
-}
-
 func cliConfig(c *cli.Context) {
 	global := c.Bool("global")
 	var root string
@@ -253,9 +240,11 @@ func cliCommand(c *cli.Context) {
 
 	e, err := epm.NewEPM(chain, epm.LogFile)
 	ifExit(err)
+	e.ReadVars(path.Join(root, EPMVars))
 
 	e.AddJob(job)
 	e.ExecuteJobs()
+	e.WriteVars(path.Join(root, EPMVars))
 	e.Commit()
 }
 
@@ -308,6 +297,7 @@ func cliDeployPdx(c *cli.Context) {
 	// setup EPM object with ChainInterface
 	e, err := epm.NewEPM(chain, epm.LogFile)
 	ifExit(err)
+	e.ReadVars(path.Join(chainRoot, EPMVars))
 
 	// if interactive mode, enable diffs and run the repl
 	if interactive {
@@ -330,6 +320,8 @@ func cliDeployPdx(c *cli.Context) {
 
 	// epm execute jobs
 	e.ExecuteJobs()
+	// write epm variables to file
+	e.WriteVars(path.Join(chainRoot, EPMVars))
 	// wait for a block
 	e.Commit()
 	// run tests
