@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
 	"os"
 	"path"
+	"runtime"
 )
 
 var (
@@ -89,11 +91,23 @@ func main() {
 			exit(nil)
 		}
 	*/
-	app.Run(os.Args)
+	run(app)
 
 	monklog.Flush()
 
 	// fail if `epm -init` has not been run
 	// TODO: put this everywhere it needs to be...
 	//ifExit(checkInit())
+}
+
+func run(app *cli.App) {
+	defer func() {
+		if r := recover(); r != nil {
+			trace := make([]byte, 1048)
+			count := runtime.Stack(trace, true)
+			fmt.Printf("Stack of %d bytes: %s", count, trace)
+		}
+	}()
+
+	app.Run(os.Args)
 }

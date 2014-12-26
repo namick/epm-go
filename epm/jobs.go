@@ -105,6 +105,8 @@ func (e *EPM) ExecuteJob(job Job) error {
 		}
 	case "epm":
 		return e.EPMx(job.args[0])
+	default:
+		return fmt.Errorf("Unknown command: %s", job.cmd)
 	}
 	return nil
 }
@@ -180,7 +182,7 @@ func (e *EPM) Transact(args []string) error {
 }
 
 // Issue a query.
-// TODO: Not currently functional, but not really necessary either
+// XXX: Only works after a commit ...
 func (e *EPM) Query(args []string) error {
 	addr := args[0]
 	storage := args[1]
@@ -188,7 +190,7 @@ func (e *EPM) Query(args []string) error {
 
 	v := e.chain.StorageAt(addr, storage)
 	e.StoreVar(varName, v)
-	logger.Warnf("\tresult: %s = %s\n", varName, v)
+	logger.Warnf("result: %s = %s\n", varName, v)
 	return nil
 }
 
