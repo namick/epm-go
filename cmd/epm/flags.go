@@ -2,21 +2,21 @@ package main
 
 import (
 	"fmt"
+	"github.com/codegangsta/cli"
 	"github.com/eris-ltd/epm-go/epm"
 	"os"
 	"path/filepath"
-    "github.com/codegangsta/cli"
 )
 
 func setLogLevel(c *cli.Context, m epm.Blockchain) {
-    logLevel := c.Int("log")
+	logLevel := c.Int("log")
 	if c.IsSet("log") {
 		m.SetProperty("LogLevel", logLevel)
 	}
 }
 
 func setKeysFile(c *cli.Context, m epm.Blockchain) {
-    keys :=  c.String("keys")
+	keys := c.String("keys")
 	if c.IsSet("k") {
 		//if keyfile != defaultKeys {
 		keysAbs, err := filepath.Abs(keys)
@@ -24,12 +24,12 @@ func setKeysFile(c *cli.Context, m epm.Blockchain) {
 			fmt.Println(err)
 			os.Exit(0)
 		}
-        m.SetProperty("KeyFile", keysAbs)
+		m.SetProperty("KeyFile", keysAbs)
 	}
 }
 
-func setGenesisPath(c *cli.Context, m epm.Blockchain){
-    genesis := c.String("genesis")
+func setGenesisPath(c *cli.Context, m epm.Blockchain) {
+	genesis := c.String("genesis")
 	if c.IsSet("genesis") {
 		//if *config != defaultGenesis && genfile != "" {
 		genAbs, err := filepath.Abs(genesis)
@@ -37,12 +37,12 @@ func setGenesisPath(c *cli.Context, m epm.Blockchain){
 			fmt.Println(err)
 			os.Exit(0)
 		}
-        m.SetProperty("GenesisPath", genAbs)
+		m.SetProperty("GenesisPath", genAbs)
 	}
 }
 
-func setContractPath(c *cli.Context, m epm.Blockchain){
-    contractPath := c.String("c")
+func setContractPath(c *cli.Context, m epm.Blockchain) {
+	contractPath := c.String("c")
 	if c.IsSet("c") {
 		//if cpath != defaultContractPath {
 		cPathAbs, err := filepath.Abs(contractPath)
@@ -50,7 +50,14 @@ func setContractPath(c *cli.Context, m epm.Blockchain){
 			fmt.Println(err)
 			os.Exit(0)
 		}
-        m.SetProperty("ContractPath", cPathAbs)
+		m.SetProperty("ContractPath", cPathAbs)
+	}
+}
+
+func setMining(c *cli.Context, m epm.Blockchain) {
+	tomine := c.Bool("mine")
+	if c.IsSet("mine") {
+		m.SetProperty("Mining", tomine)
 	}
 }
 
@@ -65,107 +72,107 @@ func setDb(c *cli.Context, config *string, dbpath string) {
 	}
 }
 
-
 var (
-    nameFlag = cli.StringFlag{
-            Name: "name",
-            Value: "",
-            Usage: "specify a ref name",
-            EnvVar: "",
-        }
+	nameFlag = cli.StringFlag{
+		Name:   "name",
+		Value:  "",
+		Usage:  "specify a ref name",
+		EnvVar: "",
+	}
 
-    idFlag = cli.StringFlag{
-            Name: "id",
-            Value: "",
-            Usage: "set the chain by id",
-            EnvVar: "",
-        }
+	idFlag = cli.StringFlag{
+		Name:   "id",
+		Value:  "",
+		Usage:  "set the chain by id",
+		EnvVar: "",
+	}
 
-    typeFlag = cli.StringFlag{
-            Name: "type",
-            Value: "thelonious",
-            Usage: "set the chain type (thelonious, genesis, bitcoin, ethereum)",
-            EnvVar: "",
-        }
+	typeFlag = cli.StringFlag{
+		Name:   "type",
+		Value:  "thelonious",
+		Usage:  "set the chain type (thelonious, genesis, bitcoin, ethereum)",
+		EnvVar: "",
+	}
 
-    interactiveFlag = cli.BoolFlag{
-            Name: "i",
-            Usage: "Run epm in interactive mode",
-            EnvVar: "",
-        }
+	interactiveFlag = cli.BoolFlag{
+		Name:   "i",
+		Usage:  "Run epm in interactive mode",
+		EnvVar: "",
+	}
 
-    diffFlag = cli.BoolFlag{
-            Name: "diff",
-            Usage: "Show a diff of all contract storage",
-            EnvVar: "",
-        }
+	diffFlag = cli.BoolFlag{
+		Name:   "diff",
+		Usage:  "Show a diff of all contract storage",
+		EnvVar: "",
+	}
 
-    dontClearFlag = cli.BoolFlag{
-            Name: "dont-clear",
-            Usage: "Stop epm from clearing the epm cache on startup",
-            EnvVar: "",
-        }
+	dontClearFlag = cli.BoolFlag{
+		Name:   "dont-clear",
+		Usage:  "Stop epm from clearing the epm cache on startup",
+		EnvVar: "",
+	}
 
-    contractPathFlag = cli.StringFlag{
-            Name: "c",
-            Value: defaultContractPath,
-            Usage: "set the contract path",
-        }
+	contractPathFlag = cli.StringFlag{
+		Name:  "c",
+		Value: defaultContractPath,
+		Usage: "set the contract path",
+	}
 
-    pdxPathFlag = cli.StringFlag{
-            Name: "p",
-            Value: ".",
-            Usage: "deploy a .pdx file",
-        }
+	pdxPathFlag = cli.StringFlag{
+		Name:  "p",
+		Value: ".",
+		Usage: "deploy a .pdx file",
+	}
 
-    logLevelFlag = cli.IntFlag{
-            Name: "log",
-            Value: 2,
-            Usage: "set the log level",
-            EnvVar: "EPM_LOG",
-        }
+	logLevelFlag = cli.IntFlag{
+		Name:   "log",
+		Value:  2,
+		Usage:  "set the log level",
+		EnvVar: "EPM_LOG",
+	}
 
-     rpcFlag = cli.BoolFlag{
-            Name: "rpc",
-            Usage: "run commands over rpc",
-            EnvVar: "",
-        }
+	mineFlag = cli.BoolFlag{
+		Name:  "mine, commit",
+		Usage: "commit blocks",
+	}
 
-     rpcHostFlag = cli.StringFlag{
-            Name: "host",
-            Value: ".",
-            Usage: "set the rpc host",
-        }
+	rpcFlag = cli.BoolFlag{
+		Name:   "rpc",
+		Usage:  "run commands over rpc",
+		EnvVar: "",
+	}
 
-     rpcPortFlag = cli.IntFlag{
-            Name: "port",
-            Value: 5,
-            Usage: "set the rpc port",
-        }
-      
-        deployInstallFlag = cli.BoolFlag{
-            Name: "install, i",
-            Usage: "install the chain following deploy", 
-        }
-        deployCheckoutFlag = cli.BoolFlag{
-            Name: "checkout, o",
-            Usage: "checkout the chain into head",
-        }
-        deployConfigFlag = cli.StringFlag{
-            Name: "config, c",
-            Usage: "specify config file",
-        }
-        deployGenesisFlag = cli.StringFlag{
-            Name: "genesis, g",
-            Usage: "specify genesis file",
-        }
+	rpcHostFlag = cli.StringFlag{
+		Name:  "host",
+		Value: ".",
+		Usage: "set the rpc host",
+	}
 
-        installCheckoutFlag = cli.BoolFlag{
-            Name: "checkout, o, c",
-            Usage: "checkout the chain into head",
-        }
+	rpcPortFlag = cli.IntFlag{
+		Name:  "port",
+		Value: 5,
+		Usage: "set the rpc port",
+	}
+
+	deployInstallFlag = cli.BoolFlag{
+		Name:  "install, i",
+		Usage: "install the chain following deploy",
+	}
+	deployCheckoutFlag = cli.BoolFlag{
+		Name:  "checkout, o",
+		Usage: "checkout the chain into head",
+	}
+	deployConfigFlag = cli.StringFlag{
+		Name:  "config, c",
+		Usage: "specify config file",
+	}
+	deployGenesisFlag = cli.StringFlag{
+		Name:  "genesis, g",
+		Usage: "specify genesis file",
+	}
+
+	installCheckoutFlag = cli.BoolFlag{
+		Name:  "checkout, o, c",
+		Usage: "checkout the chain into head",
+	}
 )
-
-
-
-
