@@ -78,6 +78,7 @@ func main() {
 		runDappCmd,
 		configCmd,
 		commandCmd,
+		deleteCmd,
 	}
 
 	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 3, "")

@@ -108,4 +108,15 @@ var (
 			contractPathFlag,
 		},
 	}
+
+	deleteCmd = cli.Command{
+		Name:   "delete",
+		Usage:  "remove a chain from the global directory",
+		Action: cliRemove,
+		Flags: []cli.Flag{
+			typeFlag,
+			nameFlag,
+			idFlag,
+		},
+	}
 )

@@ -196,3 +196,17 @@ func ifExit(err error) {
 		os.Exit(0)
 	}
 }
+
+func confirm(message string) bool {
+	fmt.Println(message, "Are you sure? (y/n)")
+	var r string
+	fmt.Scanln(&r)
+	for ; ; fmt.Scanln(&r) {
+		if r == "n" || r == "y" {
+			break
+		} else {
+			fmt.Printf("Yes or no?", r)
+		}
+	}
+	return r == "y"
+}

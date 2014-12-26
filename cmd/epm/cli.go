@@ -221,6 +221,13 @@ func cliConfig(c *cli.Context) {
 	m.WriteConfig(path.Join(root, "config.json"))
 }
 
+func cliRemove(c *cli.Context) {
+	root := resolveRoot(c)
+	if confirm("This will permanently delete the directory: " + root) {
+		os.RemoveAll(root)
+	}
+}
+
 func cliCommand(c *cli.Context) {
 	root := resolveRoot(c)
 	chain := loadChain(c, root)
