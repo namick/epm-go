@@ -17,9 +17,8 @@ import (
 	"github.com/eris-ltd/thelonious/monk"
 )
 
-func newChain(c *cli.Context) epm.Blockchain {
-	rpc := c.Bool("rpc")
-	switch c.String("type") {
+func newChain(chainType string, rpc bool) epm.Blockchain {
+	switch chainType {
 	case "thel", "thelonious", "monk":
 		if rpc {
 			return monkrpc.NewMonkRpcModule()
@@ -36,7 +35,7 @@ func newChain(c *cli.Context) epm.Blockchain {
 		if rpc {
 			log.Fatal("Eth rpc not implemented yet")
 		} else {
-			//	return NewEthModule(c, chainRoot)
+			return eth.NewEth(nil)
 		}
 	case "gen", "genesis":
 		//return NewGenModule(c, chainRoot)

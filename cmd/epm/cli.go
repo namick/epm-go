@@ -8,6 +8,7 @@ import (
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monk"
+	"github.com/eris-ltd/thelonious/monkdoug"
 	"log"
 	"os"
 	"path"
@@ -64,7 +65,8 @@ func cliHead(c *cli.Context) {
 
 // create ~/.decerver tree and drop default monk/gen configs in there
 func cliInit(c *cli.Context) {
-	exit(monk.InitChain())
+	//exit(monk.InitChain())
+	exit(utils.InitDecerverDir())
 }
 
 // install a dapp
@@ -73,10 +75,13 @@ func cliFetch(c *cli.Context) {
 }
 
 // deploy the genblock into a local .decerver-local
-// possibly install into ~/.decerver
-//   (will move local dir and local configs)
+// and install into the global tree
 // possibly checkout the newly deployed
+// chain agnostic!
 func cliDeploy(c *cli.Context) {
+	chainType := c.String("type")
+	chainType = chains.ResolveChainType(chainType)
+
 	// if genesis or config are not specified
 	// use defaults set by `epm -init`
 	// and copy into working dir
@@ -85,24 +90,46 @@ func cliDeploy(c *cli.Context) {
 	tempGen := ".genesis.json"
 	tempConf := ".config.json"
 
-	if deployGen == "" {
-		deployGen = path.Join(utils.Blockchains, "genesis.json")
-	}
 	if deployConf == "" {
-		deployConf = path.Join(utils.Blockchains, "config.json")
+		deployConf = path.Join(utils.Blockchains, chainType, "config.json")
 	}
 
-	ifExit(utils.Copy(deployGen, tempGen))
-	vi(tempGen)
+	if _, err := os.Stat(deployConf); err != nil {
+		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
+		m := newChain(chainType, c.Bool("rpc"))
+		ifExit(m.WriteConfig(deployConf))
+	}
 
 	ifExit(utils.Copy(deployConf, tempConf))
 	vi(tempConf)
 
-	chainId, err := monk.DeployChain(ROOT, tempGen, tempConf)
-	ifExit(err)
+	var chainId string
+	var err error
+	if chainType == "thelonious" {
+		if deployGen == "" {
+			deployGen = path.Join(utils.Blockchains, "genesis.json")
+		}
+		if _, err := os.Stat(deployGen); err != nil {
+			err := utils.WriteJson(monkdoug.DefaultGenesis, path.Join(utils.Blockchains, "genesis.json"))
+			ifExit(err)
+		}
+		ifExit(utils.Copy(deployGen, tempGen))
+		vi(tempGen)
 
-	err = monk.InstallChain(ROOT, c.String("name"), tempGen, tempConf, chainId)
-	ifExit(err)
+		chainId, err = monk.DeployChain(ROOT, tempGen, tempConf)
+		ifExit(err)
+		err = monk.InstallChain(ROOT, c.String("name"), tempGen, tempConf, chainId)
+		ifExit(err)
+	} else {
+		chain := newChain(chainType, c.Bool("rpc"))
+		chainId, err = DeployChain(chain, ROOT, tempConf)
+		ifExit(err)
+		if chainId == "" {
+			exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
+		}
+		err = InstallChain(chain, ROOT, c.String("name"), chainType, tempConf, chainId)
+		ifExit(err)
+	}
 
 	if c.Bool("checkout") {
 		ifExit(chains.ChangeHead(chainId))
@@ -206,7 +233,7 @@ func cliConfig(c *cli.Context) {
 		root = resolveRoot(c)
 	}
 
-	m := newChain(c)
+	m := newChain(c.String("type"), c.Bool("rpc"))
 	m.ReadConfig(path.Join(root, "config.json"))
 
 	args := c.Args()

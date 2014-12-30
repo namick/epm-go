@@ -210,3 +210,55 @@ func confirm(message string) bool {
 	}
 	return r == "y"
 }
+
+// Read config, set deployment root,
+// init, return chainId
+func DeployChain(chain epm.Blockchain, root, tempConf string) (string, error) {
+	chain.ReadConfig(tempConf)
+	chain.SetProperty("RootDir", root)
+
+	if err := chain.Init(); err != nil {
+		return "", err
+	}
+
+	// get chain ID!
+	return chain.ChainId()
+}
+
+// Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
+func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId string) error {
+	home := path.Join(utils.Blockchains, chainType, chainId)
+	logger.Infoln("Install directory ", home)
+	// move datastore and configs
+	// be sure to copy paths into config
+	if err := utils.InitDataDir(home); err != nil {
+		return err
+	}
+	if err := os.Rename(root, home); err != nil {
+		return err
+	}
+
+	logger.Infoln("Loading and setting chainId ", tempConf)
+	// set chainId and rootdir values in config file
+	chain.ReadConfig(tempConf)
+
+	chain.SetProperty("ChainId", chainId)
+	chain.SetProperty("ChainName", name)
+	chain.SetProperty("RootDir", home)
+	chain.WriteConfig(tempConf)
+
+	if err := os.Rename(tempConf, path.Join(home, "config.json")); err != nil {
+		return err
+	}
+
+	// update refs
+	if name != "" {
+		err := chains.AddRef(chainId, name)
+		if err != nil {
+			return err
+		}
+		logger.Infof("Created ref %s to point to chain %s\n", name, chainId)
+	}
+
+	return nil
+}

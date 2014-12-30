@@ -41,8 +41,8 @@ type DecerverModule interface {
 	Init() error
 	Start() error
 
-	ReadConfig(string)
-	WriteConfig(string)
+	ReadConfig(string) error
+	WriteConfig(string) error
 	SetProperty(string, interface{}) error
 	Property(string) interface{}
 }
@@ -50,6 +50,7 @@ type DecerverModule interface {
 type Blockchain interface {
 	KeyManager
 	DecerverModule
+	ChainId() (string, error)
 	WorldState() *modules.WorldState
 	State() *modules.State
 	Storage(target string) *modules.Storage
