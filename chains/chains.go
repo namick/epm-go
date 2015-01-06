@@ -12,6 +12,7 @@ import (
 	"github.com/eris-ltd/epm-go/utils"
 )
 
+// Get ChainId from a reference name by reading the ref file
 func ChainIdFromName(name string) string {
 	refsPath := path.Join(utils.Blockchains, "refs", name)
 	b, err := ioutil.ReadFile(refsPath)
@@ -21,23 +22,7 @@ func ChainIdFromName(name string) string {
 	return string(b)
 }
 
-func CheckGetPackageFile(dappDir string) (*dapps.PackageFile, error) {
-	if _, err := os.Stat(dappDir); err != nil {
-		return nil, fmt.Errorf("Dapp %s not found", dappDir)
-	}
-
-	b, err := ioutil.ReadFile(path.Join(dappDir, "package.json"))
-	if err != nil {
-		return nil, err
-	}
-
-	p, err := dapps.NewPackageFileFromJson(b)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
-}
-
+// Get ChainId from dapp name by reading package.json file
 func ChainIdFromDapp(dapp string) (string, error) {
 	p, err := CheckGetPackageFile(path.Join(utils.Apps, dapp))
 	if err != nil {
@@ -61,6 +46,7 @@ func ChainIdFromDapp(dapp string) (string, error) {
 	return chainId, nil
 }
 
+// Allow chain types to be specified in shorter form (ie. 'eth' for 'ethereum')
 func ResolveChainType(chainType string) string {
 	switch chainType {
 	case "thel", "thelonious", "monk":
@@ -75,7 +61,7 @@ func ResolveChainType(chainType string) string {
 	return ""
 }
 
-// Determines the chainId from a chainId prefix or from a ref, but not from a dapp
+// Determines the chainId from a chainId prefix or from a ref, but not from a dapp.
 func ResolveChainId(chainType, name, chainId string) (string, error) {
 	chainType = ResolveChainType(chainType)
 	if chainType == "" {
@@ -105,9 +91,9 @@ func ResolveChainId(chainType, name, chainId string) (string, error) {
 	}
 
 	return chainId, nil
-
 }
 
+// Return full path to a blockchain's directory
 func ResolveChain(chainType, name, chainId string) (string, error) {
 	id, err := ResolveChainId(chainType, name, chainId)
 	if err != nil {
@@ -116,6 +102,7 @@ func ResolveChain(chainType, name, chainId string) (string, error) {
 	return path.Join(utils.Blockchains, chainType, id), nil
 }
 
+// lookup chainIds by prefix match
 func findPrefixMatch(dirPath, prefix string) (string, error) {
 	fs, _ := ioutil.ReadDir(dirPath)
 	found := false
@@ -138,6 +125,7 @@ func findPrefixMatch(dirPath, prefix string) (string, error) {
 // Maximum entries in the HEAD file
 var MaxHead = 100
 
+// Add a new entry to the top of the HEAD file
 func changeHead(head string) error {
 	b, err := ioutil.ReadFile(utils.HEAD)
 	if err != nil {
@@ -158,12 +146,15 @@ func changeHead(head string) error {
 	return nil
 }
 
+// Change the head to null (no head)
 func NullHead() error {
 	return changeHead("")
 }
 
+// Add a new entry to the top of the HEAD file.
+// Argument is chainId or ref name
 // The HEAD file is a running list of the latest head
-// so we can go back if we mess up or forget
+// so we can go back if we mess up or forget.
 func ChangeHead(head string) error {
 	head, err := ResolveChainId("thelonious", head, head)
 	if err != nil {
@@ -209,7 +200,7 @@ func GetRefs() (map[string]string, error) {
 	return m, nil
 }
 
-// Get the current active chain
+// Get the current active chain (top of the HEAD file)
 func GetHead() (string, error) {
 	// TODO: only read the one line!
 	f, err := ioutil.ReadFile(utils.HEAD)
@@ -219,3 +210,22 @@ func GetHead() (string, error) {
 	fspl := strings.Split(string(f), "\n")
 	return fspl[0], nil
 }
+
+// Return a dapp package file
+func CheckGetPackageFile(dappDir string) (*dapps.PackageFile, error) {
+	if _, err := os.Stat(dappDir); err != nil {
+		return nil, fmt.Errorf("Dapp %s not found", dappDir)
+	}
+
+	b, err := ioutil.ReadFile(path.Join(dappDir, "package.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := dapps.NewPackageFileFromJson(b)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
