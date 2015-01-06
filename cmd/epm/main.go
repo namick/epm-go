@@ -44,9 +44,7 @@ func main() {
 	app.Flags = []cli.Flag{
 
 		// which chain
-		nameFlag,
-		idFlag,
-		typeFlag,
+		chainFlag,
 
 		// epm options
 		interactiveFlag,
@@ -78,7 +76,7 @@ func main() {
 		runDappCmd,
 		configCmd,
 		commandCmd,
-		deleteCmd,
+		removeCmd,
 	}
 
 	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 5, "")

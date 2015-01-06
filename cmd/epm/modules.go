@@ -38,39 +38,20 @@ func newChain(chainType string, rpc bool) epm.Blockchain {
 			return eth.NewEth(nil)
 		}
 	case "gen", "genesis":
-		//return NewGenModule(c, chainRoot)
+		return genblock.NewGenBlockModule(nil)
 	}
 	return nil
 
 }
 
 // chainroot is a full path to the dir
-func loadChain(c *cli.Context, chainRoot string) epm.Blockchain {
+func loadChain(c *cli.Context, chainType, chainRoot string) epm.Blockchain {
 	rpc := c.Bool("rpc")
 	logger.Debugln("Loading chain ", c.String("type"))
-	switch c.String("type") {
-	case "thel", "thelonious", "monk":
-		if rpc {
-			return NewMonkRpcModule(c, chainRoot)
-		} else {
-			return NewMonkModule(c, chainRoot)
-		}
-	case "btc", "bitcoin":
-		if rpc {
-			log.Fatal("Bitcoin rpc not implemented yet")
-		} else {
-			log.Fatal("Bitcoin not implemented yet")
-		}
-	case "eth", "ethereum":
-		if rpc {
-			log.Fatal("Eth rpc not implemented yet")
-		} else {
-			//	return NewEthModule(c, chainRoot)
-		}
-	case "gen", "genesis":
-		//return NewGenModule(c, chainRoot)
-	}
-	return nil
+
+	chain := newChain(chainType, rpc)
+	setupModule(c, chain, chainRoot)
+	return chain
 }
 
 // TODO: if we are passed a chainRoot but also db is set
@@ -84,7 +65,7 @@ func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string) {
 
 	// if the HEAD is set, it overrides the default
 	if typ, c, err := chains.GetHead(); err == nil && c != "" {
-		root, _ = chains.ResolveChain(typ, c, c)
+		root, _ = chains.ResolveChainDir(typ, c, c)
 		m.SetProperty("RootDir", root)
 		//path.Join(utils.Blockchains, "thelonious", c)
 	}
@@ -133,32 +114,4 @@ func setupModule(c *cli.Context, m epm.Blockchain, chainRoot string) {
 	// initialize and start
 	m.Init()
 	m.Start()
-}
-
-// configure and start an in-process thelonious  node
-// all paths should be made absolute
-func NewMonkModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	m := monk.NewMonk(nil)
-	setupModule(c, m, chainRoot)
-	return m
-}
-
-func NewGenModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	m := genblock.NewGenBlockModule(nil)
-	setupModule(c, m, chainRoot)
-	return m
-}
-
-// Rpc module for talking to running thelonious node supporting rpc server
-func NewMonkRpcModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	m := monkrpc.NewMonkRpcModule()
-	setupModule(c, m, chainRoot)
-	return m
-}
-
-// configure and start an in-process eth node
-func NewEthModule(c *cli.Context, chainRoot string) epm.Blockchain {
-	m := eth.NewEth(nil)
-	setupModule(c, m, chainRoot)
-	return m
 }

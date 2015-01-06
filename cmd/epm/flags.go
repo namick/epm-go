@@ -80,10 +80,10 @@ var (
 		EnvVar: "",
 	}
 
-	idFlag = cli.StringFlag{
-		Name:   "id",
+	chainFlag = cli.StringFlag{
+		Name:   "chain",
 		Value:  "",
-		Usage:  "set the chain by id",
+		Usage:  "set the chain by <ref name> or by <type>/<id>",
 		EnvVar: "",
 	}
 
@@ -174,10 +174,5 @@ var (
 	installCheckoutFlag = cli.BoolFlag{
 		Name:  "checkout, o, c",
 		Usage: "checkout the chain into head",
-	}
-
-	globalFlag = cli.BoolFlag{
-		Name:  "global",
-		Usage: "edit the global default config",
 	}
 )

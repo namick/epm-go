@@ -43,11 +43,6 @@ func cliRefs(c *cli.Context) {
 	_, h, _ := chains.GetHead()
 	fmt.Println("Available refs:")
 	for rk, rv := range r {
-		/*	if rv == h || rk == h {
-			color.ChangeColor(color.Green, true, color.None, false)
-			fmt.Printf("%s \t : \t %s\n", rk, rv)
-			color.ResetColor()
-		*/
 		if strings.Contains(rv, h) {
 			color.ChangeColor(color.Green, true, color.None, false)
 			fmt.Printf("%s \t : \t %s\n", rk, rv)
@@ -70,7 +65,6 @@ func cliHead(c *cli.Context) {
 
 // create ~/.decerver tree and drop default monk/gen configs in there
 func cliInit(c *cli.Context) {
-	//exit(monk.InitChain())
 	exit(utils.InitDecerverDir())
 }
 
@@ -141,10 +135,11 @@ func cliDeploy(c *cli.Context) {
 		ifExit(err)
 	}
 
+	logger.Warnf("Deployed and installed chain: %s/%s", chainType, chainId)
 	if c.Bool("checkout") {
 		ifExit(chains.ChangeHead(chainType, chainId))
+		logger.Warnf("Checked out chain: %s/%s", chainType, chainId)
 	}
-	logger.Warnf("Deployed and installed chain: %s", chainId)
 	exit(nil)
 }
 
@@ -156,23 +151,8 @@ func cliCheckout(c *cli.Context) {
 	}
 	head := args[0]
 
-	refs, err := chains.GetRefs()
+	typ, id, err := chains.ResolveChain(head)
 	ifExit(err)
-
-	var typ string
-	var id string
-	if h, ok := refs[head]; ok {
-		typ, id, err = chains.SplitRef(h)
-		ifExit(err)
-	} else {
-		// arg is not a known ref, check for type flag
-		if !c.IsSet("type") {
-			exit(fmt.Errorf("Specify the chain type (-type) when checking out by chain id"))
-		}
-		typ = c.String("type")
-		id, err = chains.ResolveChainId(typ, head, head)
-		ifExit(err)
-	}
 
 	if err := chains.ChangeHead(typ, id); err != nil {
 		exit(err)
@@ -183,56 +163,62 @@ func cliCheckout(c *cli.Context) {
 
 // add a new reference to a chainId
 func cliAddRef(c *cli.Context) {
-	ref := c.Args().Get(0)
-	name := c.Args().Get(1)
-	if name == "" {
+	chain := c.Args().Get(0)
+	ref := c.Args().Get(1)
+	if ref == "" {
 		log.Fatal(`add-ref requires a name to be specified as well, \n
                         eg. "add-ref 14c32 mychain"`)
 	}
-	typ := c.String("type")
-	exit(chains.AddRef(typ, ref, name))
+
+	typ, id, err := chains.SplitRef(chain)
+	if err != nil {
+		exit(fmt.Errorf(`Error: specify the type in the first 
+                argument as '<type>/<chainId>'`))
+	}
+	exit(chains.AddRef(typ, id, ref))
+}
+
+// run a node on a chain
+func cliRun(c *cli.Context) {
+	run := c.Args().First()
+	chainType, chainId, err := chains.ResolveChain(run)
+	ifExit(err)
+	logger.Infof("Running chain %s/%s\n", chainType, chainId)
+	chain := loadChain(c, chainType, path.Join(utils.Blockchains, chainType, chainId))
+	chain.WaitForShutdown()
 }
 
 // TODO: multi types
-func cliRun(c *cli.Context) {
-	run := c.Args().First()
-	chainType := c.String("type")
-	fmt.Println("type: ", chainType)
-	if run == "" {
-		typ, id, err := chains.GetHead()
-		ifExit(err)
-		run = id
-		chainType = typ
-	}
-	chainId, err := chains.ResolveChainId(chainType, run, run)
-	if err != nil {
-
-	}
-	ifExit(err)
-	logger.Infoln("Running chain ", chainId)
-	chain := loadChain(c, path.Join(utils.Blockchains, "thelonious", chainId))
-	chain.WaitForShutdown()
-}
-
 func cliRunDapp(c *cli.Context) {
 	dapp := c.Args().First()
+	chainType := "thelonious"
 	chainId, err := chains.ChainIdFromDapp(dapp)
 	ifExit(err)
 	logger.Infoln("Running chain ", chainId)
-	chain := loadChain(c, path.Join(utils.Blockchains, "thelonious", chainId))
+	chain := loadChain(c, chainType, path.Join(utils.Blockchains, chainType, chainId))
 	chain.WaitForShutdown()
 }
 
+// edit a config value
 func cliConfig(c *cli.Context) {
-	global := c.Bool("global")
-	var root string
-	if global {
-		root = utils.Blockchains
+	var (
+		root      string
+		chainType string
+		chainId   string
+		err       error
+	)
+	rpc := c.Bool("rpc")
+	if c.IsSet("type") {
+		chainType = c.String("type")
+		root = path.Join(utils.Blockchains, chainType)
 	} else {
-		root = resolveRoot(c)
+		chain := c.String("chain")
+		chainType, chainId, err = chains.ResolveChain(chain)
+		ifExit(err)
+		root = path.Join(utils.Blockchains, chainType, chainId)
 	}
 
-	m := newChain(c.String("type"), c.Bool("rpc"))
+	m := newChain(chainType, rpc)
 	m.ReadConfig(path.Join(root, "config.json"))
 
 	args := c.Args()
@@ -247,8 +233,13 @@ func cliConfig(c *cli.Context) {
 	m.WriteConfig(path.Join(root, "config.json"))
 }
 
+// remove a chain
 func cliRemove(c *cli.Context) {
-	root := resolveRoot(c)
+	chain := c.String("chain")
+	chainType, chainId, err := chains.ResolveChain(chain)
+	ifExit(err)
+	root := path.Join(utils.Blockchains, chainType, chainId)
+
 	if confirm("This will permanently delete the directory: " + root) {
 		// remove the directory
 		os.RemoveAll(root)
@@ -268,9 +259,14 @@ func cliRemove(c *cli.Context) {
 	}
 }
 
+// run a single epm on-chain command (endow, deploy)
 func cliCommand(c *cli.Context) {
-	root := resolveRoot(c)
-	chain := loadChain(c, root)
+	ref := c.String("chain")
+	chainType, chainId, err := chains.ResolveChain(ref)
+	ifExit(err)
+	root := path.Join(utils.Blockchains, chainType, chainId)
+
+	chain := loadChain(c, chainType, root)
 
 	args := c.Args()
 	if len(args) < 3 {
@@ -286,7 +282,6 @@ func cliCommand(c *cli.Context) {
 		contractPath = defaultContractPath
 	}
 
-	var err error
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
 
@@ -300,34 +295,29 @@ func cliCommand(c *cli.Context) {
 	e.Commit()
 }
 
+// deploy a pdx file on a chain
 func cliDeployPdx(c *cli.Context) {
-	var err error
 	if len(c.Args()) > 0 {
 		logger.Errorln("Did not understand command. Did you forget a - ?")
 		logger.Errorln("Run `epm -help` to see the list of commands")
 		exit(nil)
 	}
 
-	name := c.String("name")
-	chainId := c.String("id")
-	chainType := c.String("type")
+	ref := c.String("chain")
 	contractPath := c.String("c")
 	dontClear := c.Bool("dont-clear")
 	interactive := c.Bool("i")
 	diffStorage := c.Bool("diff")
 	packagePath := c.String("p")
 
-	// Find the chain's db
+	chainType, chainId, err := chains.ResolveChain(ref)
+	ifExit(err)
+	chainRoot := path.Join(utils.Blockchains, chainType, chainId)
 	// hierarchy : name > chainId > db > config > HEAD > default
-	var chainRoot string
-	if name != "" || chainId != "" {
-		chainRoot, err = chains.ResolveChain(chainType, name, chainId)
-		ifExit(err)
-	}
 
 	// Startup the chain
 	var chain epm.Blockchain
-	chain = loadChain(c, chainRoot)
+	chain = loadChain(c, chainType, chainRoot)
 
 	if !c.IsSet("c") {
 		contractPath = defaultContractPath
@@ -386,5 +376,4 @@ func cliDeployPdx(c *cli.Context) {
 			}
 		}
 	}
-
 }

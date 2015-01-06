@@ -58,18 +58,12 @@ var (
 		Name:   "checkout",
 		Usage:  "change the current working chain",
 		Action: cliCheckout,
-		Flags: []cli.Flag{
-			typeFlag,
-		},
 	}
 
 	addRefCmd = cli.Command{
 		Name:   "add-ref",
 		Usage:  "add a new reference to a chain id",
 		Action: cliAddRef,
-		Flags: []cli.Flag{
-			typeFlag,
-		},
 	}
 
 	runCmd = cli.Command{
@@ -78,7 +72,6 @@ var (
 		Action: cliRun,
 		Flags: []cli.Flag{
 			mineFlag,
-			typeFlag,
 		},
 	}
 
@@ -96,10 +89,8 @@ var (
 		Usage:  "epm config <config key 1>:<config value 1> <config key 2>:<config value 2> ...",
 		Action: cliConfig,
 		Flags: []cli.Flag{
+			chainFlag,
 			typeFlag,
-			nameFlag,
-			idFlag,
-			globalFlag,
 		},
 	}
 
@@ -108,21 +99,14 @@ var (
 		Usage:  "epm cmd deploy contract.lll",
 		Action: cliCommand,
 		Flags: []cli.Flag{
-			typeFlag,
-			nameFlag,
-			idFlag,
+			chainFlag,
 			contractPathFlag,
 		},
 	}
 
-	deleteCmd = cli.Command{
-		Name:   "delete",
+	removeCmd = cli.Command{
+		Name:   "rm",
 		Usage:  "remove a chain from the global directory",
 		Action: cliRemove,
-		Flags: []cli.Flag{
-			typeFlag,
-			nameFlag,
-			idFlag,
-		},
 	}
 )
