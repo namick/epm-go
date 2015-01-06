@@ -80,6 +80,7 @@ func (e *EPM) ExecuteJobs() error {
 // Job switch
 // Args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job) error {
+    logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
 	job.args = e.VarSub(job.args) // substitute vars
 	switch job.cmd {
 	case "deploy":

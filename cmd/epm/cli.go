@@ -298,7 +298,7 @@ func cliCommand(c *cli.Context) {
 // deploy a pdx file on a chain
 func cliDeployPdx(c *cli.Context) {
 	if len(c.Args()) > 0 {
-		logger.Errorln("Did not understand command. Did you forget a - ?")
+		logger.Errorln("Did not understand command.")
 		logger.Errorln("Run `epm -help` to see the list of commands")
 		exit(nil)
 	}
