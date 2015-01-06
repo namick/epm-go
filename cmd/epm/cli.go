@@ -40,10 +40,15 @@ func cliPlop(c *cli.Context) {
 // list the refs
 func cliRefs(c *cli.Context) {
 	r, err := chains.GetRefs()
-	h, _ := chains.GetHead()
+	_, h, _ := chains.GetHead()
 	fmt.Println("Available refs:")
 	for rk, rv := range r {
-		if rv == h || rk == h {
+		/*	if rv == h || rk == h {
+			color.ChangeColor(color.Green, true, color.None, false)
+			fmt.Printf("%s \t : \t %s\n", rk, rv)
+			color.ResetColor()
+		*/
+		if strings.Contains(rv, h) {
 			color.ChangeColor(color.Green, true, color.None, false)
 			fmt.Printf("%s \t : \t %s\n", rk, rv)
 			color.ResetColor()
@@ -56,9 +61,9 @@ func cliRefs(c *cli.Context) {
 
 // print current head
 func cliHead(c *cli.Context) {
-	chainHead, err := chains.GetHead()
+	typ, id, err := chains.GetHead()
 	if err == nil {
-		fmt.Println("Current head:", chainHead)
+		fmt.Println("Current head:", path.Join(typ, id))
 	}
 	exit(err)
 }
@@ -70,6 +75,7 @@ func cliInit(c *cli.Context) {
 }
 
 // install a dapp
+// TODO hmph
 func cliFetch(c *cli.Context) {
 	exit(monk.FetchInstallChain(c.Args().First()))
 }
@@ -79,24 +85,25 @@ func cliFetch(c *cli.Context) {
 // possibly checkout the newly deployed
 // chain agnostic!
 func cliDeploy(c *cli.Context) {
-	chainType := c.String("type")
-	chainType = chains.ResolveChainType(chainType)
+	chainType, err := chains.ResolveChainType(c.String("type"))
+	ifExit(err)
+	name := c.String("name")
+	rpc := c.Bool("rpc")
 
 	// if genesis or config are not specified
 	// use defaults set by `epm -init`
 	// and copy into working dir
-	deployGen := c.String("genesis")
 	deployConf := c.String("config")
-	tempGen := ".genesis.json"
 	tempConf := ".config.json"
 
 	if deployConf == "" {
 		deployConf = path.Join(utils.Blockchains, chainType, "config.json")
 	}
 
+	// if config doesnt exist, lay it
 	if _, err := os.Stat(deployConf); err != nil {
 		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
-		m := newChain(chainType, c.Bool("rpc"))
+		m := newChain(chainType, rpc)
 		ifExit(m.WriteConfig(deployConf))
 	}
 
@@ -104,35 +111,38 @@ func cliDeploy(c *cli.Context) {
 	vi(tempConf)
 
 	var chainId string
-	var err error
 	if chainType == "thelonious" {
+		deployGen := c.String("genesis")
+		tempGen := path.Join(ROOT, "genesis.json")
+		utils.InitDataDir(ROOT)
+
 		if deployGen == "" {
-			deployGen = path.Join(utils.Blockchains, "genesis.json")
+			deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
 		}
 		if _, err := os.Stat(deployGen); err != nil {
-			err := utils.WriteJson(monkdoug.DefaultGenesis, path.Join(utils.Blockchains, "genesis.json"))
+			err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
 			ifExit(err)
 		}
 		ifExit(utils.Copy(deployGen, tempGen))
 		vi(tempGen)
-
 		chainId, err = monk.DeployChain(ROOT, tempGen, tempConf)
 		ifExit(err)
-		err = monk.InstallChain(ROOT, c.String("name"), tempGen, tempConf, chainId)
+		err = monk.InstallChain(ROOT, name, tempGen, tempConf, chainId)
 		ifExit(err)
 	} else {
-		chain := newChain(chainType, c.Bool("rpc"))
+		chain := newChain(chainType, rpc)
 		chainId, err = DeployChain(chain, ROOT, tempConf)
 		ifExit(err)
 		if chainId == "" {
 			exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 		}
-		err = InstallChain(chain, ROOT, c.String("name"), chainType, tempConf, chainId)
+		fmt.Println(ROOT, name, chainType, tempConf, chainId)
+		err = InstallChain(chain, ROOT, name, chainType, tempConf, chainId)
 		ifExit(err)
 	}
 
 	if c.Bool("checkout") {
-		ifExit(chains.ChangeHead(chainId))
+		ifExit(chains.ChangeHead(chainType, chainId))
 	}
 	logger.Warnf("Deployed and installed chain: %s", chainId)
 	exit(nil)
@@ -144,10 +154,30 @@ func cliCheckout(c *cli.Context) {
 	if len(args) == 0 {
 		exit(fmt.Errorf("Please specify the chain to checkout"))
 	}
-	if err := chains.ChangeHead(args[0]); err != nil {
+	head := args[0]
+
+	refs, err := chains.GetRefs()
+	ifExit(err)
+
+	var typ string
+	var id string
+	if h, ok := refs[head]; ok {
+		typ, id, err = chains.SplitRef(h)
+		ifExit(err)
+	} else {
+		// arg is not a known ref, check for type flag
+		if !c.IsSet("type") {
+			exit(fmt.Errorf("Specify the chain type (-type) when checking out by chain id"))
+		}
+		typ = c.String("type")
+		id, err = chains.ResolveChainId(typ, head, head)
+		ifExit(err)
+	}
+
+	if err := chains.ChangeHead(typ, id); err != nil {
 		exit(err)
 	}
-	logger.Infoln("Checked out new head: ", args[0])
+	logger.Infoln("Checked out new head: ", path.Join(typ, id))
 	exit(nil)
 }
 
@@ -159,7 +189,8 @@ func cliAddRef(c *cli.Context) {
 		log.Fatal(`add-ref requires a name to be specified as well, \n
                         eg. "add-ref 14c32 mychain"`)
 	}
-	exit(chains.AddRef(ref, name))
+	typ := c.String("type")
+	exit(chains.AddRef(typ, ref, name))
 }
 
 // TODO: multi types
@@ -168,9 +199,10 @@ func cliRun(c *cli.Context) {
 	chainType := c.String("type")
 	fmt.Println("type: ", chainType)
 	if run == "" {
-		chainHead, err := chains.GetHead()
+		typ, id, err := chains.GetHead()
 		ifExit(err)
-		run = chainHead
+		run = id
+		chainType = typ
 	}
 	chainId, err := chains.ResolveChainId(chainType, run, run)
 	if err != nil {
@@ -221,7 +253,7 @@ func cliRemove(c *cli.Context) {
 		// remove the directory
 		os.RemoveAll(root)
 		// remove from head (if current head)
-		h, _ := chains.GetHead()
+		_, h, _ := chains.GetHead()
 		if strings.Contains(root, h) {
 			chains.NullHead()
 		}

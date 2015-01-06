@@ -83,8 +83,8 @@ func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string) {
 	m.SetProperty("RootDir", root)
 
 	// if the HEAD is set, it overrides the default
-	if c, err := chains.GetHead(); err == nil && c != "" {
-		root, _ = chains.ResolveChain("thelonious", c, c)
+	if typ, c, err := chains.GetHead(); err == nil && c != "" {
+		root, _ = chains.ResolveChain(typ, c, c)
 		m.SetProperty("RootDir", root)
 		//path.Join(utils.Blockchains, "thelonious", c)
 	}

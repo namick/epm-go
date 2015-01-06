@@ -19,7 +19,10 @@ func ChainIdFromName(name string) string {
 	if err != nil {
 		return ""
 	}
-	return string(b)
+	s := string(b)
+	_, id, _ := SplitRef(s)
+	return id
+
 }
 
 // Get ChainId from dapp name by reading package.json file
@@ -47,25 +50,26 @@ func ChainIdFromDapp(dapp string) (string, error) {
 }
 
 // Allow chain types to be specified in shorter form (ie. 'eth' for 'ethereum')
-func ResolveChainType(chainType string) string {
+func ResolveChainType(chainType string) (string, error) {
 	switch chainType {
 	case "thel", "thelonious", "monk":
-		return "thelonious"
+		return "thelonious", nil
 	case "btc", "bitcoin":
-		return "bitcoin"
+		return "bitcoin", nil
 	case "eth", "ethereum":
-		return "ethereum"
+		return "ethereum", nil
 	case "gen", "genesis":
-		return "thelonious"
+		return "thelonious", nil
 	}
-	return ""
+	return "", fmt.Errorf("Unknown chain type: %s", chainType)
 }
 
 // Determines the chainId from a chainId prefix or from a ref, but not from a dapp.
 func ResolveChainId(chainType, name, chainId string) (string, error) {
-	chainType = ResolveChainType(chainType)
-	if chainType == "" {
-		return "", fmt.Errorf("Unknown chain type: %s", chainType)
+	var err error
+	chainType, err = ResolveChainType(chainType)
+	if err != nil {
+		return "", err
 	}
 
 	var p string
@@ -87,7 +91,7 @@ func ResolveChainId(chainType, name, chainId string) (string, error) {
 		}
 	}
 	if _, err := os.Stat(p); err != nil {
-		return "", fmt.Errorf("Could not locate chain by name %s or by id %s", name, chainId)
+		return "", fmt.Errorf("Could not locate %s chain by name %s or by id %s", chainType, name, chainId)
 	}
 
 	return chainId, nil
@@ -117,7 +121,7 @@ func findPrefixMatch(dirPath, prefix string) (string, error) {
 		}
 	}
 	if !found {
-		return "", fmt.Errorf("ChainId %s did not match any known chains", prefix)
+		return "", fmt.Errorf("ChainId %s did not match any known chains. Did you specify the type correctly (-type)?", prefix)
 	}
 	return p, nil
 }
@@ -125,8 +129,11 @@ func findPrefixMatch(dirPath, prefix string) (string, error) {
 // Maximum entries in the HEAD file
 var MaxHead = 100
 
-// Add a new entry to the top of the HEAD file
-func changeHead(head string) error {
+// Add a new entry (type/chainId) to the top of the HEAD file
+// Expects the chain type to have already been checked
+func changeHead(typ, head string) error {
+	// read in the entire head file and clip
+	// if we have reached the max length
 	b, err := ioutil.ReadFile(utils.HEAD)
 	if err != nil {
 		return err
@@ -138,8 +145,14 @@ func changeHead(head string) error {
 	} else {
 		bsp = string(b)
 	}
-	bsp = head + "\n" + bsp
-	err = ioutil.WriteFile(utils.HEAD, []byte(bsp), 0666)
+
+	// add the new head
+	var s string
+	if head != "" {
+		s = typ + "/"
+	}
+	s = s + head + "\n" + bsp
+	err = ioutil.WriteFile(utils.HEAD, []byte(s), 0666)
 	if err != nil {
 		return err
 	}
@@ -148,29 +161,40 @@ func changeHead(head string) error {
 
 // Change the head to null (no head)
 func NullHead() error {
-	return changeHead("")
+	return changeHead("", "")
 }
 
 // Add a new entry to the top of the HEAD file.
-// Argument is chainId or ref name
+// Arguments are chain type and new head (chainId or ref name)
 // The HEAD file is a running list of the latest head
 // so we can go back if we mess up or forget.
-func ChangeHead(head string) error {
-	head, err := ResolveChainId("thelonious", head, head)
+func ChangeHead(typ, head string) error {
+	var err error
+	typ, err = ResolveChainType(typ)
 	if err != nil {
 		return err
 	}
-	return changeHead(head)
+
+	head, err = ResolveChainId(typ, head, head)
+	if err != nil {
+		return err
+	}
+	return changeHead(typ, head)
 }
 
 // Add a reference name to a chainId
-func AddRef(id, ref string) error {
+func AddRef(typ, id, ref string) error {
 	_, err := os.Stat(path.Join(utils.Refs, ref))
 	if err == nil {
 		return fmt.Errorf("Ref %s already exists", ref)
 	}
 
-	dataDir := path.Join(utils.Blockchains, "thelonious")
+	typ, err = ResolveChainType(typ)
+	if err != nil {
+		return err
+	}
+
+	dataDir := path.Join(utils.Blockchains, typ)
 	_, err = os.Stat(path.Join(dataDir, id))
 	if err != nil {
 		id, err = findPrefixMatch(dataDir, id)
@@ -179,7 +203,8 @@ func AddRef(id, ref string) error {
 		}
 	}
 
-	return ioutil.WriteFile(path.Join(utils.Refs, ref), []byte(id), 0644)
+	refid := path.Join(typ, id)
+	return ioutil.WriteFile(path.Join(utils.Refs, ref), []byte(refid), 0644)
 }
 
 // Return a list of chain references
@@ -201,14 +226,27 @@ func GetRefs() (map[string]string, error) {
 }
 
 // Get the current active chain (top of the HEAD file)
-func GetHead() (string, error) {
+// Returns chain type and chain id
+func GetHead() (string, string, error) {
 	// TODO: only read the one line!
 	f, err := ioutil.ReadFile(utils.HEAD)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	fspl := strings.Split(string(f), "\n")
-	return fspl[0], nil
+	head := fspl[0]
+	if head == "" {
+		return "", "", nil
+	}
+	return SplitRef(head)
+}
+
+func SplitRef(ref string) (string, string, error) {
+	sp := strings.Split(ref, "/")
+	if len(sp) != 2 {
+		return "", "", fmt.Errorf("Improperly formatted ref:", ref)
+	}
+	return sp[0], sp[1], nil
 }
 
 // Return a dapp package file
@@ -228,4 +266,3 @@ func CheckGetPackageFile(dappDir string) (*dapps.PackageFile, error) {
 	}
 	return p, nil
 }
-

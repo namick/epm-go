@@ -158,15 +158,15 @@ func checkInit() error {
 	return nil
 }
 
+// TODO: get type from ref
 func resolveRoot(c *cli.Context) string {
 	chainType := c.String("type")
 	chainName := c.String("name")
 	id := c.String("id")
+	var err error
 	if chainName == "" && id == "" {
-		chainHead, err := chains.GetHead()
+		chainType, chainName, err = chains.GetHead()
 		ifExit(err)
-		chainName = chainHead
-		id = chainHead
 	}
 	chainId, err := chains.ResolveChainId(chainType, chainName, id)
 	ifExit(err)
@@ -253,7 +253,7 @@ func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId
 
 	// update refs
 	if name != "" {
-		err := chains.AddRef(chainId, name)
+		err := chains.AddRef(chainType, chainId, name)
 		if err != nil {
 			return err
 		}

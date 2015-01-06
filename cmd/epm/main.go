@@ -81,7 +81,7 @@ func main() {
 		deleteCmd,
 	}
 
-	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 3, "")
+	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 5, "")
 
 	// clean, update, or install
 	// exit
@@ -100,6 +100,7 @@ func main() {
 	//ifExit(checkInit())
 }
 
+// so we can catch panics
 func run(app *cli.App) {
 	defer func() {
 		if r := recover(); r != nil {

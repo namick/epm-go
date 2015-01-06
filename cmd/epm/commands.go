@@ -58,12 +58,18 @@ var (
 		Name:   "checkout",
 		Usage:  "change the current working chain",
 		Action: cliCheckout,
+		Flags: []cli.Flag{
+			typeFlag,
+		},
 	}
 
 	addRefCmd = cli.Command{
 		Name:   "add-ref",
 		Usage:  "add a new reference to a chain id",
 		Action: cliAddRef,
+		Flags: []cli.Flag{
+			typeFlag,
+		},
 	}
 
 	runCmd = cli.Command{
