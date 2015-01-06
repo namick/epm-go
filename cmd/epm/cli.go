@@ -138,39 +138,6 @@ func cliDeploy(c *cli.Context) {
 	exit(nil)
 }
 
-// install a local chain into the decerver tree
-func cliInstall(c *cli.Context) {
-	if _, err := os.Stat(ROOT); err != nil {
-		exit(fmt.Errorf("No %s directory found. There must be a %s present in order to install", ROOT, ROOT))
-	}
-
-	var config string
-	var genesis string
-	name := c.String("name")
-	// if config/genesis present locally, set them
-	if _, err := os.Stat("config.json"); err == nil {
-		config = "config.json"
-	}
-	if _, err := os.Stat("genesis.json"); err == nil {
-		genesis = "genesis.json"
-	}
-
-	// if not found locally or specified, fail
-	if config == "" {
-		exit(fmt.Errorf("No config.json found. There must be a config.json in the present directory to install the chain"))
-	}
-	if genesis == "" {
-		exit(fmt.Errorf("No genesis.json found. There must be a genesis.json in the present directory to install the chain"))
-	}
-	chainId, err := monk.ChainIdFromDb(ROOT)
-	ifExit(err)
-	logger.Infoln("Installing chain ", chainId)
-	ifExit(monk.InstallChain(ROOT, name, genesis, config, chainId))
-	if c.Bool("checkout") {
-		ifExit(chains.ChangeHead(chainId))
-	}
-}
-
 // change the currently active chain
 func cliCheckout(c *cli.Context) {
 	args := c.Args()
