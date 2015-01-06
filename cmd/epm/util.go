@@ -246,3 +246,13 @@ func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId
 
 	return nil
 }
+
+func resolveRoot(c *cli.Context) (string, error) {
+	ref := c.String("chain")
+	chainType, chainId, err := chains.ResolveChain(ref)
+	if err != nil {
+		return "", err
+	}
+	root := path.Join(utils.Blockchains, chainType, chainId)
+	return root, nil
+}

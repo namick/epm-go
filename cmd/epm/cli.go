@@ -235,10 +235,7 @@ func cliConfig(c *cli.Context) {
 
 // remove a chain
 func cliRemove(c *cli.Context) {
-	chain := c.String("chain")
-	chainType, chainId, err := chains.ResolveChain(chain)
-	ifExit(err)
-	root := path.Join(utils.Blockchains, chainType, chainId)
+	root := resolveRoot(c)
 
 	if confirm("This will permanently delete the directory: " + root) {
 		// remove the directory
@@ -261,10 +258,8 @@ func cliRemove(c *cli.Context) {
 
 // run a single epm on-chain command (endow, deploy)
 func cliCommand(c *cli.Context) {
-	ref := c.String("chain")
-	chainType, chainId, err := chains.ResolveChain(ref)
-	ifExit(err)
-	root := path.Join(utils.Blockchains, chainType, chainId)
+	chainType, _, _ := chains.ResolveChain(c.String("ref"))
+	root := resolveRoot(c)
 
 	chain := loadChain(c, chainType, root)
 
@@ -303,16 +298,15 @@ func cliDeployPdx(c *cli.Context) {
 		exit(nil)
 	}
 
-	ref := c.String("chain")
 	contractPath := c.String("c")
 	dontClear := c.Bool("dont-clear")
 	interactive := c.Bool("i")
 	diffStorage := c.Bool("diff")
 	packagePath := c.String("p")
 
-	chainType, chainId, err := chains.ResolveChain(ref)
+	chainRoot, err := resolveRoot(c)
 	ifExit(err)
-	chainRoot := path.Join(utils.Blockchains, chainType, chainId)
+	chainType, _, _ := chains.ResolveChain(c.String("chain"))
 	// hierarchy : name > chainId > db > config > HEAD > default
 
 	// Startup the chain
