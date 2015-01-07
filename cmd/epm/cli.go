@@ -79,7 +79,7 @@ func cliFetch(c *cli.Context) {
 // possibly checkout the newly deployed
 // chain agnostic!
 // TODO: does rpc make sense in here?!
-func cliDeploy(c *cli.Context) {
+func cliNew(c *cli.Context) {
 	chainType, err := chains.ResolveChainType(c.String("type"))
 	ifExit(err)
 	name := c.String("name")
@@ -324,18 +324,15 @@ func cliCommand(c *cli.Context) {
 }
 
 // deploy a pdx file on a chain
-func cliDeployPdx(c *cli.Context) {
+func cliDeploy(c *cli.Context) {
+	packagePath := "."
 	if len(c.Args()) > 0 {
-		logger.Errorln("Did not understand command.")
-		logger.Errorln("Run `epm -help` to see the list of commands")
-		exit(nil)
+		packagePath = c.Args()[0]
 	}
 
 	contractPath := c.String("c")
 	dontClear := c.Bool("dont-clear")
-	interactive := c.Bool("i")
 	diffStorage := c.Bool("diff")
-	packagePath := c.String("p")
 
 	chainRoot, err := resolveRoot(c)
 	ifExit(err)
@@ -368,13 +365,6 @@ func cliDeployPdx(c *cli.Context) {
 	ifExit(err)
 	e.ReadVars(path.Join(chainRoot, EPMVars))
 
-	// if interactive mode, enable diffs and run the repl
-	if interactive {
-		e.Diff = true
-		e.Repl()
-		os.Exit(0)
-	}
-
 	// comb directory for package-definition file
 	// exits on error
 	dir, pkg, test_ := getPkgDefFile(packagePath)
@@ -403,4 +393,47 @@ func cliDeployPdx(c *cli.Context) {
 			}
 		}
 	}
+}
+
+func cliConsole(c *cli.Context) {
+
+	contractPath := c.String("c")
+	dontClear := c.Bool("dont-clear")
+	diffStorage := c.Bool("diff")
+
+	chainRoot, err := resolveRoot(c)
+	ifExit(err)
+	chainType, _, _ := chains.ResolveChain(c.String("chain"))
+	// hierarchy : name > chainId > db > config > HEAD > default
+
+	// Startup the chain
+	var chain epm.Blockchain
+	chain = loadChain(c, chainType, chainRoot)
+
+	if !c.IsSet("c") {
+		contractPath = defaultContractPath
+	}
+	epm.ContractPath, err = filepath.Abs(contractPath)
+	ifExit(err)
+
+	logger.Debugln("Contract root:", epm.ContractPath)
+
+	// clear the cache
+	if !dontClear {
+		err := os.RemoveAll(utils.Epm)
+		if err != nil {
+			logger.Errorln("Error clearing cache: ", err)
+		}
+		utils.InitDataDir(utils.Epm)
+	}
+
+	// setup EPM object with ChainInterface
+	e, err := epm.NewEPM(chain, epm.LogFile)
+	ifExit(err)
+	e.ReadVars(path.Join(chainRoot, EPMVars))
+
+	if diffStorage {
+		e.Diff = true
+	}
+	e.Repl()
 }

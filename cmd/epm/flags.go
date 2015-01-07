@@ -175,25 +175,16 @@ var (
 		Usage: "let the rpc server handle keys (sign txs)",
 	}
 
-	deployInstallFlag = cli.BoolFlag{
-		Name:  "install, i",
-		Usage: "install the chain following deploy",
-	}
-	deployCheckoutFlag = cli.BoolFlag{
+	newCheckoutFlag = cli.BoolFlag{
 		Name:  "checkout, o",
 		Usage: "checkout the chain into head",
 	}
-	deployConfigFlag = cli.StringFlag{
+	newConfigFlag = cli.StringFlag{
 		Name:  "config, c",
 		Usage: "specify config file",
 	}
-	deployGenesisFlag = cli.StringFlag{
+	newGenesisFlag = cli.StringFlag{
 		Name:  "genesis, g",
 		Usage: "specify genesis file",
-	}
-
-	installCheckoutFlag = cli.BoolFlag{
-		Name:  "checkout, o, c",
-		Usage: "checkout the chain into head",
 	}
 )

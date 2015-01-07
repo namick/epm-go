@@ -36,25 +36,16 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "epm"
-	app.Usage = "epm alone will search the current directory for a .pdx to deploy. Specify one explicitly with -p"
-	app.Action = cliDeployPdx
-    app.Version = "0.1.0"
-    app.Author = "Ethan Buchman"
-    app.Email = "ethan@erisindustries.com"
+	app.Usage = ""
+	app.Version = "0.1.0"
+	app.Author = "Ethan Buchman"
+	app.Email = "ethan@erisindustries.com"
 	//	app.EnableBashCompletion = true
 
-	// TODO: global flags only work on global command!
+	app.Before = before
 	app.Flags = []cli.Flag{
-
 		// which chain
 		chainFlag,
-
-		// epm options
-		interactiveFlag,
-		diffFlag,
-		dontClearFlag,
-		contractPathFlag,
-		pdxPathFlag,
 
 		// log
 		logLevelFlag,
@@ -73,7 +64,7 @@ func main() {
 		headCmd,
 		initCmd,
 		fetchCmd,
-		deployCmd,
+		newCmd,
 		checkoutCmd,
 		addRefCmd,
 		runCmd,
@@ -81,9 +72,9 @@ func main() {
 		configCmd,
 		commandCmd,
 		removeCmd,
+		deployCmd,
+		consoleCmd,
 	}
-
-	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 5, "")
 
 	// clean, update, or install
 	// exit
@@ -100,6 +91,11 @@ func main() {
 	// fail if `epm -init` has not been run
 	// TODO: put this everywhere it needs to be...
 	//ifExit(checkInit())
+}
+
+func before(c *cli.Context) error {
+	utils.InitLogging(path.Join(utils.Logs, "epm"), "", c.Int("log"), "")
+	return nil
 }
 
 // so we can catch panics

@@ -41,14 +41,14 @@ var (
 		Action: cliFetch,
 	}
 
-	deployCmd = cli.Command{
-		Name:   "deploy",
-		Usage:  "deploy a chain and install into the decerver tree",
-		Action: cliDeploy,
+	newCmd = cli.Command{
+		Name:   "new",
+		Usage:  "create a new chain and install into the decerver tree",
+		Action: cliNew,
 		Flags: []cli.Flag{
-			deployCheckoutFlag,
-			deployConfigFlag,
-			deployGenesisFlag,
+			newCheckoutFlag,
+			newConfigFlag,
+			newGenesisFlag,
 			nameFlag,
 			typeFlag,
 		},
@@ -109,5 +109,29 @@ var (
 		Name:   "rm",
 		Usage:  "remove a chain from the global directory",
 		Action: cliRemove,
+	}
+
+	deployCmd = cli.Command{
+		Name:   "deploy",
+		Usage:  "deploy a .pdx file onto a chain",
+		Action: cliDeploy,
+		Flags: []cli.Flag{
+			chainFlag,
+			diffFlag,
+			dontClearFlag,
+			contractPathFlag,
+		},
+	}
+
+	consoleCmd = cli.Command{
+		Name:   "console",
+		Usage:  "run epm in interactive mode",
+		Action: cliConsole,
+		Flags: []cli.Flag{
+			chainFlag,
+			diffFlag,
+			dontClearFlag,
+			contractPathFlag,
+		},
 	}
 )
