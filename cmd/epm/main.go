@@ -36,7 +36,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "epm"
-	app.Usage = ""
+	app.Usage = "epm alone will search the current directory for a .pdx to deploy. Specify one explicitly with -p"
 	app.Action = cliDeployPdx
 	//	app.EnableBashCompletion = true
 

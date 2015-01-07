@@ -137,7 +137,7 @@ var (
 	pdxPathFlag = cli.StringFlag{
 		Name:  "p",
 		Value: ".",
-		Usage: "deploy a .pdx file",
+		Usage: "specify a .pdx file to deploy",
 	}
 
 	logLevelFlag = cli.IntFlag{
