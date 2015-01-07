@@ -250,15 +250,30 @@ func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId
 	return nil
 }
 
-func resolveRoot(c *cli.Context) (string, error) {
+func resolveRootFlag(c *cli.Context) (string, string, string, error) {
 	ref := c.String("chain")
+	rpc := c.GlobalBool("rpc")
+	return resolveRoot(ref, rpc)
+}
+
+func resolveRootArg(c *cli.Context) (string, string, string, error) {
+	args := c.Args()
+	if len(args) < 1 {
+		return "", "", "", fmt.Errorf("Error: specify the chain ref as an argument")
+	}
+	ref := args[0]
+	rpc := c.GlobalBool("rpc")
+	return resolveRoot(ref, rpc)
+}
+
+func resolveRoot(ref string, rpc bool) (string, string, string, error) {
 	chainType, chainId, err := chains.ResolveChain(ref)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 	root := path.Join(utils.Blockchains, chainType, chainId)
-	if c.GlobalBool("rpc") {
+	if rpc {
 		root = path.Join(root, "rpc")
 	}
-	return root, nil
+	return root, chainType, chainId, nil
 }
