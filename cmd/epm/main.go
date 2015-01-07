@@ -80,7 +80,7 @@ func main() {
 		removeCmd,
 	}
 
-	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 3, "")
+	utils.InitLogging(path.Join(utils.Logs, "epm"), "", 5, "")
 
 	// clean, update, or install
 	// exit
