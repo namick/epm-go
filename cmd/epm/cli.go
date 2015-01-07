@@ -78,11 +78,12 @@ func cliFetch(c *cli.Context) {
 // and install into the global tree
 // possibly checkout the newly deployed
 // chain agnostic!
+// TODO: does rpc make sense in here?!
 func cliDeploy(c *cli.Context) {
 	chainType, err := chains.ResolveChainType(c.String("type"))
 	ifExit(err)
 	name := c.String("name")
-	rpc := c.Bool("rpc")
+	rpc := c.GlobalBool("rpc")
 
 	// if genesis or config are not specified
 	// use defaults set by `epm -init`
@@ -180,15 +181,16 @@ func cliAddRef(c *cli.Context) {
 
 // run a node on a chain
 func cliRun(c *cli.Context) {
-	run := c.Args().First()
-	chainType, chainId, err := chains.ResolveChain(run)
+	chainType, chainId, _ := chains.ResolveChain(c.String("chain"))
+	root, err := resolveRoot(c)
 	ifExit(err)
 	logger.Infof("Running chain %s/%s\n", chainType, chainId)
-	chain := loadChain(c, chainType, path.Join(utils.Blockchains, chainType, chainId))
+	chain := loadChain(c, chainType, root)
 	chain.WaitForShutdown()
 }
 
 // TODO: multi types
+// TODO: deprecate in exchange for -dapp flag on run
 func cliRunDapp(c *cli.Context) {
 	dapp := c.Args().First()
 	chainType := "thelonious"
@@ -207,7 +209,7 @@ func cliConfig(c *cli.Context) {
 		chainId   string
 		err       error
 	)
-	rpc := c.Bool("rpc")
+	rpc := c.GlobalBool("rpc")
 	if c.IsSet("type") {
 		chainType = c.String("type")
 		root = path.Join(utils.Blockchains, chainType)
@@ -218,8 +220,13 @@ func cliConfig(c *cli.Context) {
 		root = path.Join(utils.Blockchains, chainType, chainId)
 	}
 
+	if rpc {
+		root = path.Join(root, "rpc")
+	}
+
 	m := newChain(chainType, rpc)
-	m.ReadConfig(path.Join(root, "config.json"))
+	err = m.ReadConfig(path.Join(root, "config.json"))
+	ifExit(err)
 
 	args := c.Args()
 	for _, a := range args {
@@ -235,7 +242,8 @@ func cliConfig(c *cli.Context) {
 
 // remove a chain
 func cliRemove(c *cli.Context) {
-	root := resolveRoot(c)
+	root, err := resolveRoot(c)
+	ifExit(err)
 
 	if confirm("This will permanently delete the directory: " + root) {
 		// remove the directory
@@ -259,7 +267,8 @@ func cliRemove(c *cli.Context) {
 // run a single epm on-chain command (endow, deploy)
 func cliCommand(c *cli.Context) {
 	chainType, _, _ := chains.ResolveChain(c.String("ref"))
-	root := resolveRoot(c)
+	root, err := resolveRoot(c)
+	ifExit(err)
 
 	chain := loadChain(c, chainType, root)
 

@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	//	"github.com/codegangsta/cli"
+	"github.com/codegangsta/cli"
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
@@ -254,5 +254,8 @@ func resolveRoot(c *cli.Context) (string, error) {
 		return "", err
 	}
 	root := path.Join(utils.Blockchains, chainType, chainId)
+	if c.GlobalBool("rpc") {
+		root = path.Join(root, "rpc")
+	}
 	return root, nil
 }

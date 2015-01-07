@@ -61,6 +61,18 @@ func setMining(c *cli.Context, m epm.Blockchain) {
 	}
 }
 
+func setRpc(c *cli.Context, m epm.Blockchain) {
+	if !c.GlobalBool("rpc") {
+		return
+	}
+
+	host := c.GlobalString("host")
+	port := c.GlobalString("port")
+
+	m.SetProperty("rpc_host", host)
+	m.SetProperty("rpc_port", port)
+}
+
 func setDb(c *cli.Context, config *string, dbpath string) {
 	var err error
 	if c.IsSet("db") {
@@ -144,7 +156,7 @@ var (
 
 	rpcHostFlag = cli.StringFlag{
 		Name:  "host",
-		Value: ".",
+		Value: "localhost",
 		Usage: "set the rpc host",
 	}
 

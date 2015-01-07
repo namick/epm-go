@@ -46,7 +46,7 @@ func newChain(chainType string, rpc bool) epm.Blockchain {
 
 // chainroot is a full path to the dir
 func loadChain(c *cli.Context, chainType, chainRoot string) epm.Blockchain {
-	rpc := c.Bool("rpc")
+	rpc := c.GlobalBool("rpc")
 	logger.Debugln("Loading chain ", c.String("type"))
 
 	chain := newChain(chainType, rpc)
@@ -75,7 +75,7 @@ func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string) {
 		m.SetProperty("RootDir", chainRoot)
 	}
 
-	if c.Bool("rpc") {
+	if c.GlobalBool("rpc") {
 		m.SetProperty("RootDir", path.Join(m.Property("RootDir").(string), "rpc"))
 	}
 }
@@ -99,6 +99,7 @@ func applyFlags(c *cli.Context, m epm.Blockchain) {
 	setGenesisPath(c, m)
 	setContractPath(c, m)
 	setMining(c, m)
+	setRpc(c, m)
 }
 
 func setupModule(c *cli.Context, m epm.Blockchain, chainRoot string) {

@@ -72,6 +72,7 @@ var (
 		Action: cliRun,
 		Flags: []cli.Flag{
 			mineFlag,
+			chainFlag,
 		},
 	}
 
