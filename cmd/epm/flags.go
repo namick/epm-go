@@ -1,69 +1,85 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/thelonious/monkdoug"
+	"github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/epm"
 	"os"
 	"path/filepath"
 )
 
-func specifiedFlags() map[string]bool {
-	// compute a map of the flags that have been set
-	// for those that are set, we will overwrite default/config-file
-	setFlags := make(map[string]bool)
-	flag.Visit(func(f *flag.Flag) {
-		setFlags[f.Name] = true
-	})
-	return setFlags
-}
-
-func setLogLevel(flags map[string]bool, config *int, loglevel int) {
-	if flags["log"] {
-		*config = loglevel
+func setLogLevel(c *cli.Context, m epm.Blockchain) {
+	logLevel := c.Int("log")
+	if c.IsSet("log") {
+		m.SetProperty("LogLevel", logLevel)
 	}
 }
 
-func setKeysFile(flags map[string]bool, config *string, keyfile string) {
-	var err error
-	if flags["k"] {
+func setKeysFile(c *cli.Context, m epm.Blockchain) {
+	keys := c.String("keys")
+	if c.IsSet("k") {
 		//if keyfile != defaultKeys {
-		*config, err = filepath.Abs(keyfile)
+		keysAbs, err := filepath.Abs(keys)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
+		m.SetProperty("KeyFile", keysAbs)
 	}
 }
 
-func setGenesisPath(flags map[string]bool, config *string, genfile string) {
-	var err error
-	if flags["genesis"] {
+func setGenesisPath(c *cli.Context, m epm.Blockchain) {
+	genesis := c.String("genesis")
+	if c.IsSet("genesis") {
 		//if *config != defaultGenesis && genfile != "" {
-		*config, err = filepath.Abs(genfile)
+		genAbs, err := filepath.Abs(genesis)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
+		m.SetProperty("GenesisPath", genAbs)
 	}
 }
 
-func setContractPath(flags map[string]bool, config *string, cpath string) {
-	var err error
-	if flags["c"] {
+func setContractPath(c *cli.Context, m epm.Blockchain) {
+	contractPath := c.String("c")
+	if c.IsSet("c") {
 		//if cpath != defaultContractPath {
-		*config, err = filepath.Abs(cpath)
+		cPathAbs, err := filepath.Abs(contractPath)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
+		m.SetProperty("ContractPath", cPathAbs)
 	}
 }
 
-func setDb(flags map[string]bool, config *string, dbpath string) {
+func setMining(c *cli.Context, m epm.Blockchain) {
+	tomine := c.Bool("mine")
+	if c.IsSet("mine") {
+		m.SetProperty("Mining", tomine)
+	}
+}
+
+func setRpc(c *cli.Context, m epm.Blockchain) {
+	if !c.GlobalBool("rpc") {
+		return
+	}
+
+	if c.GlobalIsSet("host") {
+		m.SetProperty("rpc_host", c.GlobalString("host"))
+	}
+	if c.GlobalIsSet("port") {
+		m.SetProperty("rpc_port", c.GlobalString("port"))
+	}
+	if c.GlobalIsSet("local") {
+		m.SetProperty("local", c.GlobalBool("local"))
+	}
+}
+
+func setDb(c *cli.Context, config *string, dbpath string) {
 	var err error
-	if flags["db"] {
+	if c.IsSet("db") {
 		*config, err = filepath.Abs(dbpath)
 		if err != nil {
 			fmt.Println(err)
@@ -72,23 +88,112 @@ func setDb(flags map[string]bool, config *string, dbpath string) {
 	}
 }
 
-func setDifficulty(flags map[string]bool, config *int, d int) {
-	*config = defaultDifficulty
-	if flags["dif"] {
-		*config = d
+var (
+	nameFlag = cli.StringFlag{
+		Name:   "name",
+		Value:  "",
+		Usage:  "specify a ref name",
+		EnvVar: "",
 	}
-}
 
-// TODO: handle properly (deployed already vs not...)
-func setGenesis(flags map[string]bool, m *monk.MonkModule) {
-	// Handle genesis config
-	g := monkdoug.LoadGenesis(m.Config.GenesisConfig)
-	if *noGenDoug {
-		g.NoGenDoug = true
-		logger.Infoln("No gendoug")
+	chainFlag = cli.StringFlag{
+		Name:   "chain",
+		Value:  "",
+		Usage:  "set the chain by <ref name> or by <type>/<id>",
+		EnvVar: "",
 	}
-	setDifficulty(flags, &(g.Difficulty), *difficulty)
-	g.Consensus = "constant"
 
-	m.SetGenesis(g)
-}
+	typeFlag = cli.StringFlag{
+		Name:   "type",
+		Value:  "thelonious",
+		Usage:  "set the chain type (thelonious, genesis, bitcoin, ethereum)",
+		EnvVar: "",
+	}
+
+	interactiveFlag = cli.BoolFlag{
+		Name:   "i",
+		Usage:  "Run epm in interactive mode",
+		EnvVar: "",
+	}
+
+	diffFlag = cli.BoolFlag{
+		Name:   "diff",
+		Usage:  "Show a diff of all contract storage",
+		EnvVar: "",
+	}
+
+	dontClearFlag = cli.BoolFlag{
+		Name:   "dont-clear",
+		Usage:  "Stop epm from clearing the epm cache on startup",
+		EnvVar: "",
+	}
+
+	contractPathFlag = cli.StringFlag{
+		Name:  "c",
+		Value: defaultContractPath,
+		Usage: "set the contract path",
+	}
+
+	pdxPathFlag = cli.StringFlag{
+		Name:  "p",
+		Value: ".",
+		Usage: "specify a .pdx file to deploy",
+	}
+
+	logLevelFlag = cli.IntFlag{
+		Name:   "log",
+		Value:  2,
+		Usage:  "set the log level",
+		EnvVar: "EPM_LOG",
+	}
+
+	mineFlag = cli.BoolFlag{
+		Name:  "mine, commit",
+		Usage: "commit blocks",
+	}
+
+	rpcFlag = cli.BoolFlag{
+		Name:   "rpc",
+		Usage:  "run commands over rpc",
+		EnvVar: "",
+	}
+
+	rpcHostFlag = cli.StringFlag{
+		Name:  "host",
+		Value: "localhost",
+		Usage: "set the rpc host",
+	}
+
+	rpcPortFlag = cli.IntFlag{
+		Name:  "port",
+		Value: 5,
+		Usage: "set the rpc port",
+	}
+
+	rpcLocalFlag = cli.BoolFlag{
+		Name:  "local",
+		Usage: "let the rpc server handle keys (sign txs)",
+	}
+
+	deployInstallFlag = cli.BoolFlag{
+		Name:  "install, i",
+		Usage: "install the chain following deploy",
+	}
+	deployCheckoutFlag = cli.BoolFlag{
+		Name:  "checkout, o",
+		Usage: "checkout the chain into head",
+	}
+	deployConfigFlag = cli.StringFlag{
+		Name:  "config, c",
+		Usage: "specify config file",
+	}
+	deployGenesisFlag = cli.StringFlag{
+		Name:  "genesis, g",
+		Usage: "specify genesis file",
+	}
+
+	installCheckoutFlag = cli.BoolFlag{
+		Name:  "checkout, o, c",
+		Usage: "checkout the chain into head",
+	}
+)

@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/eris-ltd/decerver-interfaces/glue/utils"
+	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
 	//"github.com/project-douglas/lllc-server"
 	"io/ioutil"
@@ -80,6 +80,7 @@ func (e *EPM) ExecuteJobs() error {
 // Job switch
 // Args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job) error {
+	logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
 	job.args = e.VarSub(job.args) // substitute vars
 	switch job.cmd {
 	case "deploy":
@@ -105,6 +106,8 @@ func (e *EPM) ExecuteJob(job Job) error {
 		}
 	case "epm":
 		return e.EPMx(job.args[0])
+	default:
+		return fmt.Errorf("Unknown command: %s", job.cmd)
 	}
 	return nil
 }
@@ -175,11 +178,12 @@ func (e *EPM) Transact(args []string) error {
 	data := strings.Split(dataS, " ")
 	data = DoMath(data)
 	e.chain.Msg(to, data)
+	logger.Warnf("Sent %s to %s", data, to)
 	return nil
 }
 
 // Issue a query.
-// TODO: Not currently functional, but not really necessary either
+// XXX: Only works after a commit ...
 func (e *EPM) Query(args []string) error {
 	addr := args[0]
 	storage := args[1]
@@ -187,7 +191,7 @@ func (e *EPM) Query(args []string) error {
 
 	v := e.chain.StorageAt(addr, storage)
 	e.StoreVar(varName, v)
-	logger.Warnf("\tresult: %s = %s\n", varName, v)
+	logger.Warnf("result: %s = %s\n", varName, v)
 	return nil
 }
 
@@ -230,6 +234,7 @@ func (e *EPM) Endow(args []string) error {
 	addr := args[0]
 	value := args[1]
 	e.chain.Tx(addr, value)
+	logger.Warnf("Endowed %s with %s", addr, value)
 	return nil
 }
 

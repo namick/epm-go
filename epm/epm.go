@@ -2,12 +2,16 @@ package epm
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/eris-ltd/decerver-interfaces/events"
 	"github.com/eris-ltd/decerver-interfaces/modules"
+	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
 	"github.com/project-douglas/lllc-server"
+	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var logger *monklog.Logger = monklog.NewLogger("EPM")
@@ -33,8 +37,20 @@ type KeyManager interface {
 	AddressCount() int
 }
 
+type DecerverModule interface {
+	Init() error
+	Start() error
+
+	ReadConfig(string) error
+	WriteConfig(string) error
+	SetProperty(string, interface{}) error
+	Property(string) interface{}
+}
+
 type Blockchain interface {
 	KeyManager
+	DecerverModule
+	ChainId() (string, error)
 	WorldState() *modules.WorldState
 	State() *modules.State
 	Storage(target string) *modules.Storage
@@ -78,7 +94,7 @@ type EPM struct {
 	log string
 }
 
-// new empty epm
+// New empty EPM
 func NewEPM(chain Blockchain, log string) (*EPM, error) {
 	lllcserver.URL = LLLURL
 	//logger.Infoln("url: ", LLLURL)
@@ -135,6 +151,7 @@ func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string
 	}
 }
 
+// Parse a pdx file into a series of EPM jobs
 func (e *EPM) Parse(filename string) error {
 	logger.Infoln("Parsing ", filename)
 	// set current file to parse
@@ -154,6 +171,16 @@ func (e *EPM) Parse(filename string) error {
 	return e.parse(lines)
 }
 
+// New EPM Job
+func NewJob(cmd string, args []string) *Job {
+	return &Job{cmd, args}
+}
+
+// Add job to EPM jobs
+func (e *EPM) AddJob(job *Job) {
+	e.jobs = append(e.jobs, *job)
+}
+
 // parse should take a list of lines, peel commands into jobs
 // lines either come from a file or from iepm
 func (e *EPM) parse(lines []string) error {
@@ -170,7 +197,7 @@ func (e *EPM) parse(lines []string) error {
 		if err != nil {
 			return err
 		}
-		e.jobs = append(e.jobs, *job)
+		e.AddJob(job)
 		// check if we need to take or diff state after this job
 		// if diff is disabled they will not run, but we need to parse them out
 		e.parseStateDiffs(&lines, l, diffmap)
@@ -198,17 +225,53 @@ func (e *EPM) VarSub(args []string) []string {
 	return args
 }
 
+// Read EPM variables in from a file
+func (e *EPM) ReadVars(file string) error {
+	f, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	sp := strings.Split(string(f), "\n")
+	for _, kv := range sp {
+		kvsp := strings.Split(kv, ":")
+		if len(kvsp) != 2 {
+			return fmt.Errorf("Invalid variable formatting in %s", file)
+		}
+		k := kvsp[0]
+		v := kvsp[1]
+		e.vars[k] = v
+	}
+	return nil
+}
+
+// Write EPM variables to file
+func (e *EPM) WriteVars(file string) error {
+	vars := e.Vars()
+	s := ""
+	for k, v := range vars {
+		s += k + ":" + v + "\n"
+	}
+	// remove final new line
+	s = s[:len(s)-1]
+	err := ioutil.WriteFile(file, []byte(s), 0600)
+	return err
+}
+
+// Return map of EPM variables.
 func (e *EPM) Vars() map[string]string {
 	return e.vars
 }
 
+// Return list of jobs
 func (e *EPM) Jobs() []Job {
 	return e.jobs
 }
 
+// Store a variable (strips {{ }} from key if necessary)
 func (e *EPM) StoreVar(key, val string) {
-	if key[:2] == "{{" && key[len(key)-2:] == "}}" {
+
+	if len(key) > 4 && key[:2] == "{{" && key[len(key)-2:] == "}}" {
 		key = key[2 : len(key)-2]
 	}
-	e.vars[key] = Coerce2Hex(val)
+	e.vars[key] = utils.Coerce2Hex(val)
 }
