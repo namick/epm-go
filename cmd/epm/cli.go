@@ -92,12 +92,19 @@ func cliDeploy(c *cli.Context) {
 	tempConf := ".config.json"
 
 	if deployConf == "" {
-		deployConf = path.Join(utils.Blockchains, chainType, "config.json")
+		if rpc {
+			deployConf = path.Join(utils.Blockchains, chainType, "rpc", "config.json")
+		} else {
+			deployConf = path.Join(utils.Blockchains, chainType, "config.json")
+		}
 	}
 
 	// if config doesnt exist, lay it
 	if _, err := os.Stat(deployConf); err != nil {
 		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
+		if rpc {
+			utils.InitDataDir(path.Join(utils.Blockchains, chainType, "rpc"))
+		}
 		m := newChain(chainType, rpc)
 		ifExit(m.WriteConfig(deployConf))
 	}
@@ -107,36 +114,53 @@ func cliDeploy(c *cli.Context) {
 
 	var chainId string
 	if chainType == "thelonious" {
-		deployGen := c.String("genesis")
-		tempGen := path.Join(ROOT, "genesis.json")
-		utils.InitDataDir(ROOT)
+		if rpc {
+			chain := newChain(chainType, rpc)
+			chainId, err = DeployChain(chain, ROOT, tempConf)
+			ifExit(err)
+			if chainId == "" {
+				exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
+			}
+			//fmt.Println(ROOT, name, chainType, tempConf, chainId)
+			err = InstallChain(chain, ROOT, name, chainType, tempConf, chainId, rpc)
+			ifExit(err)
+		} else {
+			deployGen := c.String("genesis")
+			tempGen := path.Join(ROOT, "genesis.json")
+			utils.InitDataDir(ROOT)
 
-		if deployGen == "" {
-			deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
-		}
-		if _, err := os.Stat(deployGen); err != nil {
-			err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
+			if deployGen == "" {
+				deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
+			}
+			if _, err := os.Stat(deployGen); err != nil {
+				err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
+				ifExit(err)
+			}
+			ifExit(utils.Copy(deployGen, tempGen))
+			vi(tempGen)
+			chainId, err = monk.DeployChain(ROOT, tempGen, tempConf)
+			ifExit(err)
+			err = monk.InstallChain(ROOT, name, tempGen, tempConf, chainId)
 			ifExit(err)
 		}
-		ifExit(utils.Copy(deployGen, tempGen))
-		vi(tempGen)
-		chainId, err = monk.DeployChain(ROOT, tempGen, tempConf)
-		ifExit(err)
-		err = monk.InstallChain(ROOT, name, tempGen, tempConf, chainId)
-		ifExit(err)
 	} else {
+		// TODO: rpc
 		chain := newChain(chainType, rpc)
 		chainId, err = DeployChain(chain, ROOT, tempConf)
 		ifExit(err)
 		if chainId == "" {
 			exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 		}
-		fmt.Println(ROOT, name, chainType, tempConf, chainId)
-		err = InstallChain(chain, ROOT, name, chainType, tempConf, chainId)
+		//fmt.Println(ROOT, name, chainType, tempConf, chainId)
+		err = InstallChain(chain, ROOT, name, chainType, tempConf, chainId, rpc)
 		ifExit(err)
 	}
 
-	logger.Warnf("Deployed and installed chain: %s/%s", chainType, chainId)
+	s := fmt.Sprintf("Deployed and installed chain: %s/%s", chainType, chainId)
+	if rpc {
+		s += " with rpc"
+	}
+	logger.Warnln(s)
 	if c.Bool("checkout") {
 		ifExit(chains.ChangeHead(chainType, chainId))
 		logger.Warnf("Checked out chain: %s/%s", chainType, chainId)

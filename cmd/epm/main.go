@@ -60,6 +60,7 @@ func main() {
 		rpcFlag,
 		rpcHostFlag,
 		rpcPortFlag,
+		rpcLocalFlag,
 	}
 
 	app.Commands = []cli.Command{
@@ -102,8 +103,9 @@ func main() {
 func run(app *cli.App) {
 	defer func() {
 		if r := recover(); r != nil {
-			trace := make([]byte, 1048)
+			trace := make([]byte, 2048)
 			count := runtime.Stack(trace, true)
+			fmt.Printf("Panic: ", r)
 			fmt.Printf("Stack of %d bytes: %s", count, trace)
 		}
 	}()

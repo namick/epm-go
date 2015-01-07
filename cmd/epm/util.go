@@ -210,8 +210,11 @@ func DeployChain(chain epm.Blockchain, root, tempConf string) (string, error) {
 }
 
 // Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
-func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId string) error {
+func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId string, rpc bool) error {
 	home := path.Join(utils.Blockchains, chainType, chainId)
+	if rpc {
+		home = path.Join(home, "rpc")
+	}
 	logger.Infoln("Install directory ", home)
 	// move datastore and configs
 	// be sure to copy paths into config

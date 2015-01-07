@@ -76,13 +76,18 @@ func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string) {
 	}
 
 	if c.GlobalBool("rpc") {
-		m.SetProperty("RootDir", path.Join(m.Property("RootDir").(string), "rpc"))
+		r := m.Property("RootDir").(string)
+		last := filepath.Base(r)
+		if last != "rpc" {
+			m.SetProperty("RootDir", path.Join(r, "rpc"))
+		}
 	}
 }
 
 func readConfigFile(c *cli.Context, m epm.Blockchain) {
 	// if there's a config file in the root dir, use that
 	// else fall back on default or flag
+	// TODO: switch those priorities around!
 	configFlag := c.String("config")
 	s := path.Join(m.Property("RootDir").(string), "config.json")
 	if _, err := os.Stat(s); err == nil {

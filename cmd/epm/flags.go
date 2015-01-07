@@ -66,11 +66,15 @@ func setRpc(c *cli.Context, m epm.Blockchain) {
 		return
 	}
 
-	host := c.GlobalString("host")
-	port := c.GlobalString("port")
-
-	m.SetProperty("rpc_host", host)
-	m.SetProperty("rpc_port", port)
+	if c.GlobalIsSet("host") {
+		m.SetProperty("rpc_host", c.GlobalString("host"))
+	}
+	if c.GlobalIsSet("port") {
+		m.SetProperty("rpc_port", c.GlobalString("port"))
+	}
+	if c.GlobalIsSet("local") {
+		m.SetProperty("local", c.GlobalBool("local"))
+	}
 }
 
 func setDb(c *cli.Context, config *string, dbpath string) {
@@ -164,6 +168,11 @@ var (
 		Name:  "port",
 		Value: 5,
 		Usage: "set the rpc port",
+	}
+
+	rpcLocalFlag = cli.BoolFlag{
+		Name:  "local",
+		Usage: "let the rpc server handle keys (sign txs)",
 	}
 
 	deployInstallFlag = cli.BoolFlag{
