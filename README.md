@@ -74,7 +74,7 @@ Simply running that will look for a `.pdx` file in your current directory, deplo
 Commands:
 - `epm init`
     - Initialize the decerver directory tree and default configuration files
-- `epm deploy`
+- `epm new`
     - Deploy a genesis block from a genesis.json file. 
     - The block is saved in a hidden temp folder in the working directory first, and then copied into the decerver tree
     - Specify a particular `config.json` and `genesis.json` with the `-config` and `-genesis` flags, respectively.
@@ -83,26 +83,30 @@ Commands:
 - `epm checkout <chainId/name>`
     - Checkout a chain, making it the current working chain. 
     - It will be written to the top of the `~/.decerver/blockchains/HEAD` file. 
-    - Use `epm deploy -checkout` to checkout a chain immediately after deployment, but before installing.
-    - Or run `epm deploy -install -checkout` to kill all birds with one stone.
+    - Use `epm new -checkout` to checkout a chain immediately after deployment, but before installing.
+    - Or run `epm new -checkout` to kill all birds with one stone.
     - Note chainIds should always be prefixed by chainType, eg `thel/f8b5`
 - `epm fetch <dappname>`
     - Deploy and install a chain from a package.json and genesis.json in a dapp repository
     - Easiest way to sync with a dapp specific chain using just the package.json and genesis.json
 - `epm run -chain <chain name or id>`
     - Run a chain. Leaving out the `-chain` flag will default to the HEAD chain.
+- `epm deploy`
+    - deploy a `.pdx` file (create contracts, send transactions)
 - `epm plop <genesis | config>`
     - Plop the default genesis.json or config.json (respectively) into the current working directory
 - `epm [clean | pull | update]`
     - Clean epm related dirs, pull updates to the source code, and re-install the software, respectively.
 - `epm add-ref <chainType/chainId> <name>`
     - Create a new named reference to a chainId
-    - Note you can avoid this by using, for example, `epm deploy -name <name>`, to name the chain during installation
+    - Note you can avoid this by using, for example, `epm new -name <name>`, to name the chain during installation
 - `epm [refs | head]`
     - Display the available references, or the current head, respectively.
 - `epm rm <chain ref>
     - Remove a chain and all associated data from the decerver tree.
     - Will ask for confirmation
+- `epm console`
+    - boot epm in interactive mode (like an ipython console) - experimental feature
     
 Flags
 - `-no-gendoug` can be added to force simplified protocols without a genesis doug
@@ -110,7 +114,6 @@ Flags
 - `-genesis` to specify a genesis.json config file
 - `-chain` to attempt to select a chain by name or by chainType and chainId
 - `-type` to specify the protocol type (eg `bitcoin`, `eth`, `thel`, `genblock`, etc.)
-- `-i` to boot into interactive epm mode
 - `-diff` to display storage diffs, as specified by wrapping the commands to be diffed in `!{<diffname>` and `!}<diffname>`
 - `-dont-clear` to stop epm from clearing its smart contract cache every time (primarily used to handle modify deploys)
 - `-c` to specify the contract root path
