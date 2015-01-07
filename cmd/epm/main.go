@@ -38,6 +38,9 @@ func main() {
 	app.Name = "epm"
 	app.Usage = "epm alone will search the current directory for a .pdx to deploy. Specify one explicitly with -p"
 	app.Action = cliDeployPdx
+    app.Version = "0.1.0"
+    app.Author = "Ethan Buchman"
+    app.Email = "ethan@erisindustries.com"
 	//	app.EnableBashCompletion = true
 
 	// TODO: global flags only work on global command!
