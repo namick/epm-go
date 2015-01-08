@@ -11,9 +11,9 @@ import (
 	"github.com/codegangsta/cli"
 
 	// modules
-	"github.com/eris-ltd/decerver-interfaces/glue/eth"
-	"github.com/eris-ltd/decerver-interfaces/glue/genblock"
-	"github.com/eris-ltd/decerver-interfaces/glue/monkrpc"
+	"github.com/eris-ltd/modules/eth"
+	"github.com/eris-ltd/modules/genblock"
+	"github.com/eris-ltd/modules/monkrpc"
 	"github.com/eris-ltd/thelonious/monk"
 )
 
