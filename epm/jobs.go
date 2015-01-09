@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
-	//"github.com/project-douglas/lllc-server"
+	"github.com/project-douglas/lllc-server"
 	"io/ioutil"
 	"log"
 	"os"
@@ -144,8 +144,13 @@ func (e *EPM) Deploy(args []string) error {
 	} else {
 		p = path.Join(ContractPath, contract)
 	}
-	// deploy contract
-	addr, err := e.chain.Script(p, "lll")
+	// compile
+	bytecode, err := lllcserver.Compile(p)
+	if err != nil {
+		return err
+	}
+	// send transaction
+	addr, err := e.chain.Script(hex.EncodeToString(bytecode))
 	if err != nil {
 		err = fmt.Errorf("Error compiling %s: %s", p, err.Error())
 		logger.Infoln(err.Error())
