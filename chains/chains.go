@@ -251,7 +251,7 @@ func GetHead() (string, string, error) {
 	fspl := strings.Split(string(f), "\n")
 	head := fspl[0]
 	if head == "" {
-		return "", "", nil
+		return "", "", fmt.Errorf("There is no chain checked out")
 	}
 	return SplitRef(head)
 }

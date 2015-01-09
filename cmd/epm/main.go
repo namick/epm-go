@@ -87,14 +87,13 @@ func main() {
 	run(app)
 
 	monklog.Flush()
-
-	// fail if `epm -init` has not been run
-	// TODO: put this everywhere it needs to be...
-	//ifExit(checkInit())
 }
 
 func before(c *cli.Context) error {
 	utils.InitLogging(path.Join(utils.Logs, "epm"), "", c.Int("log"), "")
+	if _, err := os.Stat(utils.Decerver); err != nil {
+		exit(fmt.Errorf("Could not find decerver tree. Did you run `epm init`?"))
+	}
 	return nil
 }
 
