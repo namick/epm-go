@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
-	"github.com/project-douglas/lllc-server"
+	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"log"
 	"os"
