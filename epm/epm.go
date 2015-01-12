@@ -197,7 +197,9 @@ func (e *EPM) parse(lines []string) error {
 		if err != nil {
 			return err
 		}
-		e.AddJob(job)
+		if job.cmd != "" {
+			e.AddJob(job)
+		}
 		// check if we need to take or diff state after this job
 		// if diff is disabled they will not run, but we need to parse them out
 		e.parseStateDiffs(&lines, l, diffmap)
