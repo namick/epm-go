@@ -3,9 +3,8 @@ package epm
 import (
 	"bufio"
 	"fmt"
-	"github.com/eris-ltd/decerver-interfaces/events"
-	"github.com/eris-ltd/decerver-interfaces/modules"
 	"github.com/eris-ltd/epm-go/utils"
+	"github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/thelonious/monklog"
 	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
@@ -51,19 +50,19 @@ type Blockchain interface {
 	KeyManager
 	DecerverModule
 	ChainId() (string, error)
-	WorldState() *modules.WorldState
-	State() *modules.State
-	Storage(target string) *modules.Storage
-	Account(target string) *modules.Account
+	WorldState() *types.WorldState
+	State() *types.State
+	Storage(target string) *types.Storage
+	Account(target string) *types.Account
 	StorageAt(target, storage string) string
 	BlockCount() int
 	LatestBlock() string
-	Block(hash string) *modules.Block
+	Block(hash string) *types.Block
 	IsScript(target string) bool
 	Tx(addr, amt string) (string, error)
 	Msg(addr string, data []string) (string, error)
 	Script(code string) (string, error)
-	Subscribe(name, event, target string) chan events.Event
+	Subscribe(name, event, target string) chan types.Event
 	UnSubscribe(name string)
 	Commit()
 	AutoCommit(toggle bool)
@@ -84,7 +83,7 @@ type EPM struct {
 
 	pkgdef string
 	Diff   bool
-	states map[string]modules.State
+	states map[string]types.State
 
 	//map job numbers to names of diffs invoked after that job
 	diffName map[int][]string
@@ -104,7 +103,7 @@ func NewEPM(chain Blockchain, log string) (*EPM, error) {
 		vars:      make(map[string]string),
 		log:       ".epm-log",
 		Diff:      false, // off by default
-		states:    make(map[string]modules.State),
+		states:    make(map[string]types.State),
 		diffName:  make(map[int][]string),
 		diffSched: make(map[int][]int),
 	}
