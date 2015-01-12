@@ -27,6 +27,7 @@ var (
 	Apps        = path.Join(Decerver, "dapps")
 	Blockchains = path.Join(Decerver, "blockchains")
 	Filesystems = path.Join(Decerver, "filesystems")
+	Languages   = path.Join(Decerver, "languages")
 	Logs        = path.Join(Decerver, "logs")
 	Modules     = path.Join(Decerver, "modules")
 	Scratch     = path.Join(Decerver, "scratch")
@@ -168,7 +169,7 @@ func Usr() string {
 }
 
 var MajorDirs = []string{
-	Decerver, Apps, Blockchains, Filesystems, Logs, Modules, Scratch, Refs, Epm, Lllc,
+	Decerver, Apps, Blockchains, Filesystems, Languages, Logs, Modules, Scratch, Refs, Epm, Lllc,
 }
 
 func InitLogging(Datadir string, LogFile string, LogLevel int, DebugFile string) {
@@ -197,21 +198,18 @@ func openLogFile(Datadir string, filename string) *os.File {
 	return file
 }
 
-func InitDecerverDir() error {
+// Create the default decerver tree
+func InitDecerverDir() (err error) {
 	for _, d := range MajorDirs {
 		err := InitDataDir(d)
 		if err != nil {
 			return err
 		}
 	}
-	err := InitDataDir(Refs)
-	if err != nil {
-		return err
-	}
 	if _, err = os.Stat(HEAD); err != nil {
 		_, err = os.Create(HEAD)
 	}
-	return err
+	return
 }
 
 func NewInvalidKindErr(kind, k reflect.Kind) error {
