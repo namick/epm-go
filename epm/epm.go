@@ -7,7 +7,7 @@ import (
 	"github.com/eris-ltd/decerver-interfaces/modules"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
-	"github.com/project-douglas/lllc-server"
+	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -19,7 +19,7 @@ var logger *monklog.Logger = monklog.NewLogger("EPM")
 var (
 	StateDiffOpen  = "!{"
 	StateDiffClose = "!}"
-	LLLURL         = "http://lllc.erisindustries.com/compile"
+	//LLLURL         = "http://lllc.erisindustries.com/compile"
 )
 
 // an EPM Job
@@ -62,7 +62,7 @@ type Blockchain interface {
 	IsScript(target string) bool
 	Tx(addr, amt string) (string, error)
 	Msg(addr string, data []string) (string, error)
-	Script(file, lang string) (string, error)
+	Script(code string) (string, error)
 	Subscribe(name, event, target string) chan events.Event
 	UnSubscribe(name string)
 	Commit()
@@ -96,7 +96,7 @@ type EPM struct {
 
 // New empty EPM
 func NewEPM(chain Blockchain, log string) (*EPM, error) {
-	lllcserver.URL = LLLURL
+	//lllcserver.URL = LLLURL
 	//logger.Infoln("url: ", LLLURL)
 	e := &EPM{
 		chain:     chain,
