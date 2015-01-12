@@ -90,9 +90,16 @@ func setDb(c *cli.Context, config *string, dbpath string) {
 
 var (
 	nameFlag = cli.StringFlag{
-		Name:   "name",
+		Name:   "name, n",
 		Value:  "",
 		Usage:  "specify a ref name",
+		EnvVar: "",
+	}
+
+	forceNameFlag = cli.StringFlag{
+		Name:   "force-name, N",
+		Value:  "",
+		Usage:  "Force a ref name (even if already taken)",
 		EnvVar: "",
 	}
 

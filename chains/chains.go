@@ -197,14 +197,8 @@ func ChangeHead(typ, id string) error {
 	return changeHead(typ, id)
 }
 
-// Add a reference name to a chainId
-func AddRef(typ, id, ref string) error {
-	_, err := os.Stat(path.Join(utils.Refs, ref))
-	if err == nil {
-		return fmt.Errorf("Ref %s already exists", ref)
-	}
-
-	typ, err = ResolveChainType(typ)
+func addRef(typ, id, ref string) error {
+	typ, err := ResolveChainType(typ)
 	if err != nil {
 		return err
 	}
@@ -220,6 +214,19 @@ func AddRef(typ, id, ref string) error {
 
 	refid := path.Join(typ, id)
 	return ioutil.WriteFile(path.Join(utils.Refs, ref), []byte(refid), 0644)
+}
+
+// Add a reference name to a chainId
+func AddRef(typ, id, ref string) error {
+	_, err := os.Stat(path.Join(utils.Refs, ref))
+	if err == nil {
+		return fmt.Errorf("Ref %s already exists", ref)
+	}
+	return addRef(typ, id, ref)
+}
+
+func AddRefForce(typ, id, ref string) error {
+	return addRef(typ, id, ref)
 }
 
 // Return a list of chain references

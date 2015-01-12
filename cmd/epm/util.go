@@ -210,7 +210,7 @@ func DeployChain(chain epm.Blockchain, root, tempConf string) (string, error) {
 }
 
 // Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
-func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId string, rpc bool) error {
+func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId string, rpc bool) error {
 	home := path.Join(utils.Blockchains, chainType, chainId)
 	if rpc {
 		home = path.Join(home, "rpc")
@@ -230,21 +230,12 @@ func InstallChain(chain epm.Blockchain, root, name, chainType, tempConf, chainId
 	chain.ReadConfig(tempConf)
 
 	chain.SetProperty("ChainId", chainId)
-	chain.SetProperty("ChainName", name)
+	//chain.SetProperty("ChainName", name)
 	chain.SetProperty("RootDir", home)
 	chain.WriteConfig(tempConf)
 
 	if err := os.Rename(tempConf, path.Join(home, "config.json")); err != nil {
 		return err
-	}
-
-	// update refs
-	if name != "" {
-		err := chains.AddRef(chainType, chainId, name)
-		if err != nil {
-			return err
-		}
-		logger.Infof("Created ref %s to point to chain %s\n", name, chainId)
 	}
 
 	return nil

@@ -83,6 +83,7 @@ func cliNew(c *cli.Context) {
 	chainType, err := chains.ResolveChainType(c.String("type"))
 	ifExit(err)
 	name := c.String("name")
+	forceName := c.String("force-name")
 	rpc := c.GlobalBool("rpc")
 
 	// if genesis or config are not specified
@@ -122,7 +123,7 @@ func cliNew(c *cli.Context) {
 				exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 			}
 			//fmt.Println(ROOT, name, chainType, tempConf, chainId)
-			err = InstallChain(chain, ROOT, name, chainType, tempConf, chainId, rpc)
+			err = InstallChain(chain, ROOT, chainType, tempConf, chainId, rpc)
 			ifExit(err)
 		} else {
 			deployGen := c.String("genesis")
@@ -140,7 +141,7 @@ func cliNew(c *cli.Context) {
 			vi(tempGen)
 			chainId, err = monk.DeployChain(ROOT, tempGen, tempConf)
 			ifExit(err)
-			err = monk.InstallChain(ROOT, name, tempGen, tempConf, chainId)
+			err = monk.InstallChain(ROOT, tempGen, tempConf, chainId)
 			ifExit(err)
 		}
 	} else {
@@ -152,7 +153,7 @@ func cliNew(c *cli.Context) {
 			exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 		}
 		//fmt.Println(ROOT, name, chainType, tempConf, chainId)
-		err = InstallChain(chain, ROOT, name, chainType, tempConf, chainId, rpc)
+		err = InstallChain(chain, ROOT, chainType, tempConf, chainId, rpc)
 		ifExit(err)
 	}
 
@@ -161,9 +162,25 @@ func cliNew(c *cli.Context) {
 		s += " with rpc"
 	}
 	logger.Warnln(s)
+
 	if c.Bool("checkout") {
 		ifExit(chains.ChangeHead(chainType, chainId))
 		logger.Warnf("Checked out chain: %s/%s", chainType, chainId)
+	}
+
+	// update refs
+	if forceName != "" {
+		err := chains.AddRefForce(chainType, chainId, forceName)
+		if err != nil {
+			ifExit(err)
+		}
+		logger.Warnf("Created ref %s to point to chain %s\n", forceName, chainId)
+	} else if name != "" {
+		err := chains.AddRef(chainType, chainId, name)
+		if err != nil {
+			ifExit(err)
+		}
+		logger.Warnf("Created ref %s to point to chain %s\n", name, chainId)
 	}
 	exit(nil)
 }
@@ -186,13 +203,27 @@ func cliCheckout(c *cli.Context) {
 	exit(nil)
 }
 
+// remove a reference from a chainId
+func cliRmRef(c *cli.Context) {
+	args := c.Args()
+	if len(args) == 0 {
+		exit(fmt.Errorf("Please specify the ref to remove"))
+	}
+	ref := args[0]
+
+	_, _, err := chains.ResolveChain(ref)
+	ifExit(err)
+	err = os.Remove(path.Join(utils.Refs, ref))
+	ifExit(err)
+}
+
 // add a new reference to a chainId
 func cliAddRef(c *cli.Context) {
 	chain := c.Args().Get(0)
 	ref := c.Args().Get(1)
 	if ref == "" {
-		log.Fatal(`add-ref requires a name to be specified as well, \n
-                        eg. "add-ref 14c32 mychain"`)
+		log.Fatal(`requires both a chainId and a name to be specified, \n
+                        eg. "add 14c32 mychain"`)
 	}
 
 	typ, id, err := chains.SplitRef(chain)

@@ -21,6 +21,10 @@ var (
 		Name:   "refs",
 		Usage:  "display the chain references",
 		Action: cliRefs,
+		Subcommands: []cli.Command{
+			addRefCmd,
+			rmRefCmd,
+		},
 	}
 
 	headCmd = cli.Command{
@@ -50,6 +54,7 @@ var (
 			newConfigFlag,
 			newGenesisFlag,
 			nameFlag,
+			forceNameFlag,
 			typeFlag,
 		},
 	}
@@ -61,9 +66,15 @@ var (
 	}
 
 	addRefCmd = cli.Command{
-		Name:   "add-ref",
-		Usage:  "add a new reference to a chain id",
+		Name:   "add",
+		Usage:  "add a new reference to a chain id: `epm refs add thel/f8`",
 		Action: cliAddRef,
+	}
+
+	rmRefCmd = cli.Command{
+		Name:   "rm",
+		Usage:  "rm a reference from a chain id, but leave the data",
+		Action: cliRmRef,
 	}
 
 	runCmd = cli.Command{
