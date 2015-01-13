@@ -57,6 +57,7 @@ func main() {
 		initCmd,
 		fetchCmd,
 		newCmd,
+		cpCmd,
 		checkoutCmd,
 		addRefCmd,
 		runCmd,

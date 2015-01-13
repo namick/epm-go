@@ -262,10 +262,10 @@ func resolveRootFlag(c *cli.Context) (string, string, string, error) {
 
 func resolveRootArg(c *cli.Context) (string, string, string, error) {
 	args := c.Args()
-	if len(args) < 1 {
-		return "", "", "", fmt.Errorf("Error: specify the chain ref as an argument")
+	ref := ""
+	if len(args) > 0 {
+		ref = args[0]
 	}
-	ref := args[0]
 	rpc := c.GlobalBool("rpc")
 	return resolveRoot(ref, rpc)
 }
@@ -275,7 +275,7 @@ func resolveRoot(ref string, rpc bool) (string, string, string, error) {
 	if err != nil {
 		return "", "", "", err
 	}
-	root = chains.ComposeRoot(chainType, chainId)
+	root := chains.ComposeRoot(chainType, chainId)
 	if rpc {
 		root = path.Join(root, "rpc")
 	}

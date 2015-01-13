@@ -27,6 +27,12 @@ var (
 		},
 	}
 
+	cpCmd = cli.Command{
+		Name:   "cp",
+		Usage:  "copy a blockchain",
+		Action: cliCp,
+	}
+
 	headCmd = cli.Command{
 		Name:   "head",
 		Usage:  "display the current working chain",

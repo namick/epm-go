@@ -70,6 +70,11 @@ func cliHead(c *cli.Context) {
 	exit(err)
 }
 
+func cliCp(c *cli.Context) {
+	//	root, ty, id, err := resolveRootArg(c)
+	//	ifExit(err)
+}
+
 // create ~/.decerver tree and drop default monk/gen configs in there
 func cliInit(c *cli.Context) {
 	exit(utils.InitDecerverDir())
@@ -195,17 +200,27 @@ func cliRmRef(c *cli.Context) {
 
 // add a new reference to a chainId
 func cliAddRef(c *cli.Context) {
-	chain := c.Args().Get(0)
-	ref := c.Args().Get(1)
-	if ref == "" {
-		log.Fatal(`requires both a chainId and a name to be specified, \n
-                        eg. "add 14c32 mychain"`)
-	}
+	args := c.Args()
+	var typ string
+	var id string
+	var err error
+	var ref string
+	if len(args) == 1 {
+		ref = args.Get(0)
+		typ, id, err = chains.GetHead()
+		ifExit(err)
+		if id == "" {
+			log.Fatal(`No chain is checked out. To add a ref, specify both a chainId and a name, \n eg. "add thel/14c32 mychain"`)
+		}
+	} else {
+		chain := args.Get(0)
+		ref = args.Get(1)
+		typ, id, err = chains.SplitRef(chain)
 
-	typ, id, err := chains.SplitRef(chain)
-	if err != nil {
-		exit(fmt.Errorf(`Error: specify the type in the first 
+		if err != nil {
+			exit(fmt.Errorf(`Error: specify the type in the first 
                 argument as '<type>/<chainId>'`))
+		}
 	}
 	exit(chains.AddRef(typ, id, ref))
 }
@@ -272,6 +287,9 @@ func cliConfig(c *cli.Context) {
 
 // remove a chain
 func cliRemove(c *cli.Context) {
+	if len(c.Args()) < 1 {
+		exit(fmt.Errorf("Error: specify the chain ref as an argument"))
+	}
 	root, _, _, err := resolveRootArg(c)
 	ifExit(err)
 
