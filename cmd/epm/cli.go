@@ -10,7 +10,6 @@ import (
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/thelonious/monkdoug"
 	"log"
 	"os"
 	"path"
@@ -82,11 +81,10 @@ func cliFetch(c *cli.Context) {
 	exit(monk.FetchInstallChain(c.Args().First()))
 }
 
-// deploy the genblock into a local .decerver-local
-// and install into the global tree
+// deploy the genblock into a random folder in scratch
+// and install into the global tree (must compute chainId before we know where to put it)
 // possibly checkout the newly deployed
 // chain agnostic!
-// TODO: does rpc make sense in here?!
 func cliNew(c *cli.Context) {
 	chainType, err := chains.ResolveChainType(c.String("type"))
 	ifExit(err)
@@ -99,9 +97,10 @@ func cliNew(c *cli.Context) {
 	tmpRoot := path.Join(utils.Scratch, "epm", hex.EncodeToString(r))
 
 	// if genesis or config are not specified
-	// use defaults set by `epm -init`
+	// use defaults set by `epm init`
 	// and copy into working dir
 	deployConf := c.String("config")
+	deployGen := c.String("genesis")
 	tempConf := ".config.json"
 
 	if deployConf == "" {
@@ -112,62 +111,27 @@ func cliNew(c *cli.Context) {
 		}
 	}
 
+	chain := newChain(chainType, rpc)
+
 	// if config doesnt exist, lay it
 	if _, err := os.Stat(deployConf); err != nil {
 		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
 		if rpc {
 			utils.InitDataDir(path.Join(utils.Blockchains, chainType, "rpc"))
 		}
-		m := newChain(chainType, rpc)
-		ifExit(m.WriteConfig(deployConf))
+		ifExit(chain.WriteConfig(deployConf))
 	}
 
 	ifExit(utils.Copy(deployConf, tempConf))
 	vi(tempConf)
 
-	var chainId string
-	if chainType == "thelonious" {
-		if rpc {
-			chain := newChain(chainType, rpc)
-			chainId, err = DeployChain(chain, tmpRoot, tempConf)
-			ifExit(err)
-			if chainId == "" {
-				exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
-			}
-			//fmt.Println(tmpRoot, name, chainType, tempConf, chainId)
-			err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
-			ifExit(err)
-		} else {
-			deployGen := c.String("genesis")
-			tempGen := path.Join(tmpRoot, "genesis.json")
-			utils.InitDataDir(tmpRoot)
-
-			if deployGen == "" {
-				deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
-			}
-			if _, err := os.Stat(deployGen); err != nil {
-				err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
-				ifExit(err)
-			}
-			ifExit(utils.Copy(deployGen, tempGen))
-			vi(tempGen)
-			chainId, err = monk.DeployChain(tmpRoot, tempGen, tempConf)
-			ifExit(err)
-			err = monk.InstallChain(tmpRoot, tempGen, tempConf, chainId)
-			ifExit(err)
-		}
-	} else {
-		// TODO: rpc
-		chain := newChain(chainType, rpc)
-		chainId, err = DeployChain(chain, tmpRoot, tempConf)
-		ifExit(err)
-		if chainId == "" {
-			exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
-		}
-		//fmt.Println(tmpRoot, name, chainType, tempConf, chainId)
-		err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
-		ifExit(err)
+	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen)
+	ifExit(err)
+	if chainId == "" {
+		exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 	}
+	err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
+	ifExit(err)
 
 	s := fmt.Sprintf("Deployed and installed chain: %s/%s", chainType, chainId)
 	if rpc {

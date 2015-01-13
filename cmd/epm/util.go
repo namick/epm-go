@@ -195,11 +195,20 @@ func confirm(message string) bool {
 	return r == "y"
 }
 
-// Read config, set deployment root,
+// Read config, set deployment root, config gen block (if relevant)
 // init, return chainId
-func DeployChain(chain epm.Blockchain, root, tempConf string) (string, error) {
-	chain.ReadConfig(tempConf)
+func DeployChain(chain epm.Blockchain, root, config, deployGen string) (string, error) {
+	chain.ReadConfig(config)
 	chain.SetProperty("RootDir", root)
+
+	// TODO: nice way to handle multiple gen blocks on other chains
+	// set genesis config file
+	if th, ok := isThelonious(chain); ok {
+		tempGen := copyEditGenesisConfig(deployGen, root)
+		setGenesisConfig(th, tempGen)
+	} else if deployGen != "" {
+		logger.Warnln("Genesis configuration only possible with thelonious (for now - https://github.com/eris-ltd/epm-go/issues/53)")
+	}
 
 	if err := chain.Init(); err != nil {
 		return "", err
@@ -211,6 +220,7 @@ func DeployChain(chain epm.Blockchain, root, tempConf string) (string, error) {
 
 // Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
 func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId string, rpc bool) error {
+	// chain.Shutdown() and New again (so we dont move db while its open - does this even matter though?) !
 	home := path.Join(utils.Blockchains, chainType, chainId)
 	if rpc {
 		home = path.Join(home, "rpc")
@@ -232,6 +242,9 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 	chain.SetProperty("ChainId", chainId)
 	//chain.SetProperty("ChainName", name)
 	chain.SetProperty("RootDir", home)
+	if chainType == "thelonious" {
+		chain.SetProperty("GenesisConfig", path.Join(home, "genesis.json"))
+	}
 	chain.WriteConfig(tempConf)
 
 	if err := os.Rename(tempConf, path.Join(home, "config.json")); err != nil {
