@@ -53,8 +53,51 @@ func AbsolutePath(Datadir string, filename string) string {
 	return path.Join(Datadir, filename)
 }
 
-// common golang, really?
 func Copy(src, dst string) error {
+	f, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if f.IsDir() {
+		if _, err := os.Stat(dst); err == nil {
+			return fmt.Errorf("destination already exists")
+		}
+		return copyDir(src, dst)
+	}
+	return copyFile(src, dst)
+}
+
+// assumes we've done our checking
+func copyDir(src, dst string) error {
+	fmt.Println("copy dir!", src, dst)
+	fi, _ := os.Stat(src)
+	if err := os.MkdirAll(dst, fi.Mode()); err != nil {
+		return err
+	}
+	fs, err := ioutil.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range fs {
+		s := path.Join(src, f.Name())
+		d := path.Join(dst, f.Name())
+		fmt.Println(f.Name())
+		if f.IsDir() {
+			if err := copyDir(s, d); err != nil {
+				return err
+			}
+		} else {
+			if err := copyFile(s, d); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// common golang, really?
+func copyFile(src, dst string) error {
 	r, err := os.Open(src)
 	if err != nil {
 		return err

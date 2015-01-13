@@ -110,6 +110,12 @@ var (
 		EnvVar: "",
 	}
 
+	multiFlag = cli.StringFlag{
+		Name:  "multi",
+		Value: "",
+		Usage: "use another version of a chain with the same id",
+	}
+
 	typeFlag = cli.StringFlag{
 		Name:   "type",
 		Value:  "thelonious",

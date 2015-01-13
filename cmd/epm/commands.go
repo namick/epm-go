@@ -75,12 +75,18 @@ var (
 		Name:   "add",
 		Usage:  "add a new reference to a chain id: `epm refs add thel/f8`",
 		Action: cliAddRef,
+		Flags: []cli.Flag{
+			multiFlag,
+		},
 	}
 
 	rmRefCmd = cli.Command{
 		Name:   "rm",
 		Usage:  "rm a reference from a chain id, but leave the data",
 		Action: cliRmRef,
+		Flags: []cli.Flag{
+			multiFlag,
+		},
 	}
 
 	runCmd = cli.Command{
@@ -90,6 +96,7 @@ var (
 		Flags: []cli.Flag{
 			mineFlag,
 			chainFlag,
+			multiFlag,
 		},
 	}
 
@@ -99,6 +106,7 @@ var (
 		Action: cliRunDapp,
 		Flags: []cli.Flag{
 			mineFlag,
+			multiFlag,
 		},
 	}
 
@@ -108,7 +116,7 @@ var (
 		Action: cliConfig,
 		Flags: []cli.Flag{
 			chainFlag,
-			typeFlag,
+			multiFlag,
 		},
 	}
 
@@ -118,6 +126,7 @@ var (
 		Action: cliCommand,
 		Flags: []cli.Flag{
 			chainFlag,
+			multiFlag,
 			contractPathFlag,
 		},
 	}
@@ -134,6 +143,7 @@ var (
 		Action: cliDeploy,
 		Flags: []cli.Flag{
 			chainFlag,
+			multiFlag,
 			diffFlag,
 			dontClearFlag,
 			contractPathFlag,
@@ -146,6 +156,7 @@ var (
 		Action: cliConsole,
 		Flags: []cli.Flag{
 			chainFlag,
+			multiFlag,
 			diffFlag,
 			dontClearFlag,
 			contractPathFlag,

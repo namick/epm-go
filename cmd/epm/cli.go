@@ -70,9 +70,42 @@ func cliHead(c *cli.Context) {
 	exit(err)
 }
 
+// duplicate a chain
 func cliCp(c *cli.Context) {
-	//	root, ty, id, err := resolveRootArg(c)
-	//	ifExit(err)
+	args := c.Args()
+	var (
+		root  string
+		typ   string
+		id    string
+		err   error
+		multi string
+	)
+	if len(args) == 0 {
+		log.Fatal(`To copy a chain, specify a chain and a name, \n eg. "cp thel/14c32 chaincopy"`)
+
+	} else if len(args) == 1 {
+		multi = args.Get(0)
+		// copy the checked out chain
+		typ, id, err = chains.GetHead()
+		ifExit(err)
+		if id == "" {
+			log.Fatal(`No chain is checked out. To copy a chain, specify a chainId and an optional name, \n eg. "cp thel/14c32 chaincopy"`)
+		}
+		root = chains.ComposeRoot(typ, id)
+	} else {
+		ref := args.Get(0)
+		multi = args.Get(1)
+		root, typ, id, err = resolveRoot(ref, false, "")
+		ifExit(err)
+	}
+	newRoot := chains.ComposeRootMulti(typ, id, multi)
+	fmt.Println(root)
+	fmt.Println(newRoot)
+	err = utils.Copy(root, newRoot)
+	ifExit(err)
+	chain := newChain(typ, false)
+	configureRootDir(c, chain, newRoot)
+	chain.WriteConfig(path.Join(newRoot, "config.json"))
 }
 
 // create ~/.decerver tree and drop default monk/gen configs in there

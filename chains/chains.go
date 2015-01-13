@@ -21,6 +21,13 @@ func ComposeRoot(chainType, chainId string) string {
 	return path.Join(utils.Blockchains, chainType, chainId, DefaultRefUnderId)
 }
 
+func ComposeRootMulti(chainType, chainId, multi string) string {
+	if multi == "" {
+		return ComposeRoot(chainType, chainId)
+	}
+	return path.Join(utils.Blockchains, chainType, chainId, multi)
+}
+
 // Get ChainId from a reference name by reading the ref file
 func ChainFromName(name string) (string, string, error) {
 	refsPath := path.Join(utils.Blockchains, "refs", name)
@@ -110,6 +117,9 @@ func ResolveChain(ref string) (chainType string, chainId string, err error) {
 
 	chainType, chainId, err = SplitRef(ref)
 	if err == nil {
+		if chainType, err = ResolveChainType(chainType); err != nil {
+			return
+		}
 		chainId, err = ResolveChainId(chainType, chainId)
 		return
 	}
@@ -173,6 +183,7 @@ func changeHead(typ, head string) error {
 
 	// add the new head
 	var s string
+	// handle empty head
 	if head != "" {
 		s = typ + "/"
 	}

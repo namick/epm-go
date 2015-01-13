@@ -257,7 +257,8 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 func resolveRootFlag(c *cli.Context) (string, string, string, error) {
 	ref := c.String("chain")
 	rpc := c.GlobalBool("rpc")
-	return resolveRoot(ref, rpc)
+	multi := c.String("multi")
+	return resolveRoot(ref, rpc, multi)
 }
 
 func resolveRootArg(c *cli.Context) (string, string, string, error) {
@@ -267,15 +268,16 @@ func resolveRootArg(c *cli.Context) (string, string, string, error) {
 		ref = args[0]
 	}
 	rpc := c.GlobalBool("rpc")
-	return resolveRoot(ref, rpc)
+	multi := c.String("multi")
+	return resolveRoot(ref, rpc, multi)
 }
 
-func resolveRoot(ref string, rpc bool) (string, string, string, error) {
+func resolveRoot(ref string, rpc bool, multi string) (string, string, string, error) {
 	chainType, chainId, err := chains.ResolveChain(ref)
 	if err != nil {
 		return "", "", "", err
 	}
-	root := chains.ComposeRoot(chainType, chainId)
+	root := chains.ComposeRootMulti(chainType, chainId, multi)
 	if rpc {
 		root = path.Join(root, "rpc")
 	}

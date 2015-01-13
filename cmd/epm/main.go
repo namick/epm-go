@@ -91,6 +91,7 @@ func run(app *cli.App) {
 			fmt.Printf("Panic: ", r)
 			fmt.Printf("Stack of %d bytes: %s", count, trace)
 		}
+		monklog.Flush()
 	}()
 
 	app.Run(os.Args)
