@@ -31,6 +31,9 @@ var (
 		Name:   "cp",
 		Usage:  "copy a blockchain",
 		Action: cliCp,
+		Flags: []cli.Flag{
+			bareFlag,
+		},
 	}
 
 	headCmd = cli.Command{
@@ -117,6 +120,7 @@ var (
 		Flags: []cli.Flag{
 			chainFlag,
 			multiFlag,
+			viFlag,
 		},
 	}
 
@@ -135,6 +139,9 @@ var (
 		Name:   "rm",
 		Usage:  "remove a chain from the global directory",
 		Action: cliRemove,
+		Flags: []cli.Flag{
+			multiFlag,
+		},
 	}
 
 	deployCmd = cli.Command{

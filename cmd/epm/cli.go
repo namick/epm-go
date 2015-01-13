@@ -99,10 +99,15 @@ func cliCp(c *cli.Context) {
 		ifExit(err)
 	}
 	newRoot := chains.ComposeRootMulti(typ, id, multi)
-	fmt.Println(root)
-	fmt.Println(newRoot)
-	err = utils.Copy(root, newRoot)
-	ifExit(err)
+	if c.Bool("bare") {
+		err = utils.InitDataDir(newRoot)
+		ifExit(err)
+		err = utils.Copy(path.Join(root, "config.json"), path.Join(newRoot, "config.json"))
+		ifExit(err)
+	} else {
+		err = utils.Copy(root, newRoot)
+		ifExit(err)
+	}
 	chain := newChain(typ, false)
 	configureRootDir(c, chain, newRoot)
 	chain.WriteConfig(path.Join(newRoot, "config.json"))
@@ -159,10 +164,11 @@ func cliNew(c *cli.Context) {
 		}
 		ifExit(chain.WriteConfig(deployConf))
 	}
-
+	// copy and edit temp
 	ifExit(utils.Copy(deployConf, tempConf))
 	vi(tempConf)
 
+	// deploy and install chain
 	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen)
 	ifExit(err)
 	if chainId == "" {
@@ -284,7 +290,6 @@ func cliConfig(c *cli.Context) {
 	var (
 		root      string
 		chainType string
-		chainId   string
 		err       error
 	)
 	rpc := c.GlobalBool("rpc")
@@ -292,30 +297,33 @@ func cliConfig(c *cli.Context) {
 		chainType = c.String("type")
 		root = path.Join(utils.Blockchains, chainType)
 	} else {
-		chain := c.String("chain")
-		chainType, chainId, err = chains.ResolveChain(chain)
+		root, chainType, _, err = resolveRootFlag(c)
 		ifExit(err)
-		root = chains.ComposeRoot(chainType, chainId)
 	}
 
-	if rpc {
-		root = path.Join(root, "rpc")
-	}
+	configPath := path.Join(root, "config.json")
+	if c.Bool("vi") {
+		vi(configPath)
+	} else {
+		m := newChain(chainType, rpc)
+		err = m.ReadConfig(configPath)
+		ifExit(err)
 
-	m := newChain(chainType, rpc)
-	err = m.ReadConfig(path.Join(root, "config.json"))
-	ifExit(err)
-
-	args := c.Args()
-	for _, a := range args {
-		sp := strings.Split(a, ":")
-		key := sp[0]
-		value := sp[1]
-		if err := m.SetProperty(key, value); err != nil {
-			logger.Errorln(err)
+		args := c.Args()
+		for _, a := range args {
+			sp := strings.Split(a, ":")
+			if len(sp) != 2 {
+				logger.Errorln("Invalid arg")
+				continue
+			}
+			key := sp[0]
+			value := sp[1]
+			if err := m.SetProperty(key, value); err != nil {
+				logger.Errorln(err)
+			}
 		}
+		m.WriteConfig(path.Join(root, "config.json"))
 	}
-	m.WriteConfig(path.Join(root, "config.json"))
 }
 
 // remove a chain

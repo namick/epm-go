@@ -165,6 +165,11 @@ var (
 		Usage: "commit blocks",
 	}
 
+	bareFlag = cli.BoolFlag{
+		Name:  "bare",
+		Usage: "only copy the config",
+	}
+
 	rpcFlag = cli.BoolFlag{
 		Name:   "rpc",
 		Usage:  "run commands over rpc",
@@ -199,5 +204,10 @@ var (
 	newGenesisFlag = cli.StringFlag{
 		Name:  "genesis, g",
 		Usage: "specify genesis file",
+	}
+
+	viFlag = cli.BoolFlag{
+		Name:  "vi",
+		Usage: "edit the config in a vim window",
 	}
 )

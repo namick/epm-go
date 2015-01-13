@@ -69,7 +69,6 @@ func Copy(src, dst string) error {
 
 // assumes we've done our checking
 func copyDir(src, dst string) error {
-	fmt.Println("copy dir!", src, dst)
 	fi, _ := os.Stat(src)
 	if err := os.MkdirAll(dst, fi.Mode()); err != nil {
 		return err
@@ -82,7 +81,6 @@ func copyDir(src, dst string) error {
 	for _, f := range fs {
 		s := path.Join(src, f.Name())
 		d := path.Join(dst, f.Name())
-		fmt.Println(f.Name())
 		if f.IsDir() {
 			if err := copyDir(s, d); err != nil {
 				return err
