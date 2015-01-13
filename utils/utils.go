@@ -273,3 +273,23 @@ func SetProperty(cv reflect.Value, field string, value interface{}) error {
 	}
 	return nil
 }
+
+func ClearDir(dir string) error {
+	fs, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, f := range fs {
+		n := f.Name()
+		if f.IsDir() {
+			if err := os.RemoveAll(path.Join(dir, f.Name())); err != nil {
+				return err
+			}
+		} else {
+			if err := os.Remove(path.Join(dir, n)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

@@ -7,8 +7,8 @@ import (
 var (
 	cleanCmd = cli.Command{
 		Name:   "clean",
-		Usage:  "clean epm related directories",
-		Action: cliCleanPullUpdate,
+		Usage:  "wipes out the contents of the specified directory in the decerver tree",
+		Action: cliClean,
 	}
 
 	plopCmd = cli.Command{
@@ -19,7 +19,7 @@ var (
 
 	refsCmd = cli.Command{
 		Name:   "refs",
-		Usage:  "display the chain references",
+		Usage:  "display and manage chain references",
 		Action: cliRefs,
 		Subcommands: []cli.Command{
 			addRefCmd,

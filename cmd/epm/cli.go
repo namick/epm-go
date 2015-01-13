@@ -2,7 +2,7 @@ package main
 
 import (
 	"crypto/rand"
-	//"encoding/hex"
+	"encoding/hex"
 	"fmt"
 	"github.com/codegangsta/cli"
 	color "github.com/daviddengcn/go-colortext"
@@ -20,9 +20,15 @@ import (
 
 var EPMVars = "epm.vars"
 
-// TODO !
-func cliCleanPullUpdate(c *cli.Context) {
+// TODO: pull, update
 
+func cliClean(c *cli.Context) {
+	toclean := c.Args().First()
+	if toclean == "" {
+		exit(fmt.Errorf("You must enter a directory or file to wipe"))
+	}
+	dir := path.Join(utils.Decerver, toclean)
+	exit(utils.ClearDir(dir))
 }
 
 // plop the config or genesis defaults into current dir
@@ -90,7 +96,7 @@ func cliNew(c *cli.Context) {
 
 	r := make([]byte, 8)
 	rand.Read(r)
-	tmpRoot := path.Join(utils.Scratch, hex.EncodeToString(r))
+	tmpRoot := path.Join(utils.Scratch, "epm", hex.EncodeToString(r))
 
 	// if genesis or config are not specified
 	// use defaults set by `epm -init`

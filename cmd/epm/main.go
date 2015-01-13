@@ -73,14 +73,6 @@ func main() {
 		consoleCmd,
 	}
 
-	// clean, update, or install
-	// exit
-	/*
-		if *clean || *pull || *update {
-			cleanPullUpdate()
-			exit(nil)
-		}
-	*/
 	run(app)
 
 	monklog.Flush()
