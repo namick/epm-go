@@ -12,6 +12,15 @@ import (
 	"github.com/eris-ltd/epm-go/utils"
 )
 
+var (
+	DefaultRefUnderId = "0"
+)
+
+// Compose path to this chain's root, including multichain ref
+func ComposeRoot(chainType, chainId string) string {
+	return path.Join(utils.Blockchains, chainType, chainId, DefaultRefUnderId)
+}
+
 // Get ChainId from a reference name by reading the ref file
 func ChainFromName(name string) (string, string, error) {
 	refsPath := path.Join(utils.Blockchains, "refs", name)
@@ -75,7 +84,7 @@ func ResolveChainId(chainType, chainId string) (string, error) {
 		return "", err
 	}
 
-	p := path.Join(utils.Blockchains, chainType, chainId)
+	p := ComposeRoot(chainType, chainId)
 	if _, err := os.Stat(p); err != nil {
 		// see if its a prefix of a chainId
 		id, err := findPrefixMatch(path.Join(utils.Blockchains, chainType), chainId)
@@ -119,7 +128,7 @@ func ResolveChainDir(chainType, name, chainId string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return path.Join(utils.Blockchains, chainType, chainId), nil
+	return ComposeRoot(chainType, chainId), nil
 }
 
 // lookup chainIds by prefix match

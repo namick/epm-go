@@ -227,7 +227,7 @@ func cliRunDapp(c *cli.Context) {
 	chainId, err := chains.ChainIdFromDapp(dapp)
 	ifExit(err)
 	logger.Infoln("Running chain ", chainId)
-	chain := loadChain(c, chainType, path.Join(utils.Blockchains, chainType, chainId))
+	chain := loadChain(c, chainType, chains.ComposeRoot(chainType, chainId))
 	chain.WaitForShutdown()
 }
 
@@ -247,7 +247,7 @@ func cliConfig(c *cli.Context) {
 		chain := c.String("chain")
 		chainType, chainId, err = chains.ResolveChain(chain)
 		ifExit(err)
-		root = path.Join(utils.Blockchains, chainType, chainId)
+		root = chains.ComposeRoot(chainType, chainId)
 	}
 
 	if rpc {

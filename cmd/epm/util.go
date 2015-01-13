@@ -221,7 +221,7 @@ func DeployChain(chain epm.Blockchain, root, config, deployGen string) (string, 
 // Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
 func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId string, rpc bool) error {
 	// chain.Shutdown() and New again (so we dont move db while its open - does this even matter though?) !
-	home := path.Join(utils.Blockchains, chainType, chainId)
+	home := chains.ComposeRoot(chainType, chainId)
 	if rpc {
 		home = path.Join(home, "rpc")
 	}
@@ -275,7 +275,7 @@ func resolveRoot(ref string, rpc bool) (string, string, string, error) {
 	if err != nil {
 		return "", "", "", err
 	}
-	root := path.Join(utils.Blockchains, chainType, chainId)
+	root = chains.ComposeRoot(chainType, chainId)
 	if rpc {
 		root = path.Join(root, "rpc")
 	}

@@ -13,19 +13,14 @@ import (
 var (
 	GoPath = os.Getenv("GOPATH")
 
-	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
-
 	// epm extensions
 	PkgExt  = "pdx"
 	TestExt = "pdt"
 
 	defaultContractPath = "." //path.Join(utils.ErisLtd, "eris-std-lib")
-	defaultPackagePath  = "."
-	defaultGenesis      = ""
-	defaultKeys         = ""
 	defaultDatabase     = ".chain"
-	defaultLogLevel     = 2
-	defaultDiffStorage  = false
+
+	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
 )
 
 func main() {
