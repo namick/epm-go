@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	//"encoding/hex"
 	"fmt"
 	"github.com/codegangsta/cli"
 	color "github.com/daviddengcn/go-colortext"
@@ -86,6 +88,10 @@ func cliNew(c *cli.Context) {
 	forceName := c.String("force-name")
 	rpc := c.GlobalBool("rpc")
 
+	r := make([]byte, 8)
+	rand.Read(r)
+	tmpRoot := path.Join(utils.Scratch, hex.EncodeToString(r))
+
 	// if genesis or config are not specified
 	// use defaults set by `epm -init`
 	// and copy into working dir
@@ -117,18 +123,18 @@ func cliNew(c *cli.Context) {
 	if chainType == "thelonious" {
 		if rpc {
 			chain := newChain(chainType, rpc)
-			chainId, err = DeployChain(chain, ROOT, tempConf)
+			chainId, err = DeployChain(chain, tmpRoot, tempConf)
 			ifExit(err)
 			if chainId == "" {
 				exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 			}
-			//fmt.Println(ROOT, name, chainType, tempConf, chainId)
-			err = InstallChain(chain, ROOT, chainType, tempConf, chainId, rpc)
+			//fmt.Println(tmpRoot, name, chainType, tempConf, chainId)
+			err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
 			ifExit(err)
 		} else {
 			deployGen := c.String("genesis")
-			tempGen := path.Join(ROOT, "genesis.json")
-			utils.InitDataDir(ROOT)
+			tempGen := path.Join(tmpRoot, "genesis.json")
+			utils.InitDataDir(tmpRoot)
 
 			if deployGen == "" {
 				deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
@@ -139,21 +145,21 @@ func cliNew(c *cli.Context) {
 			}
 			ifExit(utils.Copy(deployGen, tempGen))
 			vi(tempGen)
-			chainId, err = monk.DeployChain(ROOT, tempGen, tempConf)
+			chainId, err = monk.DeployChain(tmpRoot, tempGen, tempConf)
 			ifExit(err)
-			err = monk.InstallChain(ROOT, tempGen, tempConf, chainId)
+			err = monk.InstallChain(tmpRoot, tempGen, tempConf, chainId)
 			ifExit(err)
 		}
 	} else {
 		// TODO: rpc
 		chain := newChain(chainType, rpc)
-		chainId, err = DeployChain(chain, ROOT, tempConf)
+		chainId, err = DeployChain(chain, tmpRoot, tempConf)
 		ifExit(err)
 		if chainId == "" {
 			exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 		}
-		//fmt.Println(ROOT, name, chainType, tempConf, chainId)
-		err = InstallChain(chain, ROOT, chainType, tempConf, chainId, rpc)
+		//fmt.Println(tmpRoot, name, chainType, tempConf, chainId)
+		err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
 		ifExit(err)
 	}
 

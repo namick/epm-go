@@ -15,9 +15,6 @@ var (
 
 	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
 
-	// location for blockchain database before install
-	ROOT = ".decerver-local"
-
 	// epm extensions
 	PkgExt  = "pdx"
 	TestExt = "pdt"
