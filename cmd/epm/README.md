@@ -130,6 +130,12 @@ Or, all at once:
 epm config local_port:30305 mining:true client:epm-tutorial
 ```
 
+You can boot it into vim with
+
+```
+epm config -vi
+```
+
 The chain's directory also contains a `genesis.json` (the first vim window that popped up on deploy),
 but it is rather of sentimental or referential value, and should not be changed (nor should changing it affect
 anything). All the information from genesis.json is written into the blockchain database in the form of the genesis
@@ -157,10 +163,16 @@ epm refs
 The current head should be emphasized. A new ref can be added anytime with
 
 ```
-epm add-ref <chainType>/<chainId> <new name>
+epm refs add <chainType>/<chainId> <new name>
 ```
 
 where `<chainType>` is the type of chain (`thel`, `eth`, etc.), `<chainId>` is a prefix of some known chainId, and `<new name>` is the new reference.
+
+Similarly, remove a ref with 
+
+```
+epm refs rm <ref>
+```
 
 A given chain can be checked out as HEAD with 
 
