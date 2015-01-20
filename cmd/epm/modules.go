@@ -3,10 +3,12 @@ package main
 import (
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
+	"github.com/eris-ltd/epm-go/utils"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/codegangsta/cli"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/eris-ltd/modules/genblock"
 	"github.com/eris-ltd/modules/monkrpc"
 	"github.com/eris-ltd/thelonious/monk"
+	"github.com/eris-ltd/thelonious/monkdoug"
 )
 
 func newChain(chainType string, rpc bool) epm.Blockchain {
@@ -120,4 +123,34 @@ func setupModule(c *cli.Context, m epm.Blockchain, chainRoot string) {
 	// initialize and start
 	m.Init()
 	m.Start()
+}
+
+func isThelonious(chain epm.Blockchain) (*monk.MonkModule, bool) {
+	th, ok := chain.(*monk.MonkModule)
+	return th, ok
+}
+
+func setGenesisConfig(m *monk.MonkModule, genesis string) {
+	if strings.HasSuffix(genesis, ".pdx") || strings.HasSuffix(genesis, ".gdx") {
+		m.GenesisConfig = &monkdoug.GenesisConfig{Address: "0000000000THISISDOUG", NoGenDoug: false, Pdx: genesis}
+		m.GenesisConfig.Init()
+	} else {
+		m.Config.GenesisConfig = genesis
+	}
+}
+
+func copyEditGenesisConfig(deployGen, tmpRoot string) string {
+	tempGen := path.Join(tmpRoot, "genesis.json")
+	utils.InitDataDir(tmpRoot)
+
+	if deployGen == "" {
+		deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
+	}
+	if _, err := os.Stat(deployGen); err != nil {
+		err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
+		ifExit(err)
+	}
+	ifExit(utils.Copy(deployGen, tempGen))
+	vi(tempGen)
+	return tempGen
 }

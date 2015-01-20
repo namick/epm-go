@@ -195,11 +195,20 @@ func confirm(message string) bool {
 	return r == "y"
 }
 
-// Read config, set deployment root,
+// Read config, set deployment root, config gen block (if relevant)
 // init, return chainId
-func DeployChain(chain epm.Blockchain, root, tempConf string) (string, error) {
-	chain.ReadConfig(tempConf)
+func DeployChain(chain epm.Blockchain, root, config, deployGen string) (string, error) {
+	chain.ReadConfig(config)
 	chain.SetProperty("RootDir", root)
+
+	// TODO: nice way to handle multiple gen blocks on other chains
+	// set genesis config file
+	if th, ok := isThelonious(chain); ok {
+		tempGen := copyEditGenesisConfig(deployGen, root)
+		setGenesisConfig(th, tempGen)
+	} else if deployGen != "" {
+		logger.Warnln("Genesis configuration only possible with thelonious (for now - https://github.com/eris-ltd/epm-go/issues/53)")
+	}
 
 	if err := chain.Init(); err != nil {
 		return "", err
@@ -211,7 +220,8 @@ func DeployChain(chain epm.Blockchain, root, tempConf string) (string, error) {
 
 // Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
 func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId string, rpc bool) error {
-	home := path.Join(utils.Blockchains, chainType, chainId)
+	// chain.Shutdown() and New again (so we dont move db while its open - does this even matter though?) !
+	home := chains.ComposeRoot(chainType, chainId)
 	if rpc {
 		home = path.Join(home, "rpc")
 	}
@@ -232,6 +242,9 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 	chain.SetProperty("ChainId", chainId)
 	//chain.SetProperty("ChainName", name)
 	chain.SetProperty("RootDir", home)
+	if chainType == "thelonious" {
+		chain.SetProperty("GenesisConfig", path.Join(home, "genesis.json"))
+	}
 	chain.WriteConfig(tempConf)
 
 	if err := os.Rename(tempConf, path.Join(home, "config.json")); err != nil {
@@ -244,25 +257,27 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 func resolveRootFlag(c *cli.Context) (string, string, string, error) {
 	ref := c.String("chain")
 	rpc := c.GlobalBool("rpc")
-	return resolveRoot(ref, rpc)
+	multi := c.String("multi")
+	return resolveRoot(ref, rpc, multi)
 }
 
 func resolveRootArg(c *cli.Context) (string, string, string, error) {
 	args := c.Args()
-	if len(args) < 1 {
-		return "", "", "", fmt.Errorf("Error: specify the chain ref as an argument")
+	ref := ""
+	if len(args) > 0 {
+		ref = args[0]
 	}
-	ref := args[0]
 	rpc := c.GlobalBool("rpc")
-	return resolveRoot(ref, rpc)
+	multi := c.String("multi")
+	return resolveRoot(ref, rpc, multi)
 }
 
-func resolveRoot(ref string, rpc bool) (string, string, string, error) {
+func resolveRoot(ref string, rpc bool, multi string) (string, string, string, error) {
 	chainType, chainId, err := chains.ResolveChain(ref)
 	if err != nil {
 		return "", "", "", err
 	}
-	root := path.Join(utils.Blockchains, chainType, chainId)
+	root := chains.ComposeRootMulti(chainType, chainId, multi)
 	if rpc {
 		root = path.Join(root, "rpc")
 	}

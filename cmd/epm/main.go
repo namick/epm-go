@@ -13,19 +13,14 @@ import (
 var (
 	GoPath = os.Getenv("GOPATH")
 
-	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
-
 	// epm extensions
 	PkgExt  = "pdx"
 	TestExt = "pdt"
 
 	defaultContractPath = "." //path.Join(utils.ErisLtd, "eris-std-lib")
-	defaultPackagePath  = "."
-	defaultGenesis      = ""
-	defaultKeys         = ""
 	defaultDatabase     = ".chain"
-	defaultLogLevel     = 2
-	defaultDiffStorage  = false
+
+	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
 )
 
 func main() {
@@ -62,6 +57,7 @@ func main() {
 		initCmd,
 		fetchCmd,
 		newCmd,
+		cpCmd,
 		checkoutCmd,
 		addRefCmd,
 		runCmd,
@@ -95,6 +91,7 @@ func run(app *cli.App) {
 			fmt.Printf("Panic: ", r)
 			fmt.Printf("Stack of %d bytes: %s", count, trace)
 		}
+		monklog.Flush()
 	}()
 
 	app.Run(os.Args)

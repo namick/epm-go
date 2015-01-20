@@ -12,6 +12,22 @@ import (
 	"github.com/eris-ltd/epm-go/utils"
 )
 
+var (
+	DefaultRefUnderId = "0"
+)
+
+// Compose path to this chain's root, including multichain ref
+func ComposeRoot(chainType, chainId string) string {
+	return path.Join(utils.Blockchains, chainType, chainId, DefaultRefUnderId)
+}
+
+func ComposeRootMulti(chainType, chainId, multi string) string {
+	if multi == "" {
+		return ComposeRoot(chainType, chainId)
+	}
+	return path.Join(utils.Blockchains, chainType, chainId, multi)
+}
+
 // Get ChainId from a reference name by reading the ref file
 func ChainFromName(name string) (string, string, error) {
 	refsPath := path.Join(utils.Blockchains, "refs", name)
@@ -75,7 +91,7 @@ func ResolveChainId(chainType, chainId string) (string, error) {
 		return "", err
 	}
 
-	p := path.Join(utils.Blockchains, chainType, chainId)
+	p := ComposeRoot(chainType, chainId)
 	if _, err := os.Stat(p); err != nil {
 		// see if its a prefix of a chainId
 		id, err := findPrefixMatch(path.Join(utils.Blockchains, chainType), chainId)
@@ -101,6 +117,9 @@ func ResolveChain(ref string) (chainType string, chainId string, err error) {
 
 	chainType, chainId, err = SplitRef(ref)
 	if err == nil {
+		if chainType, err = ResolveChainType(chainType); err != nil {
+			return
+		}
 		chainId, err = ResolveChainId(chainType, chainId)
 		return
 	}
@@ -119,7 +138,7 @@ func ResolveChainDir(chainType, name, chainId string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return path.Join(utils.Blockchains, chainType, chainId), nil
+	return ComposeRoot(chainType, chainId), nil
 }
 
 // lookup chainIds by prefix match
@@ -164,6 +183,7 @@ func changeHead(typ, head string) error {
 
 	// add the new head
 	var s string
+	// handle empty head
 	if head != "" {
 		s = typ + "/"
 	}

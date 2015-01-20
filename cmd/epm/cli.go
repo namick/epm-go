@@ -10,7 +10,6 @@ import (
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/thelonious/monkdoug"
 	"log"
 	"os"
 	"path"
@@ -71,6 +70,49 @@ func cliHead(c *cli.Context) {
 	exit(err)
 }
 
+// duplicate a chain
+func cliCp(c *cli.Context) {
+	args := c.Args()
+	var (
+		root  string
+		typ   string
+		id    string
+		err   error
+		multi string
+	)
+	if len(args) == 0 {
+		log.Fatal(`To copy a chain, specify a chain and a name, \n eg. "cp thel/14c32 chaincopy"`)
+
+	} else if len(args) == 1 {
+		multi = args.Get(0)
+		// copy the checked out chain
+		typ, id, err = chains.GetHead()
+		ifExit(err)
+		if id == "" {
+			log.Fatal(`No chain is checked out. To copy a chain, specify a chainId and an optional name, \n eg. "cp thel/14c32 chaincopy"`)
+		}
+		root = chains.ComposeRoot(typ, id)
+	} else {
+		ref := args.Get(0)
+		multi = args.Get(1)
+		root, typ, id, err = resolveRoot(ref, false, "")
+		ifExit(err)
+	}
+	newRoot := chains.ComposeRootMulti(typ, id, multi)
+	if c.Bool("bare") {
+		err = utils.InitDataDir(newRoot)
+		ifExit(err)
+		err = utils.Copy(path.Join(root, "config.json"), path.Join(newRoot, "config.json"))
+		ifExit(err)
+	} else {
+		err = utils.Copy(root, newRoot)
+		ifExit(err)
+	}
+	chain := newChain(typ, false)
+	configureRootDir(c, chain, newRoot)
+	chain.WriteConfig(path.Join(newRoot, "config.json"))
+}
+
 // create ~/.decerver tree and drop default monk/gen configs in there
 func cliInit(c *cli.Context) {
 	exit(utils.InitDecerverDir())
@@ -82,11 +124,10 @@ func cliFetch(c *cli.Context) {
 	exit(monk.FetchInstallChain(c.Args().First()))
 }
 
-// deploy the genblock into a local .decerver-local
-// and install into the global tree
+// deploy the genblock into a random folder in scratch
+// and install into the global tree (must compute chainId before we know where to put it)
 // possibly checkout the newly deployed
 // chain agnostic!
-// TODO: does rpc make sense in here?!
 func cliNew(c *cli.Context) {
 	chainType, err := chains.ResolveChainType(c.String("type"))
 	ifExit(err)
@@ -99,9 +140,10 @@ func cliNew(c *cli.Context) {
 	tmpRoot := path.Join(utils.Scratch, "epm", hex.EncodeToString(r))
 
 	// if genesis or config are not specified
-	// use defaults set by `epm -init`
+	// use defaults set by `epm init`
 	// and copy into working dir
 	deployConf := c.String("config")
+	deployGen := c.String("genesis")
 	tempConf := ".config.json"
 
 	if deployConf == "" {
@@ -112,62 +154,28 @@ func cliNew(c *cli.Context) {
 		}
 	}
 
+	chain := newChain(chainType, rpc)
+
 	// if config doesnt exist, lay it
 	if _, err := os.Stat(deployConf); err != nil {
 		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
 		if rpc {
 			utils.InitDataDir(path.Join(utils.Blockchains, chainType, "rpc"))
 		}
-		m := newChain(chainType, rpc)
-		ifExit(m.WriteConfig(deployConf))
+		ifExit(chain.WriteConfig(deployConf))
 	}
-
+	// copy and edit temp
 	ifExit(utils.Copy(deployConf, tempConf))
 	vi(tempConf)
 
-	var chainId string
-	if chainType == "thelonious" {
-		if rpc {
-			chain := newChain(chainType, rpc)
-			chainId, err = DeployChain(chain, tmpRoot, tempConf)
-			ifExit(err)
-			if chainId == "" {
-				exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
-			}
-			//fmt.Println(tmpRoot, name, chainType, tempConf, chainId)
-			err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
-			ifExit(err)
-		} else {
-			deployGen := c.String("genesis")
-			tempGen := path.Join(tmpRoot, "genesis.json")
-			utils.InitDataDir(tmpRoot)
-
-			if deployGen == "" {
-				deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
-			}
-			if _, err := os.Stat(deployGen); err != nil {
-				err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
-				ifExit(err)
-			}
-			ifExit(utils.Copy(deployGen, tempGen))
-			vi(tempGen)
-			chainId, err = monk.DeployChain(tmpRoot, tempGen, tempConf)
-			ifExit(err)
-			err = monk.InstallChain(tmpRoot, tempGen, tempConf, chainId)
-			ifExit(err)
-		}
-	} else {
-		// TODO: rpc
-		chain := newChain(chainType, rpc)
-		chainId, err = DeployChain(chain, tmpRoot, tempConf)
-		ifExit(err)
-		if chainId == "" {
-			exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
-		}
-		//fmt.Println(tmpRoot, name, chainType, tempConf, chainId)
-		err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
-		ifExit(err)
+	// deploy and install chain
+	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen)
+	ifExit(err)
+	if chainId == "" {
+		exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 	}
+	err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
+	ifExit(err)
 
 	s := fmt.Sprintf("Deployed and installed chain: %s/%s", chainType, chainId)
 	if rpc {
@@ -231,17 +239,27 @@ func cliRmRef(c *cli.Context) {
 
 // add a new reference to a chainId
 func cliAddRef(c *cli.Context) {
-	chain := c.Args().Get(0)
-	ref := c.Args().Get(1)
-	if ref == "" {
-		log.Fatal(`requires both a chainId and a name to be specified, \n
-                        eg. "add 14c32 mychain"`)
-	}
+	args := c.Args()
+	var typ string
+	var id string
+	var err error
+	var ref string
+	if len(args) == 1 {
+		ref = args.Get(0)
+		typ, id, err = chains.GetHead()
+		ifExit(err)
+		if id == "" {
+			log.Fatal(`No chain is checked out. To add a ref, specify both a chainId and a name, \n eg. "add thel/14c32 mychain"`)
+		}
+	} else {
+		chain := args.Get(0)
+		ref = args.Get(1)
+		typ, id, err = chains.SplitRef(chain)
 
-	typ, id, err := chains.SplitRef(chain)
-	if err != nil {
-		exit(fmt.Errorf(`Error: specify the type in the first 
+		if err != nil {
+			exit(fmt.Errorf(`Error: specify the type in the first 
                 argument as '<type>/<chainId>'`))
+		}
 	}
 	exit(chains.AddRef(typ, id, ref))
 }
@@ -263,7 +281,7 @@ func cliRunDapp(c *cli.Context) {
 	chainId, err := chains.ChainIdFromDapp(dapp)
 	ifExit(err)
 	logger.Infoln("Running chain ", chainId)
-	chain := loadChain(c, chainType, path.Join(utils.Blockchains, chainType, chainId))
+	chain := loadChain(c, chainType, chains.ComposeRoot(chainType, chainId))
 	chain.WaitForShutdown()
 }
 
@@ -272,7 +290,6 @@ func cliConfig(c *cli.Context) {
 	var (
 		root      string
 		chainType string
-		chainId   string
 		err       error
 	)
 	rpc := c.GlobalBool("rpc")
@@ -280,34 +297,40 @@ func cliConfig(c *cli.Context) {
 		chainType = c.String("type")
 		root = path.Join(utils.Blockchains, chainType)
 	} else {
-		chain := c.String("chain")
-		chainType, chainId, err = chains.ResolveChain(chain)
+		root, chainType, _, err = resolveRootFlag(c)
 		ifExit(err)
-		root = path.Join(utils.Blockchains, chainType, chainId)
 	}
 
-	if rpc {
-		root = path.Join(root, "rpc")
-	}
+	configPath := path.Join(root, "config.json")
+	if c.Bool("vi") {
+		vi(configPath)
+	} else {
+		m := newChain(chainType, rpc)
+		err = m.ReadConfig(configPath)
+		ifExit(err)
 
-	m := newChain(chainType, rpc)
-	err = m.ReadConfig(path.Join(root, "config.json"))
-	ifExit(err)
-
-	args := c.Args()
-	for _, a := range args {
-		sp := strings.Split(a, ":")
-		key := sp[0]
-		value := sp[1]
-		if err := m.SetProperty(key, value); err != nil {
-			logger.Errorln(err)
+		args := c.Args()
+		for _, a := range args {
+			sp := strings.Split(a, ":")
+			if len(sp) != 2 {
+				logger.Errorln("Invalid arg")
+				continue
+			}
+			key := sp[0]
+			value := sp[1]
+			if err := m.SetProperty(key, value); err != nil {
+				logger.Errorln(err)
+			}
 		}
+		m.WriteConfig(path.Join(root, "config.json"))
 	}
-	m.WriteConfig(path.Join(root, "config.json"))
 }
 
 // remove a chain
 func cliRemove(c *cli.Context) {
+	if len(c.Args()) < 1 {
+		exit(fmt.Errorf("Error: specify the chain ref as an argument"))
+	}
 	root, _, _, err := resolveRootArg(c)
 	ifExit(err)
 
