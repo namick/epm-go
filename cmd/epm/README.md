@@ -40,19 +40,6 @@ go get -d
 go install
 ```
 
-Now, you have installed the master branch. What follows in this tutorial, however, depends on the develop branch.
-Unfortunately, that means you have to be on `develop` for three eris repos:
-
-```
-cd $GOPATH/src/github.com/eris-ltd/decerver-interfaces
-git checkout develop
-cd $GOPATH/src/github.com/eris-ltd/thelonious
-git checkout develop
-cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm
-git checkout develop
-go install
-```
-
 # Init
 Note epm has just received a major overhaul and is somewhat backwards incompatible with the first released version. 
 If you have already played with any eris tools, you should delete `~/.decerver`, or at least `~/.decerver/blockchains`
@@ -192,13 +179,13 @@ epm new
 
 The two vim windows that pop up are for the `config.json` and the `genesis.json`, respectively.
 You can find more details about the `genesis.json` in the [thelonious tutorial](https://thelonious.io/tutorials/).
-For now, I will simply have you note that if you want to deploy multiple thelonious chains (as you should!) you will 
+For now, I will simply have you note that if you want to deploy multiple thelonious chains with the same settings you will 
 need to change the `unique` field to true in the `genesis.json` during the deploy (the second vim window that 
-pops up). It is currently not possible to install more than one copy of a chain with the same id.
+pops up).
 
-A genesis block is deployed from the `genesis.json` into the current directory under `.decerver-local`.
-Both the `config.json` and `genesis.json` are copied into the local directory as well.
-The chainId is then set, and the database and json files are moved from the current directory into the 
+A genesis block is deployed from the `genesis.json` into a temporary folder in `~/.decerver/scratch`.
+Both the `config.json` and `genesis.json` are copied in as well.
+The chainId is then set, and the database and json files are moved from the temporary directory into the 
 appropriate location in `~/.decerver/blockchains`.
 You can then check out or add a reference for the chain later:
 
@@ -246,8 +233,12 @@ You can delete a chain anytime with
 epm rm <chain>
 ```
 
-eg. `epm rm chain1`. Note this removes the entire directory and there references, not just the references.
+eg. `epm rm chain1`. Note this removes the entire directory and the references, not just the references. 
+If you only want to delete a reference, use
 
+```
+epm refs rm <ref>
+```
 
 Run `--help` on any of the commands to see more information.
 
@@ -282,12 +273,14 @@ The [EPM spec](https://epm.io) defines the commands available to EPM for interac
 For example, let's create a contract, deploy it, and then send it a message.
 
 First, create a new working directory and cd into it:
+
 ```
 mkdir epmtut
 cd epmtut
 ```
 
 Now, create a file `contract.lll` with contents:
+
 ```
 {
     (return 0 (lll {
@@ -335,6 +328,7 @@ Fortunately, you don't really need queries, because you can use tests instead.
 
 To test the deployment, include a `.pdt` file in the same directory as the `.pdx`. 
 Each line of a `.pdt` file specifies a test and should have the form
+
 ```
 contract_addr; storage_addr; expected_result; {{var}}
 ```
@@ -361,6 +355,7 @@ Your test should pass with flying colors.
 
 By default, epm will look for contracts in the current directory, 
 but use the `-c` flag to set the contract root to another directory.
+
 WARNING: to preserve import paths, the entire contents of the contract directory 
 is copied into a cache, so the contract folder ought not contain more than the contracts themselves.
 This is why we created the folder `epmtut` before. If you instead kept the contracts
@@ -438,8 +433,6 @@ epm head
 Everything else is the same. I have given the ethereum chain the default chainID of `default` but will update it over time.
 You can check it out (`epm checkout eth/default`, if you don't use the `-checkout` flag on `new`) 
 and work on it as you would a thelonious chain, deploying contracts and sending transactions.
-Note for now you can only have one ethereum chain (the chain ID will always be the same), but soon we will make it possible
-to manage multiple versions of the same chain (that may be convenient - if you think so, bug me about it ;) )
 
 Note that unlike with a thelonious chain, you cannot transact right away, since you will not have a key in the genesis block.
 So you must mine first to get yourself some ether:
@@ -457,6 +450,39 @@ epm deploy tutorial.pdx
 
 The ethereum rpc module hasn't been implemented just yet, but soon. In principle bitcoin is available through the blockchain.info module
 wrapper (`epm new -type btc`), but is currently disabled as we have more testing to do.
+
+
+# Multiple versions of a chain
+
+I have found it useful to be able to work with multiple copies of the same chain (ie. same ChainId), usually for testing purposes.
+
+This can be achieved using the `epm cp` command to duplicate a chain and the `-multi` flag to refer to duplicates. 
+
+
+For example, to make a copy of the `thel/f8` chain called "copy":
+
+```
+epm cp thel/f8 copy
+```
+
+We can then run it with 
+
+```
+epm run --chain thel/f8 --multi copy
+```
+
+Or, if `thel/f8` is already checked out,
+
+```
+epm run --multi copy
+```
+
+Note that duplicates *must* be named (but feel free to use numbers), and cannot be given refs or checked out directly.
+Chains can be found under `~/.decerver/blockchains/<chainType>/<chainId>/<multi name>`. 
+A The default chain for a given ChainId has `<multi name> = 0`
+
+
+# Conclusion
 
 And that's that! Merry blockchaining :)
 

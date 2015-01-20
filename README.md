@@ -9,12 +9,12 @@ At its core is a domain specifc language for specifying contract suite deploy se
 
 For tutorials, see the [website](https://epm.io)
 
-epm-go uses the same spec as the [ruby original](https://github.com/project-douglas/epm), but this is subject to change in an upcoming version. If you have input, please make an issue.
+epm-go uses the same spec as the [ruby original](https://github.com/project-douglas/epm), but this is subject to change in an upcoming version. If you have input, please make an issue. We will also soon support yaml and json formatting for deployment suites.
 
 Blockchains
 -----------
 
-EPM aims to be chain agnostic, by using `module` wrappers satisfying a [blockchain interface](https://github.com/eris-ltd/epm-go/blob/cli/epm/epm.go#L50), built for compatibility with the eris `decerver` ecosystem. 
+EPM aims to be chain agnostic, by using `module` wrappers satisfying a [blockchain interface](https://github.com/eris-ltd/epm-go/blob/master/epm/epm.go#L50), built for compatibility with the eris `decerver` ecosystem. 
 While theoretically any chain can be supported (provided it satisfies the interface), there is currently support for 
 
 - `thelonious` (in-process and rpc), 
@@ -23,9 +23,9 @@ While theoretically any chain can be supported (provided it satisfies the interf
 - `bitcoin` (through `blockchain.info` api wrapper).
 
 We will continue to add support and functionality as time admits.
-If you would like epm to be able to work with your blockchain or software, submit a pull-request to `eris-ltd/decerver-interfaces` 
-with a wrapper for your chain in `decerver-interfaces/glue` that satisfies the `Blockchain` interface, 
-as defined in `epm-go/epm/epm.go`. See the other wrappers in `decerver-interfaces/glue` for examples and inspiration.
+If you would like epm to be able to work with your blockchain or software, submit a pull-request to `eris-ltd/modules` 
+with a wrapper for your chain that satisfies the `Blockchain` interface, as defined in `epm-go/epm/epm.go`. 
+See the other wrappers in `eris-ltd/modules` for examples and inspiration.
 
 Install
 --------
@@ -69,57 +69,45 @@ Command Line Interface
 To install the command line tool, cd into `epm-go/cmd/epm/` and hit `go install`. 
 You can get the dependencies with `go get -d`.
 Assuming your `go bin` is on your path, the cli is accessible as `epm`. 
-Simply running that will look for a `.pdx` file in your current directory, deploy it, and run the tests if there are any (in a `.pdt`) file.
+EPM provides a git-like interface for managing chains. In general, chains are referred to by their type (short forms allowed) and id (prefix matched), eg. `thel/f852b`, or by a given nickname. We denote the former as `<CHAIN>`, the latter as `<REF>`, and either or as `<ChainRef>`.
 
 Commands:
 - `epm init`
     - Initialize the decerver directory tree and default configuration files
 - `epm new`
     - Deploy a genesis block from a genesis.json file. 
-    - The block is saved in a hidden temp folder in the working directory first, and then copied into the decerver tree
+    - The block is saved in a temp folder in ~/.decerver/scratch first, and then copied into the blockchains dir
     - Specify a particular `config.json` and `genesis.json` with the `-config` and `-genesis` flags, respectively.
     - Otherwise, it will use the default `config.json` and `genesis.json`
     - Deploy will automatically open vim for you to edit config files as you deem fit, before saving them to the working directory
-- `epm checkout <chainId/name>`
+- `epm checkout <ChainRef>`
     - Checkout a chain, making it the current working chain. 
     - It will be written to the top of the `~/.decerver/blockchains/HEAD` file. 
-    - Use `epm new -checkout` to checkout a chain immediately after deployment, but before installing.
-    - Or run `epm new -checkout` to kill all birds with one stone.
-    - Note chainIds should always be prefixed by chainType, eg `thel/f8b5`
+    - Use `epm new -checkout` to checkout a chain immediately after creation.
 - `epm fetch <dappname>`
     - Deploy and install a chain from a package.json and genesis.json in a dapp repository
     - Easiest way to sync with a dapp specific chain using just the package.json and genesis.json
-- `epm run -chain <chain name or id>`
+- `epm run -chain <ChainRef>`
     - Run a chain. Leaving out the `-chain` flag will default to the HEAD chain.
-- `epm deploy`
+- `epm deploy <file.pdx>`
     - deploy a `.pdx` file (create contracts, send transactions)
 - `epm plop <genesis | config>`
     - Plop the default genesis.json or config.json (respectively) into the current working directory
 - `epm [clean | pull | update]`
     - Clean epm related dirs, pull updates to the source code, and re-install the software, respectively.
-- `epm add-ref <chainType/chainId> <name>`
+- `epm refs add <CHAIN> <REF>`
     - Create a new named reference to a chainId
     - Note you can avoid this by using, for example, `epm new -name <name>`, to name the chain during installation
+    - Don't forget, `<CHAIN>` means `ChainType/ChainId` (eg. `thel/f852`)
+- `epm refs rm <REF>`
+    - Remove a reference to a chain
 - `epm [refs | head]`
     - Display the available references, or the current head, respectively.
-- `epm rm <chain ref>
+- `epm rm <ChainRef>
     - Remove a chain and all associated data from the decerver tree.
     - Will ask for confirmation
 - `epm console`
     - boot epm in interactive mode (like an ipython console) - experimental feature
     
-Flags
-- `-no-gendoug` can be added to force simplified protocols without a genesis doug
-- `-config` to specify a chain config file
-- `-genesis` to specify a genesis.json config file
-- `-chain` to attempt to select a chain by name or by chainType and chainId
-- `-type` to specify the protocol type (eg `bitcoin`, `eth`, `thel`, `genblock`, etc.)
-- `-diff` to display storage diffs, as specified by wrapping the commands to be diffed in `!{<diffname>` and `!}<diffname>`
-- `-dont-clear` to stop epm from clearing its smart contract cache every time (primarily used to handle modify deploys)
-- `-c` to specify the contract root path
-- `-p` to specify the `.pdx` file
-- `-k` to specify a `.keys` file
-- `-log` to set the log level
-- `-rpc` to talk to chains using rpc
-- `-host` and `-port` to set the host and port for rpc communication
 
+For more details, see `epm --help` or `epm [command] --help`
