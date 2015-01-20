@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/eris-ltd/decerver-interfaces/glue/utils"
-	"github.com/eris-ltd/epm-go"
+	"github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/chains"
+	"github.com/eris-ltd/epm-go/epm"
+	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/thelonious/monklog"
 	"io/ioutil"
 	"os"
@@ -13,8 +15,9 @@ import (
 	"strings"
 )
 
+// TODO: needs work..
 func cleanupEPM() {
-	dirs := []string{epm.EpmDir, *database}
+	dirs := []string{epm.EpmDir}
 	for _, d := range dirs {
 		err := os.RemoveAll(d)
 		if err != nil {
@@ -58,18 +61,18 @@ func updateEPM() {
 	os.Chdir(cur)
 }
 
-func cleanPullUpdate() {
-	if *clean && *pull {
+func cleanPullUpdate(clean, pull, update bool) {
+	if clean && pull {
 		cleanupEPM()
 		updateEPM()
-	} else if *clean {
+	} else if clean {
 		cleanupEPM()
-		if *update {
+		if update {
 			installEPM()
 		}
-	} else if *pull {
+	} else if pull {
 		updateEPM()
-	} else if *update {
+	} else if update {
 		installEPM()
 	}
 }
@@ -147,10 +150,10 @@ func getPkgDefFile(pkgPath string) (string, string, bool) {
 
 func checkInit() error {
 	if _, err := os.Stat(path.Join(utils.Blockchains, "config.json")); err != nil {
-		return fmt.Errorf("Could not find default config. Did you run `epm -init` ?")
+		return fmt.Errorf("Could not find default config. Did you run `epm init` ?")
 	}
 	if _, err := os.Stat(path.Join(utils.Blockchains, "genesis.json")); err != nil {
-		return fmt.Errorf("Could not find default genesis.json. Did you run `epm -init` ?")
+		return fmt.Errorf("Could not find default genesis.json. Did you run `epm init` ?")
 	}
 	return nil
 }
@@ -176,4 +179,107 @@ func ifExit(err error) {
 		monklog.Flush()
 		os.Exit(0)
 	}
+}
+
+func confirm(message string) bool {
+	fmt.Println(message, "Are you sure? (y/n)")
+	var r string
+	fmt.Scanln(&r)
+	for ; ; fmt.Scanln(&r) {
+		if r == "n" || r == "y" {
+			break
+		} else {
+			fmt.Printf("Yes or no?", r)
+		}
+	}
+	return r == "y"
+}
+
+// Read config, set deployment root, config gen block (if relevant)
+// init, return chainId
+func DeployChain(chain epm.Blockchain, root, config, deployGen string) (string, error) {
+	chain.ReadConfig(config)
+	chain.SetProperty("RootDir", root)
+
+	// TODO: nice way to handle multiple gen blocks on other chains
+	// set genesis config file
+	if th, ok := isThelonious(chain); ok {
+		tempGen := copyEditGenesisConfig(deployGen, root)
+		setGenesisConfig(th, tempGen)
+	} else if deployGen != "" {
+		logger.Warnln("Genesis configuration only possible with thelonious (for now - https://github.com/eris-ltd/epm-go/issues/53)")
+	}
+
+	if err := chain.Init(); err != nil {
+		return "", err
+	}
+
+	// get chain ID!
+	return chain.ChainId()
+}
+
+// Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
+func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId string, rpc bool) error {
+	// chain.Shutdown() and New again (so we dont move db while its open - does this even matter though?) !
+	home := chains.ComposeRoot(chainType, chainId)
+	if rpc {
+		home = path.Join(home, "rpc")
+	}
+	logger.Infoln("Install directory ", home)
+	// move datastore and configs
+	// be sure to copy paths into config
+	if err := utils.InitDataDir(home); err != nil {
+		return err
+	}
+	if err := os.Rename(root, home); err != nil {
+		return err
+	}
+
+	logger.Infoln("Loading and setting chainId ", tempConf)
+	// set chainId and rootdir values in config file
+	chain.ReadConfig(tempConf)
+
+	chain.SetProperty("ChainId", chainId)
+	//chain.SetProperty("ChainName", name)
+	chain.SetProperty("RootDir", home)
+	if chainType == "thelonious" {
+		chain.SetProperty("GenesisConfig", path.Join(home, "genesis.json"))
+	}
+	chain.WriteConfig(tempConf)
+
+	if err := os.Rename(tempConf, path.Join(home, "config.json")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resolveRootFlag(c *cli.Context) (string, string, string, error) {
+	ref := c.String("chain")
+	rpc := c.GlobalBool("rpc")
+	multi := c.String("multi")
+	return resolveRoot(ref, rpc, multi)
+}
+
+func resolveRootArg(c *cli.Context) (string, string, string, error) {
+	args := c.Args()
+	ref := ""
+	if len(args) > 0 {
+		ref = args[0]
+	}
+	rpc := c.GlobalBool("rpc")
+	multi := c.String("multi")
+	return resolveRoot(ref, rpc, multi)
+}
+
+func resolveRoot(ref string, rpc bool, multi string) (string, string, string, error) {
+	chainType, chainId, err := chains.ResolveChain(ref)
+	if err != nil {
+		return "", "", "", err
+	}
+	root := chains.ComposeRootMulti(chainType, chainId, multi)
+	if rpc {
+		root = path.Join(root, "rpc")
+	}
+	return root, chainType, chainId, nil
 }

@@ -2,12 +2,15 @@ package epm
 
 import (
 	"bufio"
-	"github.com/eris-ltd/decerver-interfaces/events"
-	"github.com/eris-ltd/decerver-interfaces/modules"
+	"fmt"
+	"github.com/eris-ltd/epm-go/utils"
+	"github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/thelonious/monklog"
-	"github.com/project-douglas/lllc-server"
+	//	"github.com/eris-ltd/lllc-server"
+	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var logger *monklog.Logger = monklog.NewLogger("EPM")
@@ -15,7 +18,7 @@ var logger *monklog.Logger = monklog.NewLogger("EPM")
 var (
 	StateDiffOpen  = "!{"
 	StateDiffClose = "!}"
-	LLLURL         = "http://lllc.erisindustries.com/compile"
+	//LLLURL         = "http://lllc.erisindustries.com/compile"
 )
 
 // an EPM Job
@@ -33,21 +36,33 @@ type KeyManager interface {
 	AddressCount() int
 }
 
+type DecerverModule interface {
+	Init() error
+	Start() error
+
+	ReadConfig(string) error
+	WriteConfig(string) error
+	SetProperty(string, interface{}) error
+	Property(string) interface{}
+}
+
 type Blockchain interface {
 	KeyManager
-	WorldState() *modules.WorldState
-	State() *modules.State
-	Storage(target string) *modules.Storage
-	Account(target string) *modules.Account
+	DecerverModule
+	ChainId() (string, error)
+	WorldState() *types.WorldState
+	State() *types.State
+	Storage(target string) *types.Storage
+	Account(target string) *types.Account
 	StorageAt(target, storage string) string
 	BlockCount() int
 	LatestBlock() string
-	Block(hash string) *modules.Block
+	Block(hash string) *types.Block
 	IsScript(target string) bool
 	Tx(addr, amt string) (string, error)
 	Msg(addr string, data []string) (string, error)
-	Script(file, lang string) (string, error)
-	Subscribe(name, event, target string) chan events.Event
+	Script(code string) (string, error)
+	Subscribe(name, event, target string) chan types.Event
 	UnSubscribe(name string)
 	Commit()
 	AutoCommit(toggle bool)
@@ -68,7 +83,7 @@ type EPM struct {
 
 	pkgdef string
 	Diff   bool
-	states map[string]modules.State
+	states map[string]types.State
 
 	//map job numbers to names of diffs invoked after that job
 	diffName map[int][]string
@@ -78,9 +93,9 @@ type EPM struct {
 	log string
 }
 
-// new empty epm
+// New empty EPM
 func NewEPM(chain Blockchain, log string) (*EPM, error) {
-	lllcserver.URL = LLLURL
+	//lllcserver.URL = LLLURL
 	//logger.Infoln("url: ", LLLURL)
 	e := &EPM{
 		chain:     chain,
@@ -88,7 +103,7 @@ func NewEPM(chain Blockchain, log string) (*EPM, error) {
 		vars:      make(map[string]string),
 		log:       ".epm-log",
 		Diff:      false, // off by default
-		states:    make(map[string]modules.State),
+		states:    make(map[string]types.State),
 		diffName:  make(map[int][]string),
 		diffSched: make(map[int][]int),
 	}
@@ -135,6 +150,7 @@ func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string
 	}
 }
 
+// Parse a pdx file into a series of EPM jobs
 func (e *EPM) Parse(filename string) error {
 	logger.Infoln("Parsing ", filename)
 	// set current file to parse
@@ -154,6 +170,16 @@ func (e *EPM) Parse(filename string) error {
 	return e.parse(lines)
 }
 
+// New EPM Job
+func NewJob(cmd string, args []string) *Job {
+	return &Job{cmd, args}
+}
+
+// Add job to EPM jobs
+func (e *EPM) AddJob(job *Job) {
+	e.jobs = append(e.jobs, *job)
+}
+
 // parse should take a list of lines, peel commands into jobs
 // lines either come from a file or from iepm
 func (e *EPM) parse(lines []string) error {
@@ -170,7 +196,9 @@ func (e *EPM) parse(lines []string) error {
 		if err != nil {
 			return err
 		}
-		e.jobs = append(e.jobs, *job)
+		if job.cmd != "" {
+			e.AddJob(job)
+		}
 		// check if we need to take or diff state after this job
 		// if diff is disabled they will not run, but we need to parse them out
 		e.parseStateDiffs(&lines, l, diffmap)
@@ -198,17 +226,53 @@ func (e *EPM) VarSub(args []string) []string {
 	return args
 }
 
+// Read EPM variables in from a file
+func (e *EPM) ReadVars(file string) error {
+	f, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	sp := strings.Split(string(f), "\n")
+	for _, kv := range sp {
+		kvsp := strings.Split(kv, ":")
+		if len(kvsp) != 2 {
+			return fmt.Errorf("Invalid variable formatting in %s", file)
+		}
+		k := kvsp[0]
+		v := kvsp[1]
+		e.vars[k] = v
+	}
+	return nil
+}
+
+// Write EPM variables to file
+func (e *EPM) WriteVars(file string) error {
+	vars := e.Vars()
+	s := ""
+	for k, v := range vars {
+		s += k + ":" + v + "\n"
+	}
+	// remove final new line
+	s = s[:len(s)-1]
+	err := ioutil.WriteFile(file, []byte(s), 0600)
+	return err
+}
+
+// Return map of EPM variables.
 func (e *EPM) Vars() map[string]string {
 	return e.vars
 }
 
+// Return list of jobs
 func (e *EPM) Jobs() []Job {
 	return e.jobs
 }
 
+// Store a variable (strips {{ }} from key if necessary)
 func (e *EPM) StoreVar(key, val string) {
-	if key[:2] == "{{" && key[len(key)-2:] == "}}" {
+
+	if len(key) > 4 && key[:2] == "{{" && key[len(key)-2:] == "}}" {
 		key = key[2 : len(key)-2]
 	}
-	e.vars[key] = Coerce2Hex(val)
+	e.vars[key] = utils.Coerce2Hex(val)
 }

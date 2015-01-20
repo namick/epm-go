@@ -2,12 +2,12 @@ package epm
 
 import (
 	"fmt"
-	"github.com/eris-ltd/decerver-interfaces/modules"
+	"github.com/eris-ltd/modules/types"
 )
 
-func (e *EPM) CurrentState() modules.State { //map[string]string{
+func (e *EPM) CurrentState() types.State { //map[string]string{
 	if e.chain == nil {
-		return modules.State{}
+		return types.State{}
 	}
 	return *(e.chain.State())
 }
@@ -32,12 +32,12 @@ func (e *EPM) checkTakeStateDiff(i int) {
 	}
 }
 
-func StorageDiff(pre, post modules.State) modules.State { //map[string]string) map[string]map[string]string{
-	diff := modules.State{make(map[string]*modules.Storage), []string{}}
+func StorageDiff(pre, post types.State) types.State { //map[string]string) map[string]map[string]string{
+	diff := types.State{make(map[string]*types.Storage), []string{}}
 	// for each account in post, compare all elements.
 	for _, addr := range post.Order {
 		acct := post.State[addr]
-		diff.State[addr] = &modules.Storage{make(map[string]string), []string{}}
+		diff.State[addr] = &types.Storage{make(map[string]string), []string{}}
 		diff.Order = append(diff.Order, addr)
 		acct2, ok := pre.State[addr]
 		if !ok {
@@ -61,7 +61,7 @@ func StorageDiff(pre, post modules.State) modules.State { //map[string]string) m
 	return diff
 }
 
-func PrettyPrintAcctDiff(dif modules.State) string { //map[string]string) string{
+func PrettyPrintAcctDiff(dif types.State) string { //map[string]string) string{
 	result := ""
 	for _, addr := range dif.Order {
 		acct := dif.State[addr]
@@ -78,7 +78,7 @@ func PrettyPrintAcctDiff(dif modules.State) string { //map[string]string) string
 	return result
 }
 
-func PrintDiff(name string, pre, post modules.State) { //map[string]string) {
+func PrintDiff(name string, pre, post types.State) { //map[string]string) {
 	/*
 	   fmt.Println("pre")
 	   fmt.Println(PrettyPrintAcctDiff(pre))
