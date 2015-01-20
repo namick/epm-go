@@ -81,7 +81,7 @@ func cliCp(c *cli.Context) {
 		multi string
 	)
 	if len(args) == 0 {
-		log.Fatal(`To copy a chain, specify a chain and a name, \n eg. "cp thel/14c32 chaincopy"`)
+		log.Fatal(`To copy a chain, specify a chain and a new name, \n eg. "cp thel/14c32 chaincopy"`)
 
 	} else if len(args) == 1 {
 		multi = args.Get(0)
@@ -89,7 +89,7 @@ func cliCp(c *cli.Context) {
 		typ, id, err = chains.GetHead()
 		ifExit(err)
 		if id == "" {
-			log.Fatal(`No chain is checked out. To copy a chain, specify a chainId and an optional name, \n eg. "cp thel/14c32 chaincopy"`)
+			log.Fatal(`No chain is checked out. To copy a chain, specify a chainId and an new name, \n eg. "cp thel/14c32 chaincopy"`)
 		}
 		root = chains.ComposeRoot(typ, id)
 	} else {
@@ -249,7 +249,7 @@ func cliAddRef(c *cli.Context) {
 		typ, id, err = chains.GetHead()
 		ifExit(err)
 		if id == "" {
-			log.Fatal(`No chain is checked out. To add a ref, specify both a chainId and a name, \n eg. "add thel/14c32 mychain"`)
+			log.Fatal(`No chain is checked out. To add a ref, specify both a chainId and a name, \n eg. "epm add thel/14c32 mychain"`)
 		}
 	} else {
 		chain := args.Get(0)

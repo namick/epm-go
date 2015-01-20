@@ -156,7 +156,7 @@ func findPrefixMatch(dirPath, prefix string) (string, error) {
 		}
 	}
 	if !found {
-		return "", fmt.Errorf("ChainId %s did not match any known chains. Did you specify the type correctly (-type)?", prefix)
+		return "", fmt.Errorf("ChainId %s did not match any known chains.", prefix)
 	}
 	return p, nil
 }
