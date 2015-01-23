@@ -14,8 +14,8 @@ import (
 
 	// modules
 	"github.com/eris-ltd/modules/eth"
-	"github.com/eris-ltd/modules/genblock"
-	"github.com/eris-ltd/modules/monkrpc"
+	//	"github.com/eris-ltd/modules/genblock"
+	//	"github.com/eris-ltd/modules/monkrpc"
 	"github.com/eris-ltd/thelonious/monk"
 	"github.com/eris-ltd/thelonious/monkdoug"
 )
@@ -24,7 +24,7 @@ func newChain(chainType string, rpc bool) epm.Blockchain {
 	switch chainType {
 	case "thel", "thelonious", "monk":
 		if rpc {
-			return monkrpc.NewMonkRpcModule()
+			//return monkrpc.NewMonkRpcModule()
 		} else {
 			return monk.NewMonk(nil)
 		}
@@ -41,7 +41,7 @@ func newChain(chainType string, rpc bool) epm.Blockchain {
 			return eth.NewEth(nil)
 		}
 	case "gen", "genesis":
-		return genblock.NewGenBlockModule(nil)
+		return nil //genblock.NewGenBlockModule(nil)
 	}
 	return nil
 
@@ -139,7 +139,45 @@ func setGenesisConfig(m *monk.MonkModule, genesis string) {
 	}
 }
 
-func copyEditGenesisConfig(deployGen, tmpRoot string) string {
+func copyEditClientConfig(chain epm.Blockchain, chainType, deployConf string, rpc, defaults bool) string {
+	tempConf := "config.json"
+
+	if deployConf == "" {
+		if rpc {
+			deployConf = path.Join(utils.Blockchains, chainType, "rpc", "config.json")
+		} else {
+			deployConf = path.Join(utils.Blockchains, chainType, "config.json")
+		}
+	}
+
+	// if config doesnt exist, lay it
+	if _, err := os.Stat(deployConf); err != nil {
+		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
+		if rpc {
+			utils.InitDataDir(path.Join(utils.Blockchains, chainType, "rpc"))
+		}
+		ifExit(chain.WriteConfig(deployConf))
+	}
+	// copy and edit temp
+	ifExit(utils.Copy(deployConf, tempConf))
+
+	if !defaults {
+		vi(tempConf)
+	}
+	return tempConf
+}
+
+// TODO: nice way to handle multiple gen blocks on other chains
+func copyEditGenesisConfig(chain epm.Blockchain, chainType, deployGen, tmpRoot string, defaults bool) string {
+	//if ty, _ := chains.ResolveChainType(chainType); ty != "thelonious" {
+	monk, ok := isThelonious(chain)
+	if !ok {
+		if deployGen != "" {
+			logger.Warnln("Genesis configuration only possible with thelonious (for now - https://github.com/eris-ltd/epm-go/issues/53)")
+		}
+		return ""
+	}
+
 	tempGen := path.Join(tmpRoot, "genesis.json")
 	utils.InitDataDir(tmpRoot)
 
@@ -151,6 +189,10 @@ func copyEditGenesisConfig(deployGen, tmpRoot string) string {
 		ifExit(err)
 	}
 	ifExit(utils.Copy(deployGen, tempGen))
-	vi(tempGen)
+	if !defaults {
+		vi(tempGen)
+	}
+
+	setGenesisConfig(monk, tempGen)
 	return tempGen
 }

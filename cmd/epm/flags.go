@@ -210,4 +210,9 @@ var (
 		Name:  "vi",
 		Usage: "edit the config in a vim window",
 	}
+
+	defaultFlag = cli.BoolFlag{
+		Name:  "default",
+		Usage: "use the default config files",
+	}
 )

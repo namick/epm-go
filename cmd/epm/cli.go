@@ -144,32 +144,14 @@ func cliNew(c *cli.Context) {
 	// and copy into working dir
 	deployConf := c.String("config")
 	deployGen := c.String("genesis")
-	tempConf := ".config.json"
-
-	if deployConf == "" {
-		if rpc {
-			deployConf = path.Join(utils.Blockchains, chainType, "rpc", "config.json")
-		} else {
-			deployConf = path.Join(utils.Blockchains, chainType, "config.json")
-		}
-	}
+	defaults := c.Bool("default")
 
 	chain := newChain(chainType, rpc)
 
-	// if config doesnt exist, lay it
-	if _, err := os.Stat(deployConf); err != nil {
-		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
-		if rpc {
-			utils.InitDataDir(path.Join(utils.Blockchains, chainType, "rpc"))
-		}
-		ifExit(chain.WriteConfig(deployConf))
-	}
-	// copy and edit temp
-	ifExit(utils.Copy(deployConf, tempConf))
-	vi(tempConf)
-
+	tempConf := copyEditClientConfig(chain, chainType, deployConf, rpc, defaults)
+	tempGen := copyEditGenesisConfig(chain, chainType, deployGen, tmpRoot, defaults)
 	// deploy and install chain
-	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen)
+	chainId, err := DeployChain(chain, tmpRoot, tempConf, tempGen)
 	ifExit(err)
 	if chainId == "" {
 		exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
