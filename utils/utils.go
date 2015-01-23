@@ -18,12 +18,20 @@ import (
 	"strings"
 )
 
+func resolveDecerverRoot() string {
+	DecerverEnv := os.Getenv("DECERVER")
+	if DecerverEnv == "" {
+		return path.Join(usr.HomeDir, ".decerver")
+	}
+	return DecerverEnv
+}
+
 var (
 	GoPath  = os.Getenv("GOPATH")
 	ErisLtd = path.Join(GoPath, "src", "github.com", "eris-ltd")
 
 	usr, _      = user.Current() // error?!
-	Decerver    = path.Join(usr.HomeDir, ".decerver")
+	Decerver    = resolveDecerverRoot()
 	Apps        = path.Join(Decerver, "dapps")
 	Blockchains = path.Join(Decerver, "blockchains")
 	Filesystems = path.Join(Decerver, "filesystems")
