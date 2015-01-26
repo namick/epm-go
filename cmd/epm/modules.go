@@ -139,8 +139,9 @@ func setGenesisConfig(m *monk.MonkModule, genesis string) {
 	}
 }
 
-func copyEditClientConfig(chain epm.Blockchain, chainType, deployConf string, rpc, defaults bool) string {
-	tempConf := "config.json"
+func copyEditClientConfig(chain epm.Blockchain, chainType, deployConf, tmpRoot string, rpc, defaults bool) string {
+	tempConf := path.Join(tmpRoot, "config.json")
+	ifExit(utils.InitDataDir(tmpRoot))
 
 	if deployConf == "" {
 		if rpc {
@@ -149,7 +150,6 @@ func copyEditClientConfig(chain epm.Blockchain, chainType, deployConf string, rp
 			deployConf = path.Join(utils.Blockchains, chainType, "config.json")
 		}
 	}
-
 	// if config doesnt exist, lay it
 	if _, err := os.Stat(deployConf); err != nil {
 		utils.InitDataDir(path.Join(utils.Blockchains, chainType))
@@ -185,8 +185,7 @@ func copyEditGenesisConfig(chain epm.Blockchain, chainType, deployGen, tmpRoot s
 		deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
 	}
 	if _, err := os.Stat(deployGen); err != nil {
-		err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
-		ifExit(err)
+		ifExit(utils.WriteJson(monkdoug.DefaultGenesis, deployGen))
 	}
 	ifExit(utils.Copy(deployGen, tempGen))
 	if !defaults {

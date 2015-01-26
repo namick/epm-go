@@ -253,7 +253,7 @@ func (e *EPM) WriteVars(file string) error {
 		s += k + ":" + v + "\n"
 	}
 	// remove final new line
-	s = s[:len(s)-1]
+	s = strings.TrimRight(s, "\n")
 	err := ioutil.WriteFile(file, []byte(s), 0600)
 	return err
 }

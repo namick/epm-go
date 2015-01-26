@@ -148,15 +148,16 @@ func cliNew(c *cli.Context) {
 
 	chain := newChain(chainType, rpc)
 
-	tempConf := copyEditClientConfig(chain, chainType, deployConf, rpc, defaults)
+	tempConf := copyEditClientConfig(chain, chainType, deployConf, tmpRoot, rpc, defaults)
 	tempGen := copyEditGenesisConfig(chain, chainType, deployGen, tmpRoot, defaults)
+
 	// deploy and install chain
 	chainId, err := DeployChain(chain, tmpRoot, tempConf, tempGen)
 	ifExit(err)
 	if chainId == "" {
 		exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))
 	}
-	err = InstallChain(chain, tmpRoot, chainType, tempConf, chainId, rpc)
+	err = InstallChain(chain, tmpRoot, chainType, chainId, rpc)
 	ifExit(err)
 
 	s := fmt.Sprintf("Deployed and installed chain: %s/%s", chainType, chainId)

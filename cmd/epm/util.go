@@ -206,7 +206,7 @@ func DeployChain(chain epm.Blockchain, root, config, deployGen string) (string, 
 }
 
 // Copy files and deploy directory into global tree. Set configuration values for root dir and chain id.
-func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId string, rpc bool) error {
+func InstallChain(chain epm.Blockchain, root, chainType, chainId string, rpc bool) error {
 	// chain.Shutdown() and New again (so we dont move db while its open - does this even matter though?) !
 	home := chains.ComposeRoot(chainType, chainId)
 	if rpc {
@@ -222,9 +222,9 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 		return err
 	}
 
-	logger.Infoln("Loading and setting chainId ", tempConf)
 	// set chainId and rootdir values in config file
-	chain.ReadConfig(tempConf)
+	newConf := path.Join(home, "config.json")
+	chain.ReadConfig(newConf)
 
 	chain.SetProperty("ChainId", chainId)
 	//chain.SetProperty("ChainName", name)
@@ -232,11 +232,7 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 	if chainType == "thelonious" {
 		chain.SetProperty("GenesisConfig", path.Join(home, "genesis.json"))
 	}
-	chain.WriteConfig(tempConf)
-
-	if err := os.Rename(tempConf, path.Join(home, "config.json")); err != nil {
-		return err
-	}
+	chain.WriteConfig(newConf)
 
 	return nil
 }
