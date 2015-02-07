@@ -252,6 +252,9 @@ func (e *EPM) WriteVars(file string) error {
 	for k, v := range vars {
 		s += k + ":" + v + "\n"
 	}
+	if len(s) == 0 {
+		return nil
+	}
 	// remove final new line
 	s = s[:len(s)-1]
 	err := ioutil.WriteFile(file, []byte(s), 0600)
