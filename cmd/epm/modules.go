@@ -139,7 +139,7 @@ func setGenesisConfig(m *monk.MonkModule, genesis string) {
 	}
 }
 
-func copyEditGenesisConfig(deployGen, tmpRoot string) string {
+func copyEditGenesisConfig(deployGen, tmpRoot string, novi bool) string {
 	tempGen := path.Join(tmpRoot, "genesis.json")
 	utils.InitDataDir(tmpRoot)
 
@@ -151,6 +151,8 @@ func copyEditGenesisConfig(deployGen, tmpRoot string) string {
 		ifExit(err)
 	}
 	ifExit(utils.Copy(deployGen, tempGen))
-	vi(tempGen)
+	if !novi {
+		vi(tempGen)
+	}
 	return tempGen
 }

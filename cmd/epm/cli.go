@@ -35,14 +35,13 @@ func cliClean(c *cli.Context) {
 func cliPlop(c *cli.Context) {
 	switch c.Args().First() {
 	case "genesis":
-		ifExit(utils.Copy(path.Join(utils.Blockchains, "genesis.json"), "genesis.json"))
+		ifExit(utils.Copy(path.Join(utils.Blockchains, "thelonious", "genesis.json"), "genesis.json"))
 	case "config":
-		ifExit(utils.Copy(path.Join(utils.Blockchains, "config.json"), "config.json"))
+		ifExit(utils.Copy(path.Join(utils.Blockchains, "thelonious", "config.json"), "config.json"))
 	default:
 		logger.Errorln("Unknown plop option. Should be 'config' or 'genesis'")
 	}
 	exit(nil)
-
 }
 
 // list the refs
@@ -167,10 +166,15 @@ func cliNew(c *cli.Context) {
 	}
 	// copy and edit temp
 	ifExit(utils.Copy(deployConf, tempConf))
-	vi(tempConf)
+	// if we provide config or no-vi, don't open vim for client config
+	if !c.IsSet("config") && !c.Bool("no-vi") {
+		vi(tempConf)
+	}
+	// if we provide genesis or no-vi, dont open vim for genesis
+	novi := c.IsSet("genesis") || c.Bool("no-vi")
 
 	// deploy and install chain
-	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen)
+	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen, novi)
 	ifExit(err)
 	if chainId == "" {
 		exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))

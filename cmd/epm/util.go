@@ -197,14 +197,14 @@ func confirm(message string) bool {
 
 // Read config, set deployment root, config gen block (if relevant)
 // init, return chainId
-func DeployChain(chain epm.Blockchain, root, config, deployGen string) (string, error) {
+func DeployChain(chain epm.Blockchain, root, config, deployGen string, novi bool) (string, error) {
 	chain.ReadConfig(config)
 	chain.SetProperty("RootDir", root)
 
 	// TODO: nice way to handle multiple gen blocks on other chains
 	// set genesis config file
 	if th, ok := isThelonious(chain); ok {
-		tempGen := copyEditGenesisConfig(deployGen, root)
+		tempGen := copyEditGenesisConfig(deployGen, root, novi)
 		setGenesisConfig(th, tempGen)
 	} else if deployGen != "" {
 		logger.Warnln("Genesis configuration only possible with thelonious (for now - https://github.com/eris-ltd/epm-go/issues/53)")
