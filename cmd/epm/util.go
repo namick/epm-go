@@ -158,10 +158,30 @@ func checkInit() error {
 	return nil
 }
 
+func editor(file string) error {
+	editr := os.Getenv("EDITOR")
+	switch editr {
+	case "", "vim", "vi":
+		return vi(file)
+	case "emacs":
+		return emacs(file)
+	}
+	return fmt.Errorf("Unknown editor %s", editr)
+}
+
+func emacs(file string) error {
+	cmd := exec.Command("emacs", file)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func vi(file string) error {
 	cmd := exec.Command("vim", file)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 

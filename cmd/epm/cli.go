@@ -168,7 +168,7 @@ func cliNew(c *cli.Context) {
 	ifExit(utils.Copy(deployConf, tempConf))
 	// if we provide config or no-vi, don't open vim for client config
 	if !c.IsSet("config") && !c.Bool("no-vi") {
-		vi(tempConf)
+		ifExit(editor(tempConf))
 	}
 	// if we provide genesis or no-vi, dont open vim for genesis
 	novi := c.IsSet("genesis") || c.Bool("no-vi")
@@ -308,7 +308,7 @@ func cliConfig(c *cli.Context) {
 
 	configPath := path.Join(root, "config.json")
 	if c.Bool("vi") {
-		vi(configPath)
+		ifExit(editor(configPath))
 	} else {
 		m := newChain(chainType, rpc)
 		err = m.ReadConfig(configPath)

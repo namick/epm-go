@@ -152,7 +152,7 @@ func copyEditGenesisConfig(deployGen, tmpRoot string, novi bool) string {
 	}
 	ifExit(utils.Copy(deployGen, tempGen))
 	if !novi {
-		vi(tempGen)
+		ifExit(editor(tempGen))
 	}
 	return tempGen
 }
