@@ -211,8 +211,8 @@ var (
 		Usage: "edit the config in a vim window",
 	}
 
-	novimFlag = cli.BoolFlag{
-		Name:  "no-vi",
-		Usage: "don't open configs in vim on epm new",
+	editConfigFlag = cli.BoolFlag{
+		Name:  "edit-config",
+		Usage: "open the config in an editor on epm new",
 	}
 )

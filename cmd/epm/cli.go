@@ -166,15 +166,14 @@ func cliNew(c *cli.Context) {
 	}
 	// copy and edit temp
 	ifExit(utils.Copy(deployConf, tempConf))
-	// if we provide config or no-vi, don't open vim for client config
-	if !c.IsSet("config") && !c.Bool("no-vi") {
+	if c.Bool("edit-config") {
 		ifExit(editor(tempConf))
 	}
-	// if we provide genesis or no-vi, dont open vim for genesis
-	novi := c.IsSet("genesis") || c.Bool("no-vi")
+	// if we provide genesis, dont open editor for genesis
+	noEditor := c.IsSet("genesis")
 
 	// deploy and install chain
-	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen, novi)
+	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen, noEditor)
 	ifExit(err)
 	if chainId == "" {
 		exit(fmt.Errorf("ChainId must not be empty. How else would we ever find you?!"))

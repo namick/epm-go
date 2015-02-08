@@ -65,7 +65,7 @@ var (
 			nameFlag,
 			forceNameFlag,
 			typeFlag,
-			novimFlag,
+			editConfigFlag,
 		},
 	}
 
