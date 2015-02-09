@@ -215,4 +215,9 @@ var (
 		Name:  "edit-config",
 		Usage: "open the config in an editor on epm new",
 	}
+
+	runConfigFlag = cli.BoolFlag{
+		Name:  "config",
+		Usage: "run time config edits",
+	}
 )

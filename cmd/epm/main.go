@@ -47,6 +47,9 @@ func main() {
 		rpcHostFlag,
 		rpcPortFlag,
 		rpcLocalFlag,
+
+		// runtime configuration
+		runConfigFlag,
 	}
 
 	app.Commands = []cli.Command{

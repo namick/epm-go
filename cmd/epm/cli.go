@@ -272,6 +272,7 @@ func cliAddRef(c *cli.Context) {
 func cliRun(c *cli.Context) {
 	root, chainType, chainId, err := resolveRootFlag(c)
 	ifExit(err)
+
 	logger.Infof("Running chain %s/%s\n", chainType, chainId)
 	chain := loadChain(c, chainType, root)
 	chain.WaitForShutdown()

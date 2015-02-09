@@ -117,6 +117,13 @@ func setupModule(c *cli.Context, m epm.Blockchain, chainRoot string) {
 	configureRootDir(c, m, chainRoot)
 	readConfigFile(c, m)
 	applyFlags(c, m)
+	if c.GlobalBool("config") {
+		// write the config to a temp file, open in editor, reload
+		tempConfig := path.Join(utils.Epm, "tempconfig.json")
+		ifExit(m.WriteConfig(tempConfig))
+		ifExit(editor(tempConfig))
+		ifExit(m.ReadConfig(tempConfig))
+	}
 
 	logger.Infoln("Root directory: ", m.Property("RootDir").(string))
 
