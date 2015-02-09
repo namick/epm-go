@@ -33,13 +33,21 @@ func cliClean(c *cli.Context) {
 
 // plop the config or genesis defaults into current dir
 func cliPlop(c *cli.Context) {
+	root, _, chainId, err := resolveRootFlag(c)
+	ifExit(err)
 	switch c.Args().First() {
 	case "genesis":
 		ifExit(utils.Copy(path.Join(utils.Blockchains, "thelonious", "genesis.json"), "genesis.json"))
 	case "config":
 		ifExit(utils.Copy(path.Join(utils.Blockchains, "thelonious", "config.json"), "config.json"))
+	case "chainid":
+		fmt.Println(chainId)
+	case "vars":
+		b, err := ioutil.ReadFile(path.Join(root, EPMVars))
+		ifExit(err)
+		fmt.Println(string(b))
 	default:
-		logger.Errorln("Unknown plop option. Should be 'config' or 'genesis'")
+		logger.Errorln("Plop options: config, genesis, chainid, vars")
 	}
 	exit(nil)
 }
@@ -65,7 +73,7 @@ func cliRefs(c *cli.Context) {
 func cliHead(c *cli.Context) {
 	typ, id, err := chains.GetHead()
 	if err == nil {
-		fmt.Println("Current head:", path.Join(typ, id))
+		fmt.Println(path.Join(typ, id))
 	}
 	exit(err)
 }
