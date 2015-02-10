@@ -9,8 +9,8 @@ import (
 )
 
 func setLogLevel(c *cli.Context, m epm.Blockchain) {
-	logLevel := c.Int("log")
-	if c.IsSet("log") {
+	logLevel := c.GlobalInt("log")
+	if c.GlobalIsSet("log") {
 		m.SetProperty("LogLevel", logLevel)
 	}
 }
