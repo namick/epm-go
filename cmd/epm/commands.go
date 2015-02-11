@@ -177,4 +177,17 @@ var (
 		Action: cliKeygen,
 		Flags:  []cli.Flag{},
 	}
+
+	installCmd = cli.Command{
+		Name:   "install",
+		Usage:  "install a dapp",
+		Action: cliInstall,
+		Flags: []cli.Flag{
+			newConfigFlag,
+			newGenesisFlag,
+			nameFlag,
+			forceNameFlag,
+			editConfigFlag,
+		},
+	}
 )

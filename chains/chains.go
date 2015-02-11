@@ -41,7 +41,7 @@ func ChainFromName(name string) (string, string, error) {
 
 // Get ChainId from dapp name by reading package.json file
 func ChainIdFromDapp(dapp string) (string, error) {
-	p, err := CheckGetPackageFile(path.Join(utils.Apps, dapp))
+	p, err := CheckGetPackageFile(path.Join(utils.Dapps, dapp))
 	if err != nil {
 		return "", err
 	}
@@ -50,10 +50,10 @@ func ChainIdFromDapp(dapp string) (string, error) {
 	for _, dep := range p.ModuleDependencies {
 		if dep.Name == "monk" {
 			d := &dapps.MonkData{}
-			if err := json.Unmarshal(dep.Data, d); err != nil {
+			if err := json.Unmarshal(*(dep.Data), d); err != nil {
 				return "", err
 			}
-			chainId = d.ChainId
+			chainId = utils.StripHex(d.ChainId)
 		}
 	}
 	if chainId == "" {

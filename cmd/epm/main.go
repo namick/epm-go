@@ -59,6 +59,7 @@ func main() {
 		headCmd,
 		initCmd,
 		//fetchCmd,
+		installCmd,
 		newCmd,
 		cpCmd,
 		checkoutCmd,
