@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/codegangsta/cli"
 	color "github.com/daviddengcn/go-colortext"
+	"github.com/eris-ltd/decerver/interfaces/dapps"
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
@@ -150,11 +152,42 @@ func cliNew(c *cli.Context) {
 
 	// if genesis or config are not specified
 	// use defaults set by `epm init`
-	// and copy into working dir
 	deployConf := c.String("config")
 	deployGen := c.String("genesis")
 	tempConf := ".config.json"
+	editCfg := c.Bool("edit-config")
+	// if we provide genesis, dont open editor for genesis
+	noEditor := c.IsSet("genesis")
 
+	chainId := deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType, rpc, editCfg, noEditor)
+
+	if c.Bool("checkout") {
+		ifExit(chains.ChangeHead(chainType, chainId))
+		logger.Warnf("Checked out chain: %s/%s", chainType, chainId)
+	}
+
+	// update refs
+	updateRefs(chainType, chainId, forceName, name)
+}
+
+func updateRefs(chainType, chainId, forceName, name string) {
+	// update refs
+	if forceName != "" {
+		err := chains.AddRefForce(chainType, chainId, forceName)
+		if err != nil {
+			ifExit(err)
+		}
+		logger.Warnf("Created ref %s to point to chain %s\n", forceName, chainId)
+	} else if name != "" {
+		err := chains.AddRef(chainType, chainId, name)
+		if err != nil {
+			ifExit(err)
+		}
+		logger.Warnf("Created ref %s to point to chain %s\n", name, chainId)
+	}
+}
+
+func deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType string, rpc, editCfg, noEditor bool) string {
 	if deployConf == "" {
 		if rpc {
 			deployConf = path.Join(utils.Blockchains, chainType, "rpc", "config.json")
@@ -175,11 +208,9 @@ func cliNew(c *cli.Context) {
 	}
 	// copy and edit temp
 	ifExit(utils.Copy(deployConf, tempConf))
-	if c.Bool("edit-config") {
+	if editCfg {
 		ifExit(editor(tempConf))
 	}
-	// if we provide genesis, dont open editor for genesis
-	noEditor := c.IsSet("genesis")
 
 	// deploy and install chain
 	chainId, err := DeployChain(chain, tmpRoot, tempConf, deployGen, noEditor)
@@ -195,27 +226,8 @@ func cliNew(c *cli.Context) {
 		s += " with rpc"
 	}
 	logger.Warnln(s)
-
-	if c.Bool("checkout") {
-		ifExit(chains.ChangeHead(chainType, chainId))
-		logger.Warnf("Checked out chain: %s/%s", chainType, chainId)
-	}
-
-	// update refs
-	if forceName != "" {
-		err := chains.AddRefForce(chainType, chainId, forceName)
-		if err != nil {
-			ifExit(err)
-		}
-		logger.Warnf("Created ref %s to point to chain %s\n", forceName, chainId)
-	} else if name != "" {
-		err := chains.AddRef(chainType, chainId, name)
-		if err != nil {
-			ifExit(err)
-		}
-		logger.Warnf("Created ref %s to point to chain %s\n", name, chainId)
-	}
-	exit(nil)
+	ifExit(chain.Shutdown())
+	return chainId
 }
 
 // change the currently active chain
@@ -544,4 +556,149 @@ func cliKeygen(c *cli.Context) {
 	err := ioutil.WriteFile(path.Join(utils.Keys, name), []byte(prvHex), 0600)
 	ifExit(err)
 	fmt.Println(name)
+}
+
+func cliInstall(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		ifExit(fmt.Errorf("Please provide a path to the dapp to install"))
+	}
+	dappPath := c.Args()[0]
+	dappName := path.Base(dappPath)
+	if len(c.Args()) > 1 {
+		dappName = c.Args()[1]
+	}
+	pdxPath := path.Join(dappPath, "contracts")
+
+	r := make([]byte, 8)
+	rand.Read(r)
+	tmpRoot := path.Join(utils.Scratch, "epm", hex.EncodeToString(r))
+
+	chainType := "thelonious"
+
+	forceName := c.String("force-name")
+	name := c.String("name")
+	deployConf := c.String("config")
+	deployGen := c.String("genesis")
+	tempConf := ".config.json"
+	editCfg := c.Bool("edit-config")
+	diffStorage := c.Bool("diff")
+	rpc := c.Bool("rpc")
+	// if we provide genesis, dont open editor for genesis
+	noEditor := c.IsSet("genesis")
+
+	// install chain
+	chainId := deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType, rpc, editCfg, noEditor)
+
+	ifExit(chains.ChangeHead(chainType, chainId))
+	logger.Warnf("Checked out chain: %s/%s", chainType, chainId)
+
+	updateRefs(chainType, chainId, forceName, name)
+
+	// deploy pdx
+	contractPath := c.String("c")
+
+	chainRoot := chains.ComposeRootMulti("thelonious", chainId, "0")
+
+	// Startup the chain
+	logger.Warnf("Starting up chain:", chainRoot)
+	var chain epm.Blockchain
+	chain = loadChain(c, "thelonious", chainRoot)
+
+	if !c.IsSet("c") {
+		// contractPath = defaultContractPath
+		contractPath = pdxPath
+	}
+	var err error
+	epm.ContractPath, err = filepath.Abs(contractPath)
+	ifExit(err)
+
+	logger.Debugln("Contract root:", epm.ContractPath)
+
+	// clear cache
+	err = os.RemoveAll(utils.Epm)
+	if err != nil {
+		logger.Errorln("Error clearing cache: ", err)
+	}
+	utils.InitDataDir(utils.Epm)
+
+	// setup EPM object with ChainInterface
+	e, err := epm.NewEPM(chain, epm.LogFile)
+	ifExit(err)
+	e.ReadVars(path.Join(chainRoot, EPMVars))
+
+	// comb directory for package-definition file
+	// exits on error
+	dir, pkg, test_ := getPkgDefFile(pdxPath)
+
+	// epm parse the package definition file
+	err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
+	ifExit(err)
+
+	if diffStorage {
+		e.Diff = true
+	}
+
+	// epm execute jobs
+	e.ExecuteJobs()
+	// write epm variables to file
+	e.WriteVars(path.Join(chainRoot, EPMVars))
+	// wait for a block
+	e.Commit()
+	// run tests
+	if test_ {
+		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
+		if err != nil {
+			logger.Errorln(err)
+			if results != nil {
+				logger.Errorln("Failed tests:", results.FailedTests)
+			}
+		}
+	}
+
+	var rootContract string
+	b, err := ioutil.ReadFile(path.Join(chainRoot, EPMVars))
+	ifExit(err)
+	sp := strings.Split(string(b), "\n")
+	for _, s := range sp {
+		sp := strings.Split(s, ":")
+		name := sp[0]
+		val := sp[1]
+		if name == "ROOT" {
+			rootContract = val
+		}
+	}
+	// TODO: fetch root contract from vars...
+
+	// install dapp into decerver tree
+	p := path.Join(utils.Dapps, dappName)
+	ifExit(utils.Copy(dappPath, p))
+
+	// update package.json with chainid and root contract
+	p = path.Join(p, "package.json")
+	b, err = ioutil.ReadFile(p)
+	ifExit(err)
+	var pkgFile dapps.PackageFile
+	var monkData dapps.MonkData
+	err = json.Unmarshal(b, &pkgFile)
+	ifExit(err)
+	deps := pkgFile.ModuleDependencies
+	for i, d := range deps {
+		if d.Name == "monk" {
+			data := d.Data // json.RawMessage
+			err := json.Unmarshal(*data, &monkData)
+			ifExit(err)
+			monkData.ChainId = "0x" + chainId
+			monkData.RootContract = rootContract
+			b, err := json.Marshal(monkData)
+			ifExit(err)
+			raw := json.RawMessage(b)
+			deps[i].Data = &raw
+			break
+		}
+	}
+	pkgFile.ModuleDependencies = deps
+	b, err = json.MarshalIndent(pkgFile, "", "\t")
+	ifExit(err)
+	err = ioutil.WriteFile(p, b, 0600)
+	ifExit(err)
 }

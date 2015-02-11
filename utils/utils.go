@@ -24,7 +24,7 @@ var (
 
 	usr, _      = user.Current() // error?!
 	Decerver    = path.Join(usr.HomeDir, ".decerver")
-	Apps        = path.Join(Decerver, "dapps")
+	Dapps       = path.Join(Decerver, "dapps")
 	Blockchains = path.Join(Decerver, "blockchains")
 	Filesystems = path.Join(Decerver, "filesystems")
 	Languages   = path.Join(Decerver, "languages")
@@ -39,7 +39,7 @@ var (
 )
 
 var MajorDirs = []string{
-	Decerver, Apps, Blockchains, Filesystems, Languages, Logs, Modules, Scratch, Refs, Epm, Lllc, Keys,
+	Decerver, Dapps, Blockchains, Filesystems, Languages, Logs, Modules, Scratch, Refs, Epm, Lllc, Keys,
 }
 
 func exit(err error) {
