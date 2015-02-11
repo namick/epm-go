@@ -35,7 +35,12 @@ var (
 	Refs        = path.Join(Blockchains, "refs")
 	Epm         = path.Join(Scratch, "epm")
 	Lllc        = path.Join(Scratch, "lllc")
+	Keys        = path.Join(Decerver, "keys") // temporary solution to an age old problem
 )
+
+var MajorDirs = []string{
+	Decerver, Apps, Blockchains, Filesystems, Languages, Logs, Modules, Scratch, Refs, Epm, Lllc, Keys,
+}
 
 func exit(err error) {
 	status := 0
@@ -207,10 +212,6 @@ func StripHex(s string) string {
 func Usr() string {
 	u, _ := user.Current()
 	return u.HomeDir
-}
-
-var MajorDirs = []string{
-	Decerver, Apps, Blockchains, Filesystems, Languages, Logs, Modules, Scratch, Refs, Epm, Lllc,
 }
 
 func InitLogging(Datadir string, LogFile string, LogLevel int, DebugFile string) {

@@ -48,11 +48,11 @@ var (
 		Action: cliInit,
 	}
 
-	fetchCmd = cli.Command{
+	/*fetchCmd = cli.Command{
 		Name:   "fetch",
 		Usage:  "asssemble a chain from dapp info",
 		Action: cliFetch,
-	}
+	}*/
 
 	newCmd = cli.Command{
 		Name:   "new",
@@ -169,5 +169,12 @@ var (
 			dontClearFlag,
 			contractPathFlag,
 		},
+	}
+
+	keygenCmd = cli.Command{
+		Name:   "keygen",
+		Usage:  "generate secp256k1 keys",
+		Action: cliKeygen,
+		Flags:  []cli.Flag{},
 	}
 )

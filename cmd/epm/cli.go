@@ -9,7 +9,7 @@ import (
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
-	"github.com/eris-ltd/thelonious/monk"
+	"github.com/eris-ltd/thelonious/monkcrypto" // keygen
 	"io/ioutil"
 	"log"
 	"os"
@@ -128,9 +128,10 @@ func cliInit(c *cli.Context) {
 
 // install a dapp
 // TODO hmph
+/*
 func cliFetch(c *cli.Context) {
 	exit(monk.FetchInstallChain(c.Args().First()))
-}
+}*/
 
 // deploy the genblock into a random folder in scratch
 // and install into the global tree (must compute chainId before we know where to put it)
@@ -522,4 +523,25 @@ func cliConsole(c *cli.Context) {
 		e.Diff = true
 	}
 	e.Repl()
+}
+
+func cliKeygen(c *cli.Context) {
+	name := ""
+	if len(c.Args()) > 0 {
+		name = c.Args()[0]
+	}
+
+	key := monkcrypto.GenerateNewKeyPair()
+	prv := key.PrivateKey
+	addr := key.Address()
+	a := hex.EncodeToString(addr)
+	if name != "" {
+		name += "-"
+	}
+	name += a
+	prvHex := hex.EncodeToString(prv)
+
+	err := ioutil.WriteFile(path.Join(utils.Keys, name), []byte(prvHex), 0600)
+	ifExit(err)
+	fmt.Println(name)
 }

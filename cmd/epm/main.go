@@ -58,7 +58,7 @@ func main() {
 		refsCmd,
 		headCmd,
 		initCmd,
-		fetchCmd,
+		//fetchCmd,
 		newCmd,
 		cpCmd,
 		checkoutCmd,
@@ -70,6 +70,7 @@ func main() {
 		removeCmd,
 		deployCmd,
 		consoleCmd,
+		keygenCmd,
 	}
 
 	run(app)
