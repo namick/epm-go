@@ -11,7 +11,10 @@ import (
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
-	"github.com/eris-ltd/thelonious/monkcrypto" // keygen
+	mutils "github.com/eris-ltd/modules/monkutils" // for fetch
+	"github.com/eris-ltd/thelonious"               // for fetch
+	"github.com/eris-ltd/thelonious/monkcrypto"    // keygen
+	"github.com/eris-ltd/thelonious/monkutil"      // for fetch
 	"io/ioutil"
 	"log"
 	"os"
@@ -128,12 +131,39 @@ func cliInit(c *cli.Context) {
 	exit(utils.InitDecerverDir())
 }
 
-// install a dapp
-// TODO hmph
-/*
+// fetch a genesis block and state from a peer server
 func cliFetch(c *cli.Context) {
-	exit(monk.FetchInstallChain(c.Args().First()))
-}*/
+	if len(c.Args()) == 0 {
+		ifExit(fmt.Errorf("Must specify a peerserver address"))
+	}
+	peerserver := c.Args()[0]
+	peerserver = "http://" + peerserver
+
+	chainId, err := thelonious.GetChainId(peerserver)
+	ifExit(err)
+
+	rootDir := chains.ComposeRoot("thelonious", monkutil.Bytes2Hex(chainId))
+
+	monkutil.Config = &monkutil.ConfigManager{ExecPath: rootDir, Debug: true, Paranoia: true}
+	utils.InitLogging(rootDir, "", 5, "")
+	db := mutils.NewDatabase("database", false)
+	monkutil.Config.Db = db
+
+	genesisBlock, err := thelonious.GetGenesisBlock(peerserver)
+	ifExit(err)
+
+	monkutil.Config.Db.Put([]byte("GenesisBlock"), genesisBlock.RlpEncode())
+
+	hash := genesisBlock.GetRoot()
+	hashB, ok := hash.([]byte)
+	if !ok {
+		ifExit(fmt.Errorf("State root is not []byte:", hash))
+	}
+	err = thelonious.GetGenesisState(peerserver, monkutil.Bytes2Hex(hashB), db)
+	ifExit(err)
+
+	logger.Warnf("Fetched genesis block for chain %x", chainId)
+}
 
 // deploy the genblock into a random folder in scratch
 // and install into the global tree (must compute chainId before we know where to put it)

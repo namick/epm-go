@@ -48,11 +48,12 @@ var (
 		Action: cliInit,
 	}
 
-	/*fetchCmd = cli.Command{
+	fetchCmd = cli.Command{
 		Name:   "fetch",
-		Usage:  "asssemble a chain from dapp info",
+		Usage:  "fetch a chain from peer server",
 		Action: cliFetch,
-	}*/
+		Flags:  []cli.Flag{},
+	}
 
 	newCmd = cli.Command{
 		Name:   "new",
