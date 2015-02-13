@@ -179,8 +179,6 @@ func cliFetch(c *cli.Context) {
 	ifExit(chain.WriteConfig(path.Join(rootDir, "config.json")))
 
 	logger.Warnf("Fetched genesis block for chain %x", chainId)
-
-	thelonious.GetGenesisTest(db, hashB)
 }
 
 // deploy the genblock into a random folder in scratch
