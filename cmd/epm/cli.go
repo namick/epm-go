@@ -136,13 +136,15 @@ func cliFetch(c *cli.Context) {
 	if len(c.Args()) == 0 {
 		ifExit(fmt.Errorf("Must specify a peerserver address"))
 	}
+
+	chainType := "thelonious"
 	peerserver := c.Args()[0]
 	peerserver = "http://" + peerserver
 
 	chainId, err := thelonious.GetChainId(peerserver)
 	ifExit(err)
 
-	rootDir := chains.ComposeRoot("thelonious", monkutil.Bytes2Hex(chainId))
+	rootDir := chains.ComposeRoot(chainType, monkutil.Bytes2Hex(chainId))
 
 	monkutil.Config = &monkutil.ConfigManager{ExecPath: rootDir, Debug: true, Paranoia: true}
 	utils.InitLogging(rootDir, "", 5, "")
@@ -152,17 +154,33 @@ func cliFetch(c *cli.Context) {
 	genesisBlock, err := thelonious.GetGenesisBlock(peerserver)
 	ifExit(err)
 
-	monkutil.Config.Db.Put([]byte("GenesisBlock"), genesisBlock.RlpEncode())
+	db.Put([]byte("GenesisBlock"), genesisBlock.RlpEncode())
+	db.Put([]byte("ChainID"), chainId)
 
 	hash := genesisBlock.GetRoot()
 	hashB, ok := hash.([]byte)
 	if !ok {
 		ifExit(fmt.Errorf("State root is not []byte:", hash))
 	}
+	logger.Warnf("Fetching state %x\n", hashB)
 	err = thelonious.GetGenesisState(peerserver, monkutil.Bytes2Hex(hashB), db)
 	ifExit(err)
+	db.Close()
+
+	// get genesis.json
+	g, err := thelonious.GetGenesisJson(peerserver)
+	ifExit(err)
+	err = ioutil.WriteFile(path.Join(rootDir, "genesis.json"), g, 0600)
+	ifExit(err)
+
+	// drop config
+	chain := newChain(chainType, false)
+	chain.SetProperty("RootDir", rootDir)
+	ifExit(chain.WriteConfig(path.Join(rootDir, "config.json")))
 
 	logger.Warnf("Fetched genesis block for chain %x", chainId)
+
+	thelonious.GetGenesisTest(db, hashB)
 }
 
 // deploy the genblock into a random folder in scratch
