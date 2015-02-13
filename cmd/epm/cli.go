@@ -11,7 +11,10 @@ import (
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
-	"github.com/eris-ltd/thelonious/monkcrypto" // keygen
+	mutils "github.com/eris-ltd/modules/monkutils" // for fetch
+	"github.com/eris-ltd/thelonious"               // for fetch
+	"github.com/eris-ltd/thelonious/monkcrypto"    // keygen
+	"github.com/eris-ltd/thelonious/monkutil"      // for fetch
 	"io/ioutil"
 	"log"
 	"os"
@@ -128,12 +131,57 @@ func cliInit(c *cli.Context) {
 	exit(utils.InitDecerverDir())
 }
 
-// install a dapp
-// TODO hmph
-/*
+// fetch a genesis block and state from a peer server
 func cliFetch(c *cli.Context) {
-	exit(monk.FetchInstallChain(c.Args().First()))
-}*/
+	if len(c.Args()) == 0 {
+		ifExit(fmt.Errorf("Must specify a peerserver address"))
+	}
+
+	chainType := "thelonious"
+	peerserver := c.Args()[0]
+	peerserver = "http://" + peerserver
+
+	chainId, err := thelonious.GetChainId(peerserver)
+	ifExit(err)
+
+	rootDir := chains.ComposeRoot(chainType, monkutil.Bytes2Hex(chainId))
+
+	monkutil.Config = &monkutil.ConfigManager{ExecPath: rootDir, Debug: true, Paranoia: true}
+	utils.InitLogging(rootDir, "", 5, "")
+	db := mutils.NewDatabase("database", false)
+	monkutil.Config.Db = db
+
+	genesisBlock, err := thelonious.GetGenesisBlock(peerserver)
+	ifExit(err)
+
+	db.Put([]byte("GenesisBlock"), genesisBlock.RlpEncode())
+	db.Put([]byte("ChainID"), chainId)
+
+	hash := genesisBlock.GetRoot()
+	hashB, ok := hash.([]byte)
+	if !ok {
+		ifExit(fmt.Errorf("State root is not []byte:", hash))
+	}
+	logger.Warnf("Fetching state %x\n", hashB)
+	err = thelonious.GetGenesisState(peerserver, monkutil.Bytes2Hex(hashB), db)
+	ifExit(err)
+	db.Close()
+
+	// get genesis.json
+	g, err := thelonious.GetGenesisJson(peerserver)
+	ifExit(err)
+	err = ioutil.WriteFile(path.Join(rootDir, "genesis.json"), g, 0600)
+	ifExit(err)
+
+	// drop config
+	chain := newChain(chainType, false)
+	chain.SetProperty("RootDir", rootDir)
+	ifExit(chain.WriteConfig(path.Join(rootDir, "config.json")))
+
+	logger.Warnf("Fetched genesis block for chain %x", chainId)
+
+	thelonious.GetGenesisTest(db, hashB)
+}
 
 // deploy the genblock into a random folder in scratch
 // and install into the global tree (must compute chainId before we know where to put it)
